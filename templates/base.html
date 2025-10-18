@@ -7,43 +7,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <style>
-        body {
-            display: flex;
-            min-height: 100vh;
-            flex-direction: column;
-        }
-        .main-container {
-            display: flex;
-            flex-grow: 1;
-        }
-        .sidebar {
-            width: 280px; /* Largura da sidebar */
-            flex-shrink: 0; /* Impede que a sidebar encolha */
-            background-color: #f8f9fa; /* Cor de fundo da sidebar */
-            border-right: 1px solid #dee2e6;
-        }
-        .content {
-            flex-grow: 1; /* Faz o conteúdo ocupar o espaço restante */
-            padding: 2rem;
-            background-color: #ffffff; /* Cor de fundo da área de conteúdo */
-        }
-        .sidebar .nav-link {
-            color: #495057; /* Cor dos links na sidebar */
-        }
-        .sidebar .nav-link.active,
-        .sidebar .nav-link:hover {
-            color: #0d6efd; /* Cor do link ativo/hover */
-            background-color: #e9ecef; /* Fundo do link ativo/hover */
-        }
-        .sidebar .nav-link .bi {
-            margin-right: 0.75rem; /* Espaçamento do ícone */
-        }
-        .navbar {
-            flex-shrink: 0; /* Impede que a navbar encolha */
-        }
-    </style>
     {% block head_css %}{% endblock %}
 </head>
 <body>
