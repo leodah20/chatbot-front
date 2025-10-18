@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Painel Admin{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        .main-container {
+            display: flex;
+            flex-grow: 1;
+        }
+        .sidebar {
+            width: 280px; /* Largura da sidebar */
+            flex-shrink: 0; /* Impede que a sidebar encolha */
+            background-color: #f8f9fa; /* Cor de fundo da sidebar */
+            border-right: 1px solid #dee2e6;
+        }
+        .content {
+            flex-grow: 1; /* Faz o conteúdo ocupar o espaço restante */
+            padding: 2rem;
+            background-color: #ffffff; /* Cor de fundo da área de conteúdo */
+        }
+        .sidebar .nav-link {
+            color: #495057; /* Cor dos links na sidebar */
+        }
+        .sidebar .nav-link.active,
+        .sidebar .nav-link:hover {
+            color: #0d6efd; /* Cor do link ativo/hover */
+            background-color: #e9ecef; /* Fundo do link ativo/hover */
+        }
+        .sidebar .nav-link .bi {
+            margin-right: 0.75rem; /* Espaçamento do ícone */
+        }
+        .navbar {
+            flex-shrink: 0; /* Impede que a navbar encolha */
+        }
+    </style>
+    {% block head_css %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard">
+             <i class="bi bi-robot me-2"></i> Painel Admin - Chatbot
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {% if session.get('user') %}
+                            {{ session['user']['nome'] }}
+                        {% else %}
+                            Usuário
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                        <li><a class="dropdown-item" href="/logout"> <i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="main-container">
+    <div class="sidebar d-flex flex-column p-3">
+        <ul class="nav nav-pills flex-column mb-auto">
+             <li class="nav-item">
+                <a href="/dashboard" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}" aria-current="page">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                 <a href="/avisos" class="nav-link {% if request.path == '/avisos' %}active{% endif %}">
+                    <i class="bi bi-bell-fill"></i>
+                    Avisos
+                </a>
+            </li>
+            <li>
+                <a href="/cursos" class="nav-link {% if request.path == '/cursos' %}active{% endif %}">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    Cursos
+                </a>
+            </li>
+            <li>
+                <a href="/disciplinas" class="nav-link {% if request.path == '/disciplinas' %}active{% endif %}">
+                    <i class="bi bi-book-fill"></i>
+                    Disciplinas
+                </a>
+            </li>
+            <li>
+                <a href="/professores" class="nav-link {% if request.path == '/professores' %}active{% endif %}">
+                    <i class="bi bi-person-video3"></i>
+                    Professores
+                </a>
+            </li>
+            <li>
+                <a href="/alunos" class="nav-link {% if request.path == '/alunos' %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i>
+                    Alunos
+                </a>
+            </li>
+             </ul>
+    </div>
+
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
