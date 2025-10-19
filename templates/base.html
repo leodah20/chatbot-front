@@ -1,122 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Painel Admin Chatbot{% endblock %}</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base_styles.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <style>
-        /* Estilos básicos para layout sidebar + navbar (mantidos) */
-        body { display: flex; min-height: 100vh; flex-direction: column; }
-        .main-container { display: flex; flex-grow: 1; padding-top: 56px; }
-        .sidebar { width: 250px; height: calc(100vh - 56px); position: fixed; top: 56px; left: 0; background-color: #f8f9fa; border-right: 1px solid #dee2e6; padding: 1rem; overflow-y: auto; }
-        .content { margin-left: 250px; flex-grow: 1; padding: 2rem; background-color: #ffffff; }
-        .navbar-fixed-top { position: fixed; top: 0; right: 0; left: 0; z-index: 1030; }
+        /* Estilos adicionais para layout geral (podes mover para base_styles.css) */
+        body { margin: 0; background-color: #f4f7fa; font-family: 'Arial', sans-serif; color: #333; }
+        .container-principal { display: flex; min-height: 100vh; }
+        .barra-lateral { width: 250px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; height: 100%; left: 0; top: 0; z-index: 100; display: flex; flex-direction: column; }
+        .conteudo-principal { margin-left: 250px; flex-grow: 1; display: flex; flex-direction: column; padding-top: 60px; /* Altura do header */}
+        .conteudo-pagina { padding: 30px; flex-grow: 1; overflow-y: auto; }
+        .cabecalho-principal { position: fixed; top: 0; left: 250px; right: 0; z-index: 90; height: 60px; background-color: #ffffff; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; padding: 0 30px;}
+         /* Mensagens Flash */
+        .mensagens-flash { margin-bottom: 20px; width: 100%; }
+        .mensagem-flash { padding: 15px; margin-bottom: 10px; border: 1px solid transparent; border-radius: 4px; width: 100%; }
+        .flash-success { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; }
+        .flash-error   { color: #842029; background-color: #f8d7da; border-color: #f5c2c7; }
+        .flash-info    { color: #055160; background-color: #cff4fc; border-color: #b6effb; }
+        .flash-warning { color: #664d03; background-color: #fff3cd; border-color: #ffecb5; }
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 1040; top: 0; height: 100vh; padding-top: calc(56px + 1rem); }
-            .sidebar.open { transform: translateX(0); }
-            .content { margin-left: 0; }
-             .sidebar-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); z-index: 1039; /* Abaixo da sidebar, acima do conteúdo */ }
+            .barra-lateral { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
+            .barra-lateral.open { transform: translateX(0); }
+            .conteudo-principal { margin-left: 0; }
+            .cabecalho-principal { left: 0; }
         }
     </style>
     {% block head_css %}{% endblock %}
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark navbar-fixed-top">
-    <div class="container-fluid">
-        <button class="navbar-toggler me-2" type="button" onclick="toggleSidebar()">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-             <i class="bi bi-robot me-2"></i> Painel Admin
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNavDropdown">
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle me-1"></i>
-                        Olá, {{ session.get('user', {}).get('nome', 'Usuário') }}
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
-                        <li><a class="dropdown-item" href="{{ url_for('logout') }}"> <i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+    <div class="container-principal">
+        <aside class="barra-lateral">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='img/placeholder.svg') }}" alt="Logo" class="logo-img">
+                <span class="logo-texto">Admin Chatbot</span>
+            </div>
+            <nav class="navegacao-principal">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" class="item-menu {% if request.endpoint == 'dashboard' %}ativo{% endif %}">
+                            <i class="bi bi-grid-1x2-fill icon"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('manage_avisos') if 'manage_avisos' in request.endpoint else '#' }}" class="item-menu {% if request.endpoint == 'manage_avisos' %}ativo{% endif %}">
+                             <i class="bi bi-bell-fill icon"></i> Avisos
+                        </a>
+                    </li>
                     </ul>
-                </li>
-            </ul>
+            </nav>
+        </aside>
+
+        <div class="conteudo-principal">
+            <header class="cabecalho-principal">
+                <div class="titulo-pagina">
+                    <h2>{% block page_title %}Título Padrão{% endblock %}</h2>
+                </div>
+                <div class="menu-usuario">
+                    <span>Olá, {{ session.get('user', {}).get('nome', 'Usuário') }}</span>
+                    <div class="dropdown-usuario">
+                        <button class="botao-dropdown">▼</button>
+                        <div class="dropdown-content">
+                            <a href="{{ url_for('logout') }}">Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="conteudo-pagina">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="mensagens-flash">
+                        {% for category, message in messages %}
+                            <div class="mensagem-flash flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
         </div>
     </div>
-</nav>
 
-<div id="sidebar-overlay" class="sidebar-overlay d-none d-md-none" onclick="toggleSidebar()"></div>
-
-<div class="main-container">
-    <aside id="sidebar" class="sidebar">
-        <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item">
-                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" aria-current="page">
-                    <i class="bi bi-grid-1x2-fill me-2"></i>
-                    Dashboard
-                </a>
-            </li>
-            <li>
-                 <a href="{{ url_for('manage_avisos') if 'manage_avisos' in request.endpoint else '#' }}" class="nav-link link-dark {% if request.endpoint == 'manage_avisos' %}active{% endif %}">
-                    <i class="bi bi-bell-fill me-2"></i>
-                    Avisos
-                </a>
-            </li>
-             </ul>
-    </aside>
-
-    <main class="content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="mb-4">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category in ['success', 'warning', 'danger', 'info'] else 'secondary' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-<script>
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebar-overlay').classList.toggle('d-none');
-    }
-     // Função para mostrar/esconder o menu do utilizador (já incluída no Bootstrap JS, mas pode ser customizada)
-     // Função básica para fechar dropdowns se clicar fora
-     window.onclick = function(event) {
-         if (!event.target.matches('.dropdown-toggle')) {
-             var dropdowns = document.getElementsByClassName("dropdown-menu");
-             for (var i = 0; i < dropdowns.length; i++) {
-                 var openDropdown = dropdowns[i];
-                 if (openDropdown.classList.contains('show')) {
-                     // Verifica se o clique foi fora do menu E fora do botão que o abre
-                     if (!openDropdown.contains(event.target) && !event.target.closest('[data-bs-toggle="dropdown"]')) {
-                          // A funcionalidade de fechar já é tratada pelo Bootstrap JS,
-                          // mas podes adicionar lógica extra aqui se necessário.
-                     }
-                 }
-             }
-         }
-     }
-</script>
-
-{% block scripts %}{% endblock %}
+    <script>
+        document.querySelector('.botao-dropdown')?.addEventListener('click', function() {
+            document.querySelector('.dropdown-content')?.classList.toggle('mostrar');
+        });
+        window.onclick = function(event) {
+            if (!event.target.matches('.botao-dropdown')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('mostrar')) {
+                        openDropdown.classList.remove('mostrar');
+                    }
+                }
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>

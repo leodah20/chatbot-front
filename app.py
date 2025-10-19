@@ -9,8 +9,8 @@ app.secret_key = os.urandom(24) # Ou define uma chave fixa temporariamente
 
 # Configurações (Ajusta conforme necessário)
 # URL base da tua API FastAPI (chatbot_api)
-API_BASE_URL = os.environ.get("http://100.75.160.12:5005")
-
+API_BASE_URL = "http://100.75.160.12:5005"
+#  API_BASE_URL = os.environ.get("http://100.75.160.12:5005")
 # --- Decorator para Proteger Rotas ---
 def login_required(f):
     @wraps(f)
@@ -108,36 +108,42 @@ def logout():
 
 # --- Rotas Protegidas ---
 @app.route('/dashboard')
-@login_required
+@login_required  
 def dashboard():
     """ Rota para a página principal do dashboard. Busca dados da API. """
+    # Busca apenas o endpoint de avisos que está funcionando
     api_endpoints = {
         "avisos": f"{API_BASE_URL}/aviso/",
-        "disciplinas": f"{API_BASE_URL}/disciplina/",
-        "professores": f"{API_BASE_URL}/professor/",
-        "alunos": f"{API_BASE_URL}/aluno/"
     }
-    dashboard_data = {}
+    
+    dashboard_data = {
+        "avisos": [],
+        "disciplinas": [],
+        "professores": [],
+        "alunos": []
+    }
     error_occurred = False
 
     for key, url in api_endpoints.items():
         try:
-            # Adiciona um cabeçalho de autenticação se a tua API exigir (ex: Bearer token)
-            # headers = {"Authorization": f"Bearer {session.get('api_token')}"} # Exemplo
-            response = requests.get(url, timeout=5) # headers=headers)
+            response = requests.get(url, timeout=5)
             response.raise_for_status()
-            dashboard_data[key] = response.json()
+            data = response.json()
+            # Se a resposta for uma lista, usa direto; se for dict, tenta extrair a lista
+            dashboard_data[key] = data if isinstance(data, list) else data.get('avisos', [])
         except requests.exceptions.RequestException as e:
             print(f"Erro ao buscar dados de '{key}' da API ({url}): {e}")
             dashboard_data[key] = []
             error_occurred = True
-            # Se for erro 401/403 (Não autorizado), talvez fazer logout?
-            # if isinstance(e, requests.exceptions.HTTPError) and e.response.status_code in [401, 403]:
-            #     flash("Sua sessão expirou ou é inválida. Faça login novamente.", "error")
-            #     return logout()
+
+    # Calcula estatísticas baseadas nos dados disponíveis
+    dashboard_data['total_avisos'] = len(dashboard_data.get('avisos', []))
+    dashboard_data['total_disciplinas'] = len(dashboard_data.get('disciplinas', []))
+    dashboard_data['total_professores'] = len(dashboard_data.get('professores', []))
+    dashboard_data['total_alunos'] = len(dashboard_data.get('alunos', []))
 
     if error_occurred:
-        flash("Erro ao carregar alguns dados do dashboard. A API pode estar indisponível.", "warning")
+        flash("Alguns dados do dashboard não puderam ser carregados.", "warning")
 
     return render_template('dashboard.html', **dashboard_data)
 

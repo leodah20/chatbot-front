@@ -1,0 +1,84 @@
+{% extends "base.html" %} {% block title %}Dashboard{% endblock %}
+
+{% block head_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
+    <style>
+        /* Ajustes menores para garantir que ícones funcionem */
+        .stat-icon { font-size: 2.5rem; opacity: 0.6; }
+        .action-btn i { vertical-align: middle; } /* Alinha ícones nos botões */
+    </style>
+{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %} {% block content %}
+    <h1 class="header-title mb-4">Visão Geral</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-info">
+                <div class="stat-label">Total de Avisos</div>
+                <div class="stat-value">{{ avisos|length }}</div>
+            </div>
+            <i class="bi bi-bell-fill stat-icon text-primary"></i> </div>
+         <div class="stat-card">
+            <div class="stat-info">
+                <div class="stat-label">Total de Disciplinas</div>
+                <div class="stat-value">{{ disciplinas|length }}</div>
+            </div>
+             <i class="bi bi-book-fill stat-icon text-success"></i> </div>
+         <div class="stat-card">
+            <div class="stat-info">
+                <div class="stat-label">Total de Professores</div>
+                <div class="stat-value">{{ professores|length }}</div>
+            </div>
+             <i class="bi bi-person-video3 stat-icon text-warning"></i> </div>
+         <div class="stat-card">
+            <div class="stat-info">
+                <div class="stat-label">Total de Alunos</div>
+                <div class="stat-value">{{ alunos|length }}</div>
+            </div>
+            <i class="bi bi-people-fill stat-icon text-info"></i> </div>
+    </div>
+
+    <h2 class="section-title">Gerenciamento Rápido</h2>
+
+    <div class="table-container">
+         <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+             <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Últimos Avisos</h3>
+             <a href="{{ url_for('manage_avisos') if 'manage_avisos' in request.endpoint else '#' }}" class="btn-add">
+                 <i class="bi bi-plus-circle icon"></i> Adicionar
+             </a>
+         </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Conteúdo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for aviso in avisos %}
+                <tr>
+                    <td>{{ aviso.titulo }}</td>
+                    <td>{{ aviso.conteudo[:100] }}{% if aviso.conteudo|length > 100 %}...{% endif %}</td>
+                    <td style="white-space: nowrap;"> <button class="action-btn btn-edit">
+                            <i class="bi bi-pencil-fill"></i> Editar
+                        </button>
+                        <button class="action-btn btn-delete">
+                            <i class="bi bi-trash-fill"></i> Excluir
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #888;">Nenhum aviso encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {% endblock %}
