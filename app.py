@@ -1,5 +1,5 @@
 # ===== IMPORTAÇÕES =====
-from flask import Flask, render_template, request, redirect, url_for, session # Importa o módulo Flask e as funções necessárias para criar a aplicação web
+from flask import Flask, render_template, request, redirect, url_for, session, flash # Importa o módulo Flask e as funções necessárias para criar a aplicação web
 import requests  # Biblioteca para fazer chamadas HTTP para a API externa
 import os  # Biblioteca para gerar chave secreta aleatória
 
@@ -54,13 +54,15 @@ def login():
                 return redirect(url_for('dashboard'))
             else:
                 # A API retornou um erro (ex: 401 - Não Autorizado)
-                # Retorna uma mensagem de erro para o usuário
-                return "<h1>Email ou senha inválidos!!</h1>"
+                # Exibe uma mensagem de erro para o usuário
+                flash('Email ou senha inválidos! Verifique suas credenciais e tente novamente.', 'error')
+                return redirect(url_for('login'))
 
         except requests.exceptions.RequestException as e:
             # Falha ao conectar na API (problema de rede, API fora do ar, etc.)
             print(f"Erro ao conectar na API de login: {e}")
-            return "<h1>Erro no sistema. Tente novamente mais tarde.</h1>"
+            flash('Erro ao conectar com o servidor. Tente novamente mais tarde.', 'error')
+            return redirect(url_for('login'))
         # --- FIM DA LÓGICA DE AUTENTICAÇÃO ---
 
     # Se o método for GET, exibe o formulário de login
