@@ -114,14 +114,11 @@ def dashboard():
     # Busca apenas o endpoint de avisos que está funcionando
     api_endpoints = {
         "avisos": f"{API_BASE_URL}/aviso/",
+        "disciplinas": f"{API_BASE_URL}/disciplina/",
+        "professores": f"{API_BASE_URL}/professor/",
+        "alunos": f"{API_BASE_URL}/aluno/"
     }
-    
-    dashboard_data = {
-        "avisos": [],
-        "disciplinas": [],
-        "professores": [],
-        "alunos": []
-    }
+    dashboard_data = {}
     error_occurred = False
 
     for key, url in api_endpoints.items():
@@ -130,7 +127,7 @@ def dashboard():
             response.raise_for_status()
             data = response.json()
             # Se a resposta for uma lista, usa direto; se for dict, tenta extrair a lista
-            dashboard_data[key] = data if isinstance(data, list) else data.get('avisos', [])
+            dashboard_data[key] = data if isinstance(data, list) else data.get(key, [])
         except requests.exceptions.RequestException as e:
             print(f"Erro ao buscar dados de '{key}' da API ({url}): {e}")
             dashboard_data[key] = []
