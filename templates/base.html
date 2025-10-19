@@ -34,7 +34,9 @@
              /* Adiciona aqui a secção .dark se o teu design tiver modo escuro */
         }
         body {
-            @apply bg-background text-foreground;
+            /* @apply bg-background text-foreground; */ /* Desabilitado - não suportado via CDN */
+            background-color: rgb(var(--background));
+            color: rgb(var(--foreground));
         }
 
         /* Ajustes de layout específicos */
