@@ -1,334 +1,407 @@
 /* ===== ESTILOS CUSTOMIZADOS PARA O PAINEL ADMINISTRATIVO ===== */
+/* Este arquivo contém todos os estilos personalizados para o painel administrativo */
 
-/* === VARIÁVEIS CSS === */
+/* === VARIÁVEIS CSS (CUSTOM PROPERTIES) === */
+/* Define cores, dimensões e outros valores reutilizáveis em todo o projeto */
 :root {
-    --primary-color: #0d6efd;
-    --secondary-color: #6c757d;
-    --success-color: #198754;
-    --warning-color: #ffc107;
-    --info-color: #0dcaf0;
-    --danger-color: #dc3545;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
-    --sidebar-width: 280px;
-    --navbar-height: 56px;
-    --border-radius: 8px;
-    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    --transition: all 0.3s ease;
+    /* Cores principais do sistema */
+    --primary-color: #0d6efd;        /* Azul principal */
+    --secondary-color: #6c757d;      /* Cinza secundário */
+    --success-color: #198754;        /* Verde para sucesso */
+    --warning-color: #ffc107;        /* Amarelo para avisos */
+    --info-color: #0dcaf0;           /* Azul claro para informações */
+    --danger-color: #dc3545;         /* Vermelho para erros */
+    --light-color: #f8f9fa;          /* Cinza claro para fundos */
+    --dark-color: #212529;           /* Preto/cinza escuro para textos */
+    
+    /* Dimensões do layout */
+    --sidebar-width: 280px;          /* Largura da barra lateral */
+    --navbar-height: 56px;           /* Altura da barra de navegação */
+    
+    /* Valores de design */
+    --border-radius: 8px;            /* Raio das bordas arredondadas */
+    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);  /* Sombra padrão */
+    --transition: all 0.3s ease;     /* Transição padrão para animações */
 }
 
-/* === RESET E BASE === */
+/* === RESET E CONFIGURAÇÕES BASE === */
+/* Aplica box-sizing border-box para todos os elementos */
 * {
     box-sizing: border-box;
 }
 
+/* Configurações base do corpo da página */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: var(--dark-color);
-    background-color: #f5f6fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  /* Fonte moderna e legível */
+    line-height: 1.6;                                              /* Espaçamento entre linhas */
+    color: var(--dark-color);                                      /* Cor do texto */
+    background-color: #f5f6fa;                                     /* Cor de fundo suave */
 }
 
 /* === LAYOUT PRINCIPAL === */
+/* Container principal que ocupa toda a altura disponível */
 .main-container {
-    min-height: calc(100vh - var(--navbar-height));
+    min-height: calc(100vh - var(--navbar-height));  /* Altura total menos a navbar */
 }
 
-/* === SIDEBAR === */
+/* === BARRA LATERAL (SIDEBAR) === */
+/* Estilização da barra lateral de navegação */
 .sidebar {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    transition: var(--transition);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);  /* Gradiente roxo/azul */
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);                      /* Sombra lateral */
+    transition: var(--transition);                                   /* Transição suave */
 }
 
+/* Links de navegação da sidebar */
 .sidebar .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    padding: 12px 20px;
-    margin: 4px 8px;
-    border-radius: var(--border-radius);
-    transition: var(--transition);
-    font-weight: 500;
-    position: relative;
-    overflow: hidden;
+    color: rgba(255, 255, 255, 0.8);    /* Cor branca com transparência */
+    padding: 12px 20px;                  /* Espaçamento interno */
+    margin: 4px 8px;                     /* Margem entre links */
+    border-radius: var(--border-radius); /* Bordas arredondadas */
+    transition: var(--transition);       /* Transição suave */
+    font-weight: 500;                    /* Peso da fonte */
+    position: relative;                  /* Para posicionar o efeito de brilho */
+    overflow: hidden;                    /* Esconde o efeito que sai dos limites */
 }
 
+/* Efeito de brilho que passa pelos links no hover */
 .sidebar .nav-link::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    left: -100%;  /* Começa fora da tela à esquerda */
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+    transition: left 0.5s;  /* Animação de movimento */
 }
 
+/* Animação do efeito de brilho no hover */
 .sidebar .nav-link:hover::before {
-    left: 100%;
+    left: 100%;  /* Move para fora da tela à direita */
 }
 
+/* Estado hover dos links da sidebar */
 .sidebar .nav-link:hover {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
+    color: white;                                           /* Cor branca sólida */
+    background-color: rgba(255, 255, 255, 0.1);           /* Fundo branco transparente */
+    transform: translateX(5px);                            /* Move 5px para a direita */
 }
 
+/* Link ativo (página atual) */
 .sidebar .nav-link.active {
-    color: white;
-    background-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    color: white;                                           /* Cor branca sólida */
+    background-color: rgba(255, 255, 255, 0.2);           /* Fundo branco mais opaco */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);           /* Sombra mais pronunciada */
 }
 
+/* Ícones dos links da sidebar */
 .sidebar .nav-link .bi {
-    font-size: 1.1rem;
-    width: 20px;
-    text-align: center;
+    font-size: 1.1rem;     /* Tamanho do ícone */
+    width: 20px;           /* Largura fixa para alinhamento */
+    text-align: center;    /* Centraliza o ícone */
 }
 
-/* === NAVBAR === */
+/* === BARRA DE NAVEGAÇÃO SUPERIOR (NAVBAR) === */
+/* Estilização da barra de navegação no topo da página */
 .navbar {
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border-bottom: 3px solid var(--primary-color);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;  /* Gradiente escuro */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);                                 /* Sombra sutil */
+    border-bottom: 3px solid var(--primary-color);                             /* Borda inferior azul */
 }
 
+/* Logo/título da aplicação na navbar */
 .navbar-brand {
-    font-weight: 700;
-    font-size: 1.3rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-weight: 700;                                    /* Fonte em negrito */
+    font-size: 1.3rem;                                   /* Tamanho da fonte */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);       /* Sombra no texto */
 }
 
+/* Ícone do logo na navbar */
 .navbar-brand .bi {
-    color: var(--info-color);
-    animation: pulse 2s infinite;
+    color: var(--info-color);  /* Cor azul clara */
+    animation: pulse 2s infinite;  /* Animação de pulsação contínua */
 }
 
+/* Animação de pulsação para o ícone */
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    0% { transform: scale(1); }      /* Tamanho normal */
+    50% { transform: scale(1.1); }   /* Aumenta 10% */
+    100% { transform: scale(1); }    /* Volta ao tamanho normal */
 }
 
-/* === ÁREA DE CONTEÚDO === */
+/* === ÁREA DE CONTEÚDO PRINCIPAL === */
+/* Estilização da área onde o conteúdo das páginas é exibido */
 .content {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    min-height: calc(100vh - var(--navbar-height));
-    padding: 2rem;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);  /* Gradiente suave */
+    min-height: calc(100vh - var(--navbar-height));                  /* Altura total menos navbar */
+    padding: 2rem;                                                   /* Espaçamento interno */
 }
 
 /* === CARDS DE ESTATÍSTICAS === */
+/* Estilização dos cards que exibem estatísticas no dashboard */
 .stat-card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    transition: var(--transition);
-    overflow: hidden;
-    position: relative;
+    border: none;                                           /* Remove borda padrão */
+    border-radius: 15px;                                    /* Bordas bem arredondadas */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);            /* Sombra sutil */
+    transition: var(--transition);                          /* Transição suave */
+    overflow: hidden;                                       /* Esconde conteúdo que sai dos limites */
+    position: relative;                                     /* Para posicionar elementos absolutos */
 }
 
+/* Barra decorativa no topo dos cards */
 .stat-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 4px;  /* Altura da barra */
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
 }
 
+/* Efeito hover dos cards */
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);                            /* Move 5px para cima */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);           /* Sombra mais pronunciada */
 }
 
+/* Corpo dos cards */
 .stat-card .card-body {
-    padding: 1.5rem;
+    padding: 1.5rem;  /* Espaçamento interno */
 }
 
+/* Título dos cards */
 .stat-card .card-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    opacity: 0.9;
+    font-size: 0.9rem;      /* Tamanho da fonte */
+    font-weight: 600;       /* Peso da fonte */
+    margin-bottom: 0.5rem;  /* Margem inferior */
+    opacity: 0.9;           /* Transparência sutil */
 }
 
+/* Número grande dos cards (display-6) */
 .stat-card .display-6 {
-    font-weight: 700;
-    margin-bottom: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 700;                                       /* Fonte bem negrito */
+    margin-bottom: 0;                                       /* Remove margem inferior */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);         /* Sombra no texto */
 }
 
+/* Ícones dos cards */
 .stat-card .bi {
-    opacity: 0.7;
-    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+    opacity: 0.7;                                           /* Transparência */
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));  /* Sombra no ícone */
 }
 
 /* === CORES ESPECÍFICAS DOS CARDS === */
+/* Sobrescreve as cores padrão do Bootstrap com gradientes personalizados */
+
+/* Card primário (Avisos) - Gradiente roxo/azul */
 .bg-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 }
 
+/* Card de sucesso (Disciplinas) - Gradiente verde */
 .bg-success {
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
 }
 
+/* Card de aviso (Professores) - Gradiente rosa/vermelho */
 .bg-warning {
     background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
 }
 
+/* Card de informação (Alunos) - Gradiente azul claro */
 .bg-info {
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
 }
 
 /* === TÍTULOS E TEXTO === */
+/* Estilização dos títulos e textos da aplicação */
 h1, h2, h3, h4, h5, h6 {
-    color: var(--dark-color);
-    font-weight: 600;
+    color: var(--dark-color);  /* Cor escura para contraste */
+    font-weight: 600;          /* Peso da fonte */
 }
 
+/* Título principal das páginas (h2) */
 .h2 {
-    color: var(--dark-color);
-    font-weight: 700;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-    position: relative;
-    padding-bottom: 0.5rem;
+    color: var(--dark-color);                              /* Cor escura */
+    font-weight: 700;                                       /* Fonte bem negrito */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);         /* Sombra sutil */
+    position: relative;                                     /* Para posicionar a linha decorativa */
+    padding-bottom: 0.5rem;                                /* Espaçamento inferior */
 }
 
+/* Linha decorativa abaixo do título h2 */
 .h2::after {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--primary-color), var(--info-color));
-    border-radius: 2px;
+    width: 60px;  /* Largura da linha */
+    height: 3px;  /* Altura da linha */
+    background: linear-gradient(90deg, var(--primary-color), var(--info-color));  /* Gradiente */
+    border-radius: 2px;  /* Bordas arredondadas */
 }
 
-/* === DROPDOWN MENU === */
+/* === MENU DROPDOWN === */
+/* Estilização do menu dropdown do usuário na navbar */
 .dropdown-menu {
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    border-radius: 10px;
-    padding: 0.5rem 0;
-    margin-top: 0.5rem;
+    border: none;                                           /* Remove borda padrão */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);          /* Sombra pronunciada */
+    border-radius: 10px;                                    /* Bordas arredondadas */
+    padding: 0.5rem 0;                                      /* Espaçamento interno */
+    margin-top: 0.5rem;                                     /* Margem superior */
 }
 
+/* Itens do menu dropdown */
 .dropdown-item {
-    padding: 0.75rem 1.5rem;
-    transition: var(--transition);
-    color: var(--dark-color);
+    padding: 0.75rem 1.5rem;                               /* Espaçamento interno */
+    transition: var(--transition);                          /* Transição suave */
+    color: var(--dark-color);                              /* Cor do texto */
 }
 
+/* Estado hover dos itens do dropdown */
 .dropdown-item:hover {
-    background-color: var(--light-color);
-    color: var(--primary-color);
-    transform: translateX(5px);
+    background-color: var(--light-color);                  /* Fundo claro */
+    color: var(--primary-color);                           /* Cor azul */
+    transform: translateX(5px);                            /* Move 5px para a direita */
 }
 
+/* Ícones dos itens do dropdown */
 .dropdown-item .bi {
-    width: 16px;
-    text-align: center;
+    width: 16px;           /* Largura fixa para alinhamento */
+    text-align: center;    /* Centraliza o ícone */
 }
 
 /* === RESPONSIVIDADE === */
+/* Estilos para dispositivos móveis e tablets */
+
+/* Tablets e telas médias (até 768px) */
 @media (max-width: 768px) {
+    /* Sidebar se torna um menu lateral deslizante */
     .sidebar {
-        width: 100%;
-        position: fixed;
-        top: var(--navbar-height);
-        left: -100%;
-        height: calc(100vh - var(--navbar-height));
-        z-index: 1000;
-        transition: left 0.3s ease;
+        width: 100%;                                           /* Ocupa toda a largura */
+        position: fixed;                                       /* Posição fixa */
+        top: var(--navbar-height);                             /* Abaixo da navbar */
+        left: -100%;                                           /* Fora da tela (escondida) */
+        height: calc(100vh - var(--navbar-height));            /* Altura total menos navbar */
+        z-index: 1000;                                         /* Fica acima de outros elementos */
+        transition: left 0.3s ease;                            /* Animação de deslizamento */
     }
     
+    /* Classe para mostrar a sidebar (adicionada via JavaScript) */
     .sidebar.show {
-        left: 0;
+        left: 0;  /* Move para dentro da tela */
     }
     
+    /* Reduz padding do conteúdo em telas menores */
     .content {
         padding: 1rem;
     }
     
+    /* Adiciona margem inferior aos cards */
     .stat-card {
         margin-bottom: 1rem;
     }
 }
 
+/* Celulares e telas pequenas (até 576px) */
 @media (max-width: 576px) {
+    /* Padding ainda menor para celulares */
     .content {
         padding: 0.5rem;
     }
     
+    /* Reduz padding dos cards */
     .stat-card .card-body {
         padding: 1rem;
     }
     
+    /* Reduz tamanho dos números grandes */
     .stat-card .display-6 {
         font-size: 1.5rem;
     }
 }
 
 /* === ANIMAÇÕES === */
+/* Animações personalizadas para melhorar a experiência do usuário */
+
+/* Animação de entrada dos elementos (fade in + slide up) */
 @keyframes fadeInUp {
     from {
-        opacity: 0;
-        transform: translateY(30px);
+        opacity: 0;                    /* Inicia transparente */
+        transform: translateY(30px);   /* Inicia 30px abaixo */
     }
     to {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 1;                    /* Termina opaco */
+        transform: translateY(0);      /* Termina na posição normal */
     }
 }
 
+/* Aplica animação aos cards de estatísticas */
 .stat-card {
-    animation: fadeInUp 0.6s ease-out;
+    animation: fadeInUp 0.6s ease-out;  /* Animação de 0.6s com easing suave */
 }
 
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
+/* Delays escalonados para criar efeito sequencial */
+.stat-card:nth-child(1) { animation-delay: 0.1s; }  /* Primeiro card */
+.stat-card:nth-child(2) { animation-delay: 0.2s; }  /* Segundo card */
+.stat-card:nth-child(3) { animation-delay: 0.3s; }  /* Terceiro card */
+.stat-card:nth-child(4) { animation-delay: 0.4s; }  /* Quarto card */
 
 /* === SCROLLBAR CUSTOMIZADA === */
+/* Personaliza a aparência da barra de rolagem */
+
+/* Largura da barra de rolagem */
 ::-webkit-scrollbar {
     width: 8px;
 }
 
+/* Fundo da barra de rolagem */
 ::-webkit-scrollbar-track {
-    background: var(--light-color);
+    background: var(--light-color);  /* Cor de fundo clara */
 }
 
+/* Barra de rolagem propriamente dita */
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, var(--primary-color), var(--info-color));
-    border-radius: 4px;
+    background: linear-gradient(135deg, var(--primary-color), var(--info-color));  /* Gradiente */
+    border-radius: 4px;  /* Bordas arredondadas */
 }
 
+/* Estado hover da barra de rolagem */
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, var(--info-color), var(--primary-color));
+    background: linear-gradient(135deg, var(--info-color), var(--primary-color));  /* Gradiente invertido */
 }
 
-/* === UTILITÁRIOS === */
+/* === CLASSES UTILITÁRIAS === */
+/* Classes auxiliares para uso em HTML */
+
+/* Adiciona sombra ao texto */
 .text-shadow {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Aplica sombra padrão */
 .box-shadow {
     box-shadow: var(--box-shadow);
 }
 
+/* Aplica transição padrão */
 .transition {
     transition: var(--transition);
 }
 
-/* === ESTADOS DE HOVER === */
+/* === ESTADOS DE HOVER GLOBAIS === */
+/* Efeitos hover aplicados globalmente a botões e cards */
+
+/* Hover em botões */
 .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);                            /* Move 2px para cima */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);            /* Sombra pronunciada */
 }
 
+/* Hover em cards */
 .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);                            /* Move 3px para cima */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);          /* Sombra média */
 }
