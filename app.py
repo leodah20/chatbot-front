@@ -1,118 +1,146 @@
-# ===== IMPORTAÇÕES =====
-from flask import Flask, render_template, request, redirect, url_for, session, flash # Importa o módulo Flask e as funções necessárias para criar a aplicação web
-import requests  # Biblioteca para fazer chamadas HTTP para a API externa
-import os  # Biblioteca para gerar chave secreta aleatória
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import requests
+from functools import wraps
+import os # Para a secret key
 
-# ===== CONFIGURAÇÃO DA APLICAÇÃO FLASK =====
 app = Flask(__name__)
+# É crucial definir uma chave secreta para usar sessions e flash messages
+# Podes gerar uma chave aleatória (ex: import os; os.urandom(24))
+# e guardá-la numa variável de ambiente por segurança.
+app.secret_key = os.urandom(24) # Ou define uma chave fixa temporariamente
 
-# IMPORTANTE: O Flask precisa de uma "chave secreta" para gerenciar sessões de forma segura.
-# Sem isso, a sessão não funciona. Esta chave é usada para criptografar os dados da sessão.
-app.secret_key = os.urandom(24)
+# URL base da tua API FastAPI (chatbot_api)
+# Lembra-te de ajustar se estiver a correr noutra porta ou endereço
+API_BASE_URL = "http://127.0.0.1:8000"
 
-# ===== CONFIGURAÇÕES DA API =====
-# URL base da API externa que será consumida pelo frontend
-# Esta URL deve ser substituída pela URL real da sua API
-API_BASE_URL = "http://100.75.160.12:5005"
-
-
-# ===== ROTAS DA APLICAÇÃO =====
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+# --- Decorator para Proteger Rotas ---
+def login_required(f):
     """
-    Rota para autenticação de usuários
-    - GET: Exibe o formulário de login
-    - POST: Processa os dados de login e autentica com a API externa
+    Decorator para garantir que o utilizador está logado antes de aceder a uma rota.
     """
-    if request.method == 'POST':
-        # Obtém os dados do formulário de login
-        email = request.form.get('email')
-        senha = request.form.get('senha')
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user' not in session:
+            flash("Por favor, faça login para aceder a esta página.", "error")
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
-        # --- INÍCIO DA LÓGICA DE AUTENTICAÇÃO REAL ---
-        try:
-            # Fazendo a chamada POST para o endpoint de login da API externa
-            # Envia email e senha no formato JSON
-            response = requests.post(
-                f"{API_BASE_URL}/login",
-                json={'email': email, 'password': senha}
-            )
-
-            # Verifica se a API respondeu com sucesso (status 200)
-            if response.status_code == 200:
-                # Login bem-sucedido!
-                user_data = response.json()  # Converte a resposta JSON em dicionário Python
-
-                # Armazena informações do usuário na sessão para mantê-lo logado
-                # A sessão é mantida no servidor e associada ao navegador do usuário
-                session['logged_in'] = True
-                session['user_name'] = user_data.get('nome', 'Usuário')
-                session['user_type'] = user_data.get('tipo', 'desconhecido')  # ex: 'coordenador' ou 'professor'
-
-                # Redireciona para o dashboard após login bem-sucedido
-                return redirect(url_for('dashboard'))
-            else:
-                # A API retornou um erro (ex: 401 - Não Autorizado)
-                # Exibe uma mensagem de erro para o usuário
-                flash('Email ou senha inválidos! Verifique suas credenciais e tente novamente.', 'error')
-                return redirect(url_for('login'))
-
-        except requests.exceptions.RequestException as e:
-            # Falha ao conectar na API (problema de rede, API fora do ar, etc.)
-            print(f"Erro ao conectar na API de login: {e}")
-            flash('Erro ao conectar com o servidor. Tente novamente mais tarde.', 'error')
-            return redirect(url_for('login'))
-        # --- FIM DA LÓGICA DE AUTENTICAÇÃO ---
-
-    # Se o método for GET, exibe o formulário de login
-    return render_template('login.html')
-
-
-# Rota principal que redireciona automaticamente para o login
+# --- Rotas de Autenticação ---
 @app.route('/')
 def index():
-    """
-    Rota raiz da aplicação
-    Redireciona automaticamente para a página de login
-    """
-    return redirect(url_for('login'))
+    """ Rota para a página de login. """
+    # Se o utilizador já estiver logado, redireciona para o dashboard
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
 
+@app.route('/login', methods=['POST'])
+def login():
+    """ Processa os dados do formulário de login. """
+    username = request.form.get('username')
+    password = request.form.get('password')
 
-# --- ROTAS PROTEGIDAS (REQUEREM AUTENTICAÇÃO) ---
+    if not username or not password:
+        flash("Email e senha são obrigatórios.", "error")
+        return redirect(url_for('index'))
 
-@app.route('/dashboard')
-def dashboard():
-    """
-    Rota para o Dashboard (página principal após o login)
-    Exibe estatísticas e informações gerais do sistema
-    """
-    # Verifica se o usuário está logado antes de permitir o acesso
-    # Se não estiver logado, redireciona para a página de login
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
+    # Endpoint de autenticação da tua API (ajusta se for diferente)
+    auth_url = f"{API_BASE_URL}/auth/login"
+    credentials = {"username": username, "password": password}
 
-    # Se estiver logado, renderiza a página do dashboard
-    # Passa o nome do usuário para o template poder exibir informações personalizadas
-    return render_template('dashboard.html', user_name=session.get('user_name'))
+    try:
+        response = requests.post(auth_url, json=credentials)
+        response.raise_for_status() # Lança erro para respostas 4xx/5xx
+
+        # Se o login for bem-sucedido, a API deve retornar os dados do utilizador
+        user_data = response.json()
+
+        # Guarda as informações do utilizador na sessão
+        # Adapta os nomes das chaves ('id_professor', 'nome', etc.)
+        # conforme o que a tua API retorna
+        session['user'] = {
+            'id': user_data.get('id_professor') or user_data.get('id_coordenador') or user_data.get('id_aluno'), # Adapta conforme necessário
+            'nome': user_data.get('nome'),
+            'email': user_data.get('email'),
+            'tipo': user_data.get('tipo', 'desconhecido') # Ex: 'professor', 'coordenador'
+        }
+        session.permanent = True # Torna a sessão mais duradoura (opcional)
+
+        # Redireciona para o dashboard após login bem-sucedido
+        return redirect(url_for('dashboard'))
+
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            flash("Credenciais inválidas. Verifique seu email e senha.", "error")
+        else:
+            flash(f"Erro ao tentar fazer login (HTTP {e.response.status_code}). Tente novamente.", "error")
+        return redirect(url_for('index'))
+    except requests.exceptions.RequestException as e:
+        # Erro de conexão com a API
+        print(f"Erro de conexão com a API de autenticação: {e}")
+        flash("Não foi possível conectar ao servidor de autenticação. Tente novamente mais tarde.", "error")
+        return redirect(url_for('index'))
+    except Exception as e:
+        # Outro erro inesperado
+        print(f"Erro inesperado durante o login: {e}")
+        flash("Ocorreu um erro inesperado durante o login.", "error")
+        return redirect(url_for('index'))
 
 
 @app.route('/logout')
 def logout():
-    """
-    Rota para fazer logout do usuário
-    Limpa todos os dados da sessão e redireciona para o login
-    """
-    # Limpa todos os dados da sessão (remove informações do usuário logado)
-    session.clear()
-    # Redireciona de volta para a tela de login
-    return redirect(url_for('login'))
+    """ Limpa a sessão do utilizador (faz logout). """
+    session.pop('user', None)
+    flash("Logout realizado com sucesso.", "info")
+    return redirect(url_for('index'))
 
 
-# ===== EXECUÇÃO DA APLICAÇÃO =====
+# --- Rotas Protegidas (Exemplo: Dashboard) ---
+@app.route('/dashboard')
+@login_required # Aplica o decorator para exigir login
+def dashboard():
+    """ Rota para a página principal do dashboard. """
+    # Tenta buscar dados da API para exibir nos cartões
+    try:
+        avisos_resp = requests.get(f"{API_BASE_URL}/aviso/")
+        avisos_resp.raise_for_status()
+        avisos = avisos_resp.json()
+
+        disciplinas_resp = requests.get(f"{API_BASE_URL}/disciplina/")
+        disciplinas_resp.raise_for_status()
+        disciplinas = disciplinas_resp.json()
+
+        professores_resp = requests.get(f"{API_BASE_URL}/professor/") # Assumindo endpoint /professor/
+        professores_resp.raise_for_status()
+        professores = professores_resp.json()
+
+        alunos_resp = requests.get(f"{API_BASE_URL}/aluno/") # Assumindo endpoint /aluno/
+        alunos_resp.raise_for_status()
+        alunos = alunos_resp.json()
+
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao buscar dados para o dashboard: {e}")
+        flash("Erro ao carregar dados do dashboard. A API pode estar indisponível.", "error")
+        # Define listas vazias para evitar erros no template
+        avisos, disciplinas, professores, alunos = [], [], [], []
+
+    # Renderiza o template do dashboard passando os dados
+    return render_template('dashboard.html',
+                           avisos=avisos,
+                           disciplinas=disciplinas,
+                           professores=professores,
+                           alunos=alunos)
+
+# --- Adiciona outras rotas protegidas aqui (ex: /avisos, /disciplinas, etc.) ---
+# @app.route('/avisos')
+# @login_required
+# def manage_avisos():
+#     # Lógica para buscar avisos da API e renderizar templates/avisos.html
+#     pass
+
+
+# --- Execução da Aplicação ---
 if __name__ == '__main__':
-    # Inicia o servidor Flask
-    # host='0.0.0.0' permite acesso de qualquer IP
-    # port=5000 define a porta do servidor
-    # debug=True ativa o modo de debug (recarrega automaticamente em mudanças)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # debug=True é útil durante o desenvolvimento, mas DESATIVA em produção
+    app.run(debug=True, port=5001) # Usa a porta 5001 para não conflitar com a API na 8000
