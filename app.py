@@ -5,22 +5,19 @@ import os # Para a secret key
 
 app = Flask(__name__)
 # É crucial definir uma chave secreta para usar sessions e flash messages
-# Podes gerar uma chave aleatória (ex: import os; os.urandom(24))
-# e guardá-la numa variável de ambiente por segurança.
 app.secret_key = os.urandom(24) # Ou define uma chave fixa temporariamente
 
+# Configurações (Ajusta conforme necessário)
 # URL base da tua API FastAPI (chatbot_api)
-# Lembra-te de ajustar se estiver a correr noutra porta ou endereço
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = os.environ.get("http://100.75.160.12:5005")
 
 # --- Decorator para Proteger Rotas ---
 def login_required(f):
-    """
-    Decorator para garantir que o utilizador está logado antes de aceder a uma rota.
-    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user' not in session:
+        # Verifica se 'user' existe E se tem um 'id' (mínimo para ser válido)
+        if 'user' not in session or not session['user'].get('id'):
+            session.pop('user', None) # Limpa sessão inválida
             flash("Por favor, faça login para aceder a esta página.", "error")
             return redirect(url_for('index'))
         return f(*args, **kwargs)
@@ -29,64 +26,78 @@ def login_required(f):
 # --- Rotas de Autenticação ---
 @app.route('/')
 def index():
-    """ Rota para a página de login. """
-    # Se o utilizador já estiver logado, redireciona para o dashboard
-    if 'user' in session:
+    """ Rota principal, exibe a página de login. """
+    if 'user' in session and session['user'].get('id'):
         return redirect(url_for('dashboard'))
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    """ Processa os dados do formulário de login. """
-    username = request.form.get('username')
-    password = request.form.get('password')
-
-    if not username or not password:
-        flash("Email e senha são obrigatórios.", "error")
-        return redirect(url_for('index'))
-
-    # Endpoint de autenticação da tua API (ajusta se for diferente)
-    auth_url = f"{API_BASE_URL}/login"
-    credentials = {"username": username, "password": password}
-
-    try:
-        response = requests.post(auth_url, json=credentials)
-        response.raise_for_status() # Lança erro para respostas 4xx/5xx
-
-        # Se o login for bem-sucedido, a API deve retornar os dados do utilizador
-        user_data = response.json()
-
-        # Guarda as informações do utilizador na sessão
-        # Adapta os nomes das chaves ('id_professor', 'nome', etc.)
-        # conforme o que a tua API retorna
-        session['user'] = {
-            'id': user_data.get('id_professor') or user_data.get('id_coordenador') or user_data.get('id_aluno'), # Adapta conforme necessário
-            'nome': user_data.get('nome'),
-            'email': user_data.get('email'),
-            'tipo': user_data.get('tipo', 'desconhecido') # Ex: 'professor', 'coordenador'
-        }
-        session.permanent = True # Torna a sessão mais duradoura (opcional)
-
-        # Redireciona para o dashboard após login bem-sucedido
+    """ Exibe o formulário de login (GET) e processa os dados (POST). """
+    if request.method == 'GET' and 'user' in session and session['user'].get('id'):
         return redirect(url_for('dashboard'))
 
-    except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 401:
-            flash("Credenciais inválidas. Verifique seu email e senha.", "error")
-        else:
-            flash(f"Erro ao tentar fazer login (HTTP {e.response.status_code}). Tente novamente.", "error")
-        return redirect(url_for('index'))
-    except requests.exceptions.RequestException as e:
-        # Erro de conexão com a API
-        print(f"Erro de conexão com a API de autenticação: {e}")
-        flash("Não foi possível conectar ao servidor de autenticação. Tente novamente mais tarde.", "error")
-        return redirect(url_for('index'))
-    except Exception as e:
-        # Outro erro inesperado
-        print(f"Erro inesperado durante o login: {e}")
-        flash("Ocorreu um erro inesperado durante o login.", "error")
-        return redirect(url_for('index'))
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
 
+        if not email or not password:
+            flash("Email e senha são obrigatórios.", "error")
+            return redirect(url_for('index'))
+
+        auth_url = f"{API_BASE_URL}/login"
+        credentials = {"email": email, "password": password}
+
+        try:
+            response = requests.post(auth_url, json=credentials, timeout=10)
+            response.raise_for_status()
+            user_data = response.json()
+
+            # --- ALTERAÇÃO PRINCIPAL AQUI ---
+            # Guarda informações na sessão usando .get() com valores padrão
+            session['user'] = {
+                'id': user_data.get('id_professor') or user_data.get('id_coordenador') or user_data.get('id_aluno'),
+                'nome': user_data.get('nome', 'Usuário Desconhecido'), # <--- Valor Padrão
+                'email': user_data.get('email'),
+                'tipo': user_data.get('tipo', 'desconhecido')
+            }
+            # Verifica se pelo menos um ID foi obtido
+            if not session['user']['id']:
+                 flash("Erro ao processar dados do utilizador recebidos da API.", "error")
+                 session.pop('user', None) # Limpa sessão inválida
+                 return redirect(url_for('index'))
+
+            session.permanent = True
+
+            # Usa o nome obtido (ou o padrão) na mensagem flash
+            flash(f"Bem-vindo(a), {session['user'].get('nome', 'Usuário')}!", "success")
+            return redirect(url_for('dashboard'))
+
+        # (Restante do tratamento de erros igual ao anterior)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                flash("Credenciais inválidas. Verifique seu email e senha.", "error")
+            else:
+                flash(f"Erro no servidor de autenticação (HTTP {e.response.status_code}). Tente novamente.", "error")
+            return redirect(url_for('index'))
+        except requests.exceptions.ConnectionError:
+            print(f"Erro: Não foi possível conectar à API em {auth_url}")
+            flash("Erro de conexão com o servidor de autenticação. Verifique se a API está online.", "error")
+            return redirect(url_for('index'))
+        except requests.exceptions.Timeout:
+            print(f"Erro: Timeout ao conectar à API em {auth_url}")
+            flash("O servidor de autenticação demorou muito para responder. Tente novamente.", "error")
+            return redirect(url_for('index'))
+        except requests.exceptions.RequestException as e:
+            print(f"Erro inesperado de requisição durante o login: {e}")
+            flash("Ocorreu um erro de comunicação durante o login. Tente novamente.", "error")
+            return redirect(url_for('index'))
+        except Exception as e:
+            print(f"Erro inesperado durante o login: {e}")
+            flash("Ocorreu um erro inesperado durante o login.", "error")
+            return redirect(url_for('index'))
+
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -95,52 +106,58 @@ def logout():
     flash("Logout realizado com sucesso.", "info")
     return redirect(url_for('index'))
 
-
-# --- Rotas Protegidas (Exemplo: Dashboard) ---
+# --- Rotas Protegidas ---
 @app.route('/dashboard')
-@login_required # Aplica o decorator para exigir login
+@login_required
 def dashboard():
-    """ Rota para a página principal do dashboard. """
-    # Tenta buscar dados da API para exibir nos cartões
-    try:
-        avisos_resp = requests.get(f"{API_BASE_URL}/aviso/")
-        avisos_resp.raise_for_status()
-        avisos = avisos_resp.json()
+    """ Rota para a página principal do dashboard. Busca dados da API. """
+    api_endpoints = {
+        "avisos": f"{API_BASE_URL}/aviso/",
+        "disciplinas": f"{API_BASE_URL}/disciplina/",
+        "professores": f"{API_BASE_URL}/professor/",
+        "alunos": f"{API_BASE_URL}/aluno/"
+    }
+    dashboard_data = {}
+    error_occurred = False
 
-        disciplinas_resp = requests.get(f"{API_BASE_URL}/disciplina/")
-        disciplinas_resp.raise_for_status()
-        disciplinas = disciplinas_resp.json()
+    for key, url in api_endpoints.items():
+        try:
+            # Adiciona um cabeçalho de autenticação se a tua API exigir (ex: Bearer token)
+            # headers = {"Authorization": f"Bearer {session.get('api_token')}"} # Exemplo
+            response = requests.get(url, timeout=5) # headers=headers)
+            response.raise_for_status()
+            dashboard_data[key] = response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao buscar dados de '{key}' da API ({url}): {e}")
+            dashboard_data[key] = []
+            error_occurred = True
+            # Se for erro 401/403 (Não autorizado), talvez fazer logout?
+            # if isinstance(e, requests.exceptions.HTTPError) and e.response.status_code in [401, 403]:
+            #     flash("Sua sessão expirou ou é inválida. Faça login novamente.", "error")
+            #     return logout()
 
-        professores_resp = requests.get(f"{API_BASE_URL}/professor/") # Assumindo endpoint /professor/
-        professores_resp.raise_for_status()
-        professores = professores_resp.json()
+    if error_occurred:
+        flash("Erro ao carregar alguns dados do dashboard. A API pode estar indisponível.", "warning")
 
-        alunos_resp = requests.get(f"{API_BASE_URL}/aluno/") # Assumindo endpoint /aluno/
-        alunos_resp.raise_for_status()
-        alunos = alunos_resp.json()
+    return render_template('dashboard.html', **dashboard_data)
 
-    except requests.exceptions.RequestException as e:
-        print(f"Erro ao buscar dados para o dashboard: {e}")
-        flash("Erro ao carregar dados do dashboard. A API pode estar indisponível.", "error")
-        # Define listas vazias para evitar erros no template
-        avisos, disciplinas, professores, alunos = [], [], [], []
-
-    # Renderiza o template do dashboard passando os dados
-    return render_template('dashboard.html',
-                           avisos=avisos,
-                           disciplinas=disciplinas,
-                           professores=professores,
-                           alunos=alunos)
-
-# --- Adiciona outras rotas protegidas aqui (ex: /avisos, /disciplinas, etc.) ---
+# --- Adiciona outras rotas aqui ---
+# Exemplo para a página de Avisos
 # @app.route('/avisos')
 # @login_required
 # def manage_avisos():
-#     # Lógica para buscar avisos da API e renderizar templates/avisos.html
-#     pass
+#     try:
+#         response = requests.get(f"{API_BASE_URL}/aviso/")
+#         response.raise_for_status()
+#         avisos = response.json()
+#     except requests.exceptions.RequestException as e:
+#         print(f"Erro ao buscar avisos: {e}")
+#         flash("Não foi possível carregar os avisos.", "error")
+#         avisos = []
+#     return render_template('avisos.html', avisos=avisos) # Precisarias criar templates/avisos.html
 
 
 # --- Execução da Aplicação ---
 if __name__ == '__main__':
-    # debug=True é útil durante o desenvolvimento, mas DESATIVA em produção
-    app.run(debug=True, port=5001) # Usa a porta 5001 para não conflitar com a API na 8000
+    port = int(os.environ.get('PORT', 5001))
+    app.run(debug=True, host='0.0.0.0', port=port)
