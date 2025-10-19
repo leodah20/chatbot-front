@@ -46,7 +46,7 @@ def login():
         return redirect(url_for('index'))
 
     # Endpoint de autenticação da tua API (ajusta se for diferente)
-    auth_url = f"{API_BASE_URL}/auth/login"
+    auth_url = f"{API_BASE_URL}/login"
     credentials = {"username": username, "password": password}
 
     try:
