@@ -49,51 +49,101 @@ def login():
         credentials = {"email": email, "password": password}
 
         try:
+            print(f"[DEBUG] Tentando login com: {email}")
             response = requests.post(auth_url, json=credentials, timeout=10)
+            print(f"[DEBUG] Status Code: {response.status_code}")
+            print(f"[DEBUG] Response: {response.text}")
+            
             response.raise_for_status()
             user_data = response.json()
+            print(f"[DEBUG] User Data JSON: {user_data}")
 
-            # --- ALTERAÇÃO PRINCIPAL AQUI ---
-            # Guarda informações na sessão usando .get() com valores padrão
+            # Extrai o ID do usuário de forma flexível
+            user_id = (
+                user_data.get('id') or 
+                user_data.get('id_professor') or 
+                user_data.get('id_coordenador') or 
+                user_data.get('id_aluno') or
+                user_data.get('user_id') or
+                user_data.get('userId')
+            )
+            
+            # Extrai o nome do usuário de forma flexível
+            user_nome = (
+                user_data.get('nome') or 
+                user_data.get('name') or 
+                user_data.get('username') or
+                email.split('@')[0]  # Usa parte do email como fallback
+            )
+            
+            # Extrai o tipo de usuário
+            user_tipo = (
+                user_data.get('tipo') or 
+                user_data.get('type') or 
+                user_data.get('role') or
+                'usuario'
+            )
+
+            # Guarda informações na sessão
             session['user'] = {
-                'id': user_data.get('id_professor') or user_data.get('id_coordenador') or user_data.get('id_aluno'),
-                'nome': user_data.get('nome', 'Usuário Desconhecido'), # <--- Valor Padrão
-                'email': user_data.get('email'),
-                'tipo': user_data.get('tipo', 'desconhecido')
+                'id': user_id,
+                'nome': user_nome,
+                'email': user_data.get('email') or email,
+                'tipo': user_tipo,
+                'raw_data': user_data  # Guarda dados brutos para debug
             }
+            
+            print(f"[DEBUG] Session User: {session['user']}")
+            
             # Verifica se pelo menos um ID foi obtido
             if not session['user']['id']:
-                 flash("Erro ao processar dados do utilizador recebidos da API.", "error")
-                 session.pop('user', None) # Limpa sessão inválida
-                 return redirect(url_for('index'))
+                print("[DEBUG] ERRO: Nenhum ID de usuário encontrado na resposta da API")
+                print(f"[DEBUG] Estrutura recebida: {user_data.keys()}")
+                flash("Erro ao processar dados do utilizador recebidos da API.", "error")
+                session.pop('user', None)
+                return redirect(url_for('index'))
 
+            # Login bem-sucedido - configurar sessão
             session.permanent = True
-
-            # Usa o nome obtido (ou o padrão) na mensagem flash
             flash(f"Bem-vindo(a), {session['user'].get('nome', 'Usuário')}!", "success")
             return redirect(url_for('dashboard'))
 
-        # (Restante do tratamento de erros igual ao anterior)
         except requests.exceptions.HTTPError as e:
+            print(f"[DEBUG] HTTPError: {e}")
+            print(f"[DEBUG] Response Text: {e.response.text if hasattr(e, 'response') else 'N/A'}")
+            
             if e.response.status_code == 401:
                 flash("Credenciais inválidas. Verifique seu email e senha.", "error")
+            elif e.response.status_code == 404:
+                flash("Endpoint de login não encontrado na API. Verifique a configuração.", "error")
+            elif e.response.status_code == 422:
+                try:
+                    error_detail = e.response.json()
+                    flash(f"Dados inválidos: {error_detail}", "error")
+                except:
+                    flash("Dados de login inválidos. Verifique o formato.", "error")
             else:
                 flash(f"Erro no servidor de autenticação (HTTP {e.response.status_code}). Tente novamente.", "error")
             return redirect(url_for('index'))
-        except requests.exceptions.ConnectionError:
-            print(f"Erro: Não foi possível conectar à API em {auth_url}")
+        except requests.exceptions.ConnectionError as e:
+            print(f"[DEBUG] ConnectionError: Não foi possível conectar à API em {auth_url}")
+            print(f"[DEBUG] Erro: {e}")
             flash("Erro de conexão com o servidor de autenticação. Verifique se a API está online.", "error")
             return redirect(url_for('index'))
-        except requests.exceptions.Timeout:
-            print(f"Erro: Timeout ao conectar à API em {auth_url}")
+        except requests.exceptions.Timeout as e:
+            print(f"[DEBUG] Timeout: Timeout ao conectar à API em {auth_url}")
+            print(f"[DEBUG] Erro: {e}")
             flash("O servidor de autenticação demorou muito para responder. Tente novamente.", "error")
             return redirect(url_for('index'))
         except requests.exceptions.RequestException as e:
-            print(f"Erro inesperado de requisição durante o login: {e}")
+            print(f"[DEBUG] RequestException: {e}")
             flash("Ocorreu um erro de comunicação durante o login. Tente novamente.", "error")
             return redirect(url_for('index'))
         except Exception as e:
-            print(f"Erro inesperado durante o login: {e}")
+            print(f"[DEBUG] Exception Inesperada: {e}")
+            print(f"[DEBUG] Tipo: {type(e)}")
+            import traceback
+            traceback.print_exc()
             flash("Ocorreu um erro inesperado durante o login.", "error")
             return redirect(url_for('index'))
 
@@ -111,7 +161,9 @@ def logout():
 @login_required  
 def dashboard():
     """ Rota para a página principal do dashboard. Busca dados da API. """
-    # Busca apenas o endpoint de avisos que está funcionando
+    print(f"[DEBUG] Dashboard acessado por: {session.get('user', {}).get('nome', 'Desconhecido')}")
+    
+    # Busca dados dos endpoints da API
     api_endpoints = {
         "avisos": f"{API_BASE_URL}/aviso/",
         "disciplinas": f"{API_BASE_URL}/disciplina/",
@@ -123,13 +175,24 @@ def dashboard():
 
     for key, url in api_endpoints.items():
         try:
+            print(f"[DEBUG] Buscando {key} em: {url}")
             response = requests.get(url, timeout=5)
+            print(f"[DEBUG] {key} - Status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
+            print(f"[DEBUG] {key} - Tipo de dados: {type(data)}, Tamanho: {len(data) if isinstance(data, list) else 'N/A'}")
+            
             # Se a resposta for uma lista, usa direto; se for dict, tenta extrair a lista
-            dashboard_data[key] = data if isinstance(data, list) else data.get(key, [])
+            if isinstance(data, list):
+                dashboard_data[key] = data
+            elif isinstance(data, dict):
+                # Tenta várias chaves possíveis
+                dashboard_data[key] = data.get(key) or data.get('data') or data.get('items') or []
+            else:
+                dashboard_data[key] = []
+                
         except requests.exceptions.RequestException as e:
-            print(f"Erro ao buscar dados de '{key}' da API ({url}): {e}")
+            print(f"[DEBUG] Erro ao buscar '{key}' da API ({url}): {e}")
             dashboard_data[key] = []
             error_occurred = True
 
@@ -138,6 +201,12 @@ def dashboard():
     dashboard_data['total_disciplinas'] = len(dashboard_data.get('disciplinas', []))
     dashboard_data['total_professores'] = len(dashboard_data.get('professores', []))
     dashboard_data['total_alunos'] = len(dashboard_data.get('alunos', []))
+    
+    # Adiciona informações do usuário
+    dashboard_data['user'] = session.get('user', {})
+
+    print(f"[DEBUG] Dados do dashboard: {list(dashboard_data.keys())}")
+    print(f"[DEBUG] Totais - Avisos: {dashboard_data['total_avisos']}, Disciplinas: {dashboard_data['total_disciplinas']}")
 
     if error_occurred:
         flash("Alguns dados do dashboard não puderam ser carregados.", "warning")
