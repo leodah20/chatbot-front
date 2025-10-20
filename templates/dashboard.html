@@ -255,22 +255,22 @@
       <div class="brand">
         <img class="logo" src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP">
         <h1 class="title">Painel Administrativo</h1>
-      </div>
+                </div>
       <div class="user-section">
         <div class="user-info">
-          <div class="user-name">José Zesinho</div>
-          <div class="user-email">jose.zesinho37@docente.unip.br</div>
+          <div class="user-name">{{ user.nome|title if user else 'Usuário' }}</div>
+          <div class="user-email">{{ user.email if user else '' }}</div>
         </div>
-        <a href="#" class="btn-sair">sair</a>
-      </div>
-    </div>
+        <a href="{{ url_for('logout') }}" class="btn-sair">sair</a>
+                </div>
+        </div>
     <div class="submenu">
       <div class="submenu-content">
         <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="menu-text">Menu</span>
-      </div>
+        </div>
     </div>
   </header>
 
@@ -352,11 +352,11 @@
             <svg viewBox="0 0 131 144" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M76.5616 128.86C75.4411 130.782 73.8327 132.378 71.8975 133.487C69.9624 134.596 67.7683 135.179 65.5351 135.179C63.3019 135.179 61.1079 134.596 59.1727 133.487C57.2376 132.378 55.6292 130.782 54.5086 128.86M103.777 46.4237C103.777 36.3328 99.7483 26.6552 92.5765 19.5199C85.4047 12.3846 75.6776 8.37598 65.5351 8.37598C55.3926 8.37598 45.6656 12.3846 38.4938 19.5199C31.322 26.6552 27.2929 36.3328 27.2929 46.4237C27.2929 90.8127 8.17175 103.495 8.17175 103.495H122.898C122.898 103.495 103.777 90.8127 103.777 46.4237Z" stroke="#3292F9" stroke-width="16.102" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-          </div>
+         </div>
           <div class="card-title">Avisos</div>
         </button>
 
-      </div>
+        </div>
     </div>
   </main>
 </body>

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import requests
 from functools import wraps
 import os # Para a secret key
+import re # Para formatação de nomes
 
 app = Flask(__name__)
 # É crucial definir uma chave secreta para usar sessions e flash messages
@@ -61,20 +62,41 @@ def login():
             # Extrai o ID do usuário de forma flexível
             user_id = (
                 user_data.get('id') or 
+                user_data.get('id_aluno') or
                 user_data.get('id_professor') or 
                 user_data.get('id_coordenador') or 
-                user_data.get('id_aluno') or
                 user_data.get('user_id') or
                 user_data.get('userId')
             )
             
-            # Extrai o nome do usuário de forma flexível
-            user_nome = (
+            # Extrai o nome do usuário de forma flexível (com nome e sobrenome)
+            # Prioriza os campos específicos da API de alunos
+            nome = (
+                user_data.get('nome_aluno') or 
                 user_data.get('nome') or 
                 user_data.get('name') or 
-                user_data.get('username') or
-                email.split('@')[0]  # Usa parte do email como fallback
+                ''
             )
+            sobrenome = (
+                user_data.get('sobrenome_aluno') or 
+                user_data.get('sobrenome') or 
+                user_data.get('lastname') or 
+                user_data.get('last_name') or 
+                ''
+            )
+            
+            # Monta o nome completo
+            if nome and sobrenome:
+                # Caso 1: Nome e sobrenome separados na API
+                user_nome = f"{nome} {sobrenome}"
+            elif nome:
+                # Caso 2: Nome completo em um único campo - usa apenas o nome
+                user_nome = nome
+            else:
+                # Fallback: usa parte do email
+                user_nome = email.split('@')[0]
+            
+            print(f"[DEBUG] Nome original: '{nome}', Sobrenome: '{sobrenome}', Nome final: '{user_nome}'")
             
             # Extrai o tipo de usuário
             user_tipo = (
@@ -84,12 +106,20 @@ def login():
                 'usuario'
             )
 
+            # Extrai o email (prioriza email_institucional para alunos)
+            user_email = (
+                user_data.get('email_institucional') or
+                user_data.get('email') or
+                email
+            )
+
             # Guarda informações na sessão
             session['user'] = {
                 'id': user_id,
                 'nome': user_nome,
-                'email': user_data.get('email') or email,
+                'email': user_email,
                 'tipo': user_tipo,
+                'matricula': user_data.get('matricula_ra', ''),
                 'raw_data': user_data  # Guarda dados brutos para debug
             }
             
@@ -152,8 +182,10 @@ def login():
 @app.route('/logout')
 def logout():
     """ Limpa a sessão do utilizador (faz logout). """
-    session.pop('user', None)
-    flash("Logout realizado com sucesso.", "info")
+    print(f"[DEBUG] Logout realizado por: {session.get('user', {}).get('nome', 'Desconhecido')}")
+    # Limpa toda a sessão para garantir que nenhum dado permaneça
+    session.clear()
+    flash("Logout realizado com sucesso. Até logo!", "info")
     return redirect(url_for('index'))
 
 # --- Rotas Protegidas ---
@@ -163,53 +195,44 @@ def dashboard():
     """ Rota para a página principal do dashboard. Busca dados da API. """
     print(f"[DEBUG] Dashboard acessado por: {session.get('user', {}).get('nome', 'Desconhecido')}")
     
-    # Busca dados dos endpoints da API
-    api_endpoints = {
-        "avisos": f"{API_BASE_URL}/aviso/",
-        "disciplinas": f"{API_BASE_URL}/disciplina/",
-        "professores": f"{API_BASE_URL}/professor/",
-        "alunos": f"{API_BASE_URL}/aluno/"
+    # Inicializa estrutura de dados do dashboard
+    dashboard_data = {
+        'avisos': [],
+        'disciplinas': [],
+        'professores': [],
+        'alunos': [],
+        'user': session.get('user', {})
     }
-    dashboard_data = {}
-    error_occurred = False
-
-    for key, url in api_endpoints.items():
-        try:
-            print(f"[DEBUG] Buscando {key} em: {url}")
-            response = requests.get(url, timeout=5)
-            print(f"[DEBUG] {key} - Status: {response.status_code}")
-            response.raise_for_status()
-            data = response.json()
-            print(f"[DEBUG] {key} - Tipo de dados: {type(data)}, Tamanho: {len(data) if isinstance(data, list) else 'N/A'}")
-            
-            # Se a resposta for uma lista, usa direto; se for dict, tenta extrair a lista
-            if isinstance(data, list):
-                dashboard_data[key] = data
-            elif isinstance(data, dict):
-                # Tenta várias chaves possíveis
-                dashboard_data[key] = data.get(key) or data.get('data') or data.get('items') or []
-            else:
-                dashboard_data[key] = []
-                
-        except requests.exceptions.RequestException as e:
-            print(f"[DEBUG] Erro ao buscar '{key}' da API ({url}): {e}")
-            dashboard_data[key] = []
-            error_occurred = True
-
-    # Calcula estatísticas baseadas nos dados disponíveis
-    dashboard_data['total_avisos'] = len(dashboard_data.get('avisos', []))
-    dashboard_data['total_disciplinas'] = len(dashboard_data.get('disciplinas', []))
-    dashboard_data['total_professores'] = len(dashboard_data.get('professores', []))
-    dashboard_data['total_alunos'] = len(dashboard_data.get('alunos', []))
     
-    # Adiciona informações do usuário
-    dashboard_data['user'] = session.get('user', {})
-
-    print(f"[DEBUG] Dados do dashboard: {list(dashboard_data.keys())}")
-    print(f"[DEBUG] Totais - Avisos: {dashboard_data['total_avisos']}, Disciplinas: {dashboard_data['total_disciplinas']}")
-
-    if error_occurred:
-        flash("Alguns dados do dashboard não puderam ser carregados.", "warning")
+    # Busca avisos da API
+    try:
+        print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/")
+        response = requests.get(f"{API_BASE_URL}/aviso/", timeout=5)
+        print(f"[DEBUG] Avisos - Status: {response.status_code}")
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"[DEBUG] Avisos - Tipo de dados: {type(data)}")
+            
+            if isinstance(data, list):
+                dashboard_data['avisos'] = data
+                print(f"[DEBUG] {len(data)} avisos encontrados")
+            else:
+                print(f"[DEBUG] Formato inesperado de avisos: {data}")
+        else:
+            print(f"[DEBUG] Avisos retornou status {response.status_code}")
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar avisos: {e}")
+    
+    # Calcula totais
+    dashboard_data['total_avisos'] = len(dashboard_data['avisos'])
+    dashboard_data['total_disciplinas'] = 0  # Placeholder
+    dashboard_data['total_professores'] = 0  # Placeholder
+    dashboard_data['total_alunos'] = 0  # Placeholder
+    
+    print(f"[DEBUG] Dashboard pronto - Total de avisos: {dashboard_data['total_avisos']}")
+    print(f"[DEBUG] Usuário: {dashboard_data['user'].get('nome', 'N/A')} ({dashboard_data['user'].get('email', 'N/A')})")
 
     return render_template('dashboard.html', **dashboard_data)
 
