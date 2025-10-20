@@ -1,84 +1,363 @@
-{% extends "base.html" %} {% block title %}Dashboard{% endblock %}
-
-{% block head_css %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
-    <style>
-        /* Ajustes menores para garantir que ícones funcionem */
-        .stat-icon { font-size: 2.5rem; opacity: 0.6; }
-        .action-btn i { vertical-align: middle; } /* Alinha ícones nos botões */
-    </style>
-{% endblock %}
-
-{% block page_title %}Dashboard{% endblock %} {% block content %}
-    <h1 class="header-title mb-4">Visão Geral</h1>
-
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-info">
-                <div class="stat-label">Total de Avisos</div>
-                <div class="stat-value">{{ avisos|length }}</div>
-            </div>
-            <i class="bi bi-bell-fill stat-icon text-primary"></i> </div>
-         <div class="stat-card">
-            <div class="stat-info">
-                <div class="stat-label">Total de Disciplinas</div>
-                <div class="stat-value">{{ disciplinas|length }}</div>
-            </div>
-             <i class="bi bi-book-fill stat-icon text-success"></i> </div>
-         <div class="stat-card">
-            <div class="stat-info">
-                <div class="stat-label">Total de Professores</div>
-                <div class="stat-value">{{ professores|length }}</div>
-            </div>
-             <i class="bi bi-person-video3 stat-icon text-warning"></i> </div>
-         <div class="stat-card">
-            <div class="stat-info">
-                <div class="stat-label">Total de Alunos</div>
-                <div class="stat-value">{{ alunos|length }}</div>
-            </div>
-            <i class="bi bi-people-fill stat-icon text-info"></i> </div>
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UNIP • Painel Administrativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #FFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: #023D71;
+      width: 100%;
+    }
+    
+    .header-top {
+      display: flex;
+      padding: 47px 44px 12px 44px;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo {
+      width: 278.88px;
+      height: 88.976px;
+    }
+    
+    .title {
+      color: #FFF;
+      font-size: 42px;
+      font-weight: 700;
+      line-height: normal;
+    }
+    
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 24.991px;
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 14.995px;
+    }
+    
+    .user-name,
+    .user-email {
+      color: #FFF;
+      text-align: right;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: normal;
+    }
+    
+    .btn-sair {
+      display: flex;
+      width: 106.963px;
+      height: 48.983px;
+      padding: 5.998px 13.995px;
+      justify-content: center;
+      align-items: center;
+      border-radius: 7.997px;
+      background: #DC3545;
+      color: #FFF;
+      font-size: 24.991px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-sair:hover {
+      background: #c82333;
+    }
+    
+    .submenu {
+      display: flex;
+      padding: 6.998px 59.979px;
+      background: #075EBD;
+    }
+    
+    .submenu-content {
+      display: flex;
+      align-items: center;
+      gap: 14.995px;
+    }
+    
+    .menu-icon {
+      width: 22.992px;
+      height: 16.994px;
+    }
+    
+    .menu-text {
+      color: #FFF;
+      font-size: 23.992px;
+      font-weight: 500;
+      line-height: normal;
+    }
+    
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 34px 20px;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 1215px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 77.491px 77.491px;
+      row-gap: 17px;
+      padding: 18.115px 11.07px;
+    }
+    
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    .card {
+      display: flex;
+      padding: 59.376px 50.319px;
+      flex-direction: column;
+      align-items: center;
+      gap: 44.28px;
+      border-radius: 18.115px;
+      background: rgba(241, 241, 241, 0.49);
+      box-shadow: 0 4.025px 6.843px 1.006px rgba(0, 0, 0, 0.17);
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-height: 341.161px;
+    }
+    
+    .card:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 6px 10px 2px rgba(0, 0, 0, 0.25);
+    }
+    
+    .card:focus {
+      outline: 3px solid rgba(50, 146, 249, 0.5);
+      outline-offset: 2px;
+    }
+    
+    .card-icon {
+      width: 118.813px;
+      height: 131.788px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .card-title {
+      color: #3292F9;
+      text-align: center;
+      font-size: 33.21px;
+      font-weight: 700;
+      line-height: 118.98%;
+    }
+    
+    @media (max-width: 768px) {
+      .header-top {
+        padding: 32px 24px 12px 24px;
+      }
+      
+      .title {
+        font-size: 28px;
+      }
+      
+      .logo {
+        width: 180px;
+        height: auto;
+      }
+      
+      .user-name,
+      .user-email {
+        font-size: 16px;
+      }
+      
+      .btn-sair {
+        font-size: 20px;
+        width: 90px;
+        height: 42px;
+      }
+      
+      .menu-text {
+        font-size: 20px;
+      }
+      
+      .submenu {
+        padding: 6px 24px;
+      }
+      
+      .card {
+        padding: 40px 32px;
+        gap: 32px;
+      }
+      
+      .card-icon {
+        width: 90px;
+        height: 100px;
+      }
+      
+      .card-title {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">
+        <img class="logo" src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP">
+        <h1 class="title">Painel Administrativo</h1>
+      </div>
+      <div class="user-section">
+        <div class="user-info">
+          <div class="user-name">José Zesinho</div>
+          <div class="user-email">jose.zesinho37@docente.unip.br</div>
+        </div>
+        <a href="#" class="btn-sair">sair</a>
+      </div>
     </div>
-
-    <h2 class="section-title">Gerenciamento Rápido</h2>
-
-    <div class="table-container">
-         <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-             <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Últimos Avisos</h3>
-             <a href="{{ url_for('manage_avisos') if 'manage_avisos' in request.endpoint else '#' }}" class="btn-add">
-                 <i class="bi bi-plus-circle icon"></i> Adicionar
-             </a>
-         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Conteúdo</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for aviso in avisos %}
-                <tr>
-                    <td>{{ aviso.titulo }}</td>
-                    <td>{{ aviso.conteudo[:100] }}{% if aviso.conteudo|length > 100 %}...{% endif %}</td>
-                    <td style="white-space: nowrap;"> <button class="action-btn btn-edit">
-                            <i class="bi bi-pencil-fill"></i> Editar
-                        </button>
-                        <button class="action-btn btn-delete">
-                            <i class="bi bi-trash-fill"></i> Excluir
-                        </button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="3" style="text-align: center; color: #888;">Nenhum aviso encontrado.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="submenu">
+      <div class="submenu-content">
+        <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="menu-text">Menu</span>
+      </div>
     </div>
+  </header>
 
-{% endblock %}
+  <main class="main">
+    <div class="container">
+      <div class="grid">
+        
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 120 133" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0.228394 25.4744C0.228394 23.807 1.5801 22.4553 3.24752 22.4553H9.84888C11.5163 22.4553 12.868 23.807 12.868 25.4744V125.599C12.868 127.266 11.5163 128.618 9.84888 128.618H3.24752C1.5801 128.618 0.228394 127.266 0.228394 125.599V25.4744Z" fill="#3292F9"/>
+              <path d="M24.2438 3.51009C24.2438 1.84268 25.5955 0.490967 27.2629 0.490967H40.1841C41.8515 0.490967 43.2032 1.84267 43.2032 3.51009V23.0973C43.2032 24.7647 41.8515 26.1164 40.1841 26.1164H27.2629C25.5955 26.1164 24.2438 24.7647 24.2438 23.0973V3.51009Z" fill="#3292F9"/>
+              <path d="M76.0662 3.51009C76.0662 1.84268 77.4179 0.490967 79.0853 0.490967H92.0065C93.6739 0.490967 95.0256 1.84267 95.0256 3.51009V23.0973C95.0256 24.7647 93.6739 26.1164 92.0065 26.1164H79.0853C77.4179 26.1164 76.0662 24.7647 76.0662 23.0973V3.51009Z" fill="#3292F9"/>
+              <path d="M24.2438 59.0637H44.4672V76.1473H24.2438V59.0637Z" fill="#3292F9"/>
+              <path d="M24.2438 83.4687H44.4672V100.552H24.2438V83.4687Z" fill="#3292F9"/>
+              <path d="M49.5231 83.4687H69.7464V100.552H49.5231V83.4687Z" fill="#3292F9"/>
+              <path d="M49.5231 59.0637H69.7464V76.1473H49.5231V59.0637Z" fill="#3292F9"/>
+              <path d="M76.0662 59.0637H96.2896V76.1473H76.0662V59.0637Z" fill="#3292F9"/>
+              <path d="M74.8018 83.4687H95.0252V100.552H74.8018V83.4687Z" fill="#3292F9"/>
+              <path d="M3.24751 132.279C1.5801 132.279 0.228394 130.927 0.228394 129.26V119.435C0.228394 117.767 1.5801 116.416 3.24752 116.416H116.022C117.689 116.416 119.041 117.767 119.041 119.435V129.26C119.041 130.927 117.689 132.279 116.022 132.279H3.24751Z" fill="#3292F9"/>
+              <path d="M3.24751 44.4206C1.5801 44.4206 0.228394 43.0689 0.228394 41.4015V23.0345C0.228394 21.3671 1.5801 20.0154 3.24752 20.0154H116.022C117.689 20.0154 119.041 21.3671 119.041 23.0345V41.4015C119.041 43.0689 117.689 44.4206 116.022 44.4206H3.24751Z" fill="#3292F9"/>
+              <path d="M106.401 25.4744C106.401 23.807 107.753 22.4553 109.421 22.4553H116.022C117.689 22.4553 119.041 23.807 119.041 25.4744V125.599C119.041 127.266 117.689 128.618 116.022 128.618H109.421C107.753 128.618 106.401 127.266 106.401 125.599V25.4744Z" fill="#3292F9"/>
+            </svg>
+          </div>
+          <div class="card-title">Calendário</div>
+        </button>
 
-{% block scripts %}
-    {% endblock %}
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 104 139" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0.716248 14.8168C0.716248 11.1796 3.66478 8.23109 7.30197 8.23109C10.9392 8.23109 13.8877 11.1796 13.8877 14.8168V129.357C13.8877 132.994 10.9392 135.943 7.30197 135.943C3.66478 135.943 0.716248 132.994 0.716248 129.357V14.8168Z" fill="#3292F9"/>
+              <path d="M8.45637 138.523C4.18162 138.523 0.716248 135.058 0.716248 130.783C0.716248 126.508 4.18161 123.043 8.45636 123.043H95.7134C99.9882 123.043 103.454 126.508 103.454 130.783C103.454 135.058 99.9882 138.523 95.7134 138.523H8.45637Z" fill="#3292F9"/>
+              <path d="M87.6476 43.2241C87.6476 38.8595 91.1858 35.3213 95.5504 35.3213C99.9151 35.3213 103.453 38.8595 103.453 43.2241V128.04C103.453 132.404 99.9151 135.943 95.5504 135.943C91.1858 135.943 87.6476 132.404 87.6476 128.04V43.2241Z" fill="#3292F9"/>
+              <path d="M8.45636 15.9712C4.18161 15.9712 0.716248 12.5058 0.716248 8.2311C0.716248 3.95635 4.18161 0.490983 8.45636 0.490983H65.4191C69.6939 0.490983 73.1592 3.95635 73.1592 8.2311C73.1592 12.5058 69.6939 15.9712 65.4191 15.9712H8.45636Z" fill="#3292F9"/>
+              <path d="M56.0361 7.07669C56.0361 3.43949 58.9846 0.490967 62.6218 0.490967C66.259 0.490967 69.2075 3.4395 69.2075 7.07669V42.926C69.2075 46.5632 66.259 49.5117 62.6218 49.5117C58.9846 49.5117 56.0361 46.5632 56.0361 42.926V7.07669Z" fill="#3292F9"/>
+              <path d="M62.4862 50.8015C58.9239 50.8015 56.0361 47.9137 56.0361 44.3514C56.0361 40.7891 58.9239 37.9013 62.4862 37.9013H97.0032C100.566 37.9013 103.453 40.7891 103.453 44.3514C103.453 47.9137 100.566 50.8015 97.0032 50.8015H62.4862Z" fill="#3292F9"/>
+              <path d="M63.1296 8.70415C61.3943 6.84849 61.5207 3.96891 63.412 2.27244C65.3032 0.575961 68.2431 0.705011 69.9784 2.56068L101.922 36.72C103.658 38.5757 103.531 41.4552 101.64 43.1517C99.7486 44.8482 96.8087 44.7191 95.0734 42.8635L63.1296 8.70415Z" fill="#3292F9"/>
+            </svg>
+          </div>
+          <div class="card-title">Conteúdo</div>
+        </button>
+
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 115 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M91.9533 33.0046C91.9533 50.9614 76.5438 65.5183 57.5351 65.5183C38.5265 65.5183 23.117 50.9614 23.117 33.0046C23.117 15.0478 38.5265 0.490967 57.5351 0.490967C76.5438 0.490967 91.9533 15.0478 91.9533 33.0046Z" fill="#3292F9"/>
+              <path d="M0.171509 101.438C0.171509 86.987 11.8863 75.2722 26.3373 75.2722H88.733C103.184 75.2722 114.899 86.987 114.899 101.438V119.243C114.899 123.689 111.294 127.294 106.848 127.294H8.2225C3.77606 127.294 0.171509 123.689 0.171509 119.243V101.438Z" fill="#3292F9"/>
+            </svg>
+          </div>
+          <div class="card-title">Informações<br>Docentes</div>
+        </button>
+
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 175 131" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M59.2072 65.3962C59.2072 77.707 49.3226 87.6868 37.1294 87.6868C24.9362 87.6868 15.0516 77.707 15.0516 65.3962C15.0516 53.0855 24.9362 43.1057 37.1294 43.1057C49.3226 43.1057 59.2072 53.0855 59.2072 65.3962Z" fill="#3292F9"/>
+              <path d="M0.333267 120.539C0.333267 106.088 12.0481 94.3737 26.499 94.3737H47.7601C62.2111 94.3737 73.9258 106.088 73.9258 120.539V121.988C73.9258 126.434 70.3213 130.039 65.8748 130.039H8.38426C3.93782 130.039 0.333267 126.434 0.333267 121.988V120.539Z" fill="#3292F9"/>
+              <path d="M30.6363 7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978H167.891C171.782 0.375978 174.936 3.52997 174.936 7.4206V15.4329C174.936 19.3235 171.782 22.4775 167.891 22.4775H37.681C33.7903 22.4775 30.6363 19.3235 30.6363 15.4329V7.4206Z" fill="#3292F9"/>
+              <path d="M160.336 130.038C156.445 130.038 153.291 126.884 153.291 122.994V7.42061C153.291 3.52997 156.445 0.375977 160.336 0.375977L167.891 0.375978C171.782 0.375978 174.936 3.52997 174.936 7.4206L174.936 122.994C174.936 126.884 171.782 130.038 167.891 130.038H160.336Z" fill="#3292F9"/>
+              <path d="M78.2551 108.842C78.2551 108.342 78.6602 107.937 79.1598 107.937H167.891C171.782 107.937 174.936 111.091 174.936 114.982V126.081C174.936 128.267 173.164 130.038 170.978 130.038H99.4519C87.7452 130.038 78.2551 120.548 78.2551 108.842Z" fill="#3292F9"/>
+              <path d="M31.5224 37.212C31.033 37.212 30.6363 36.8153 30.6363 36.326V7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978L50.7734 0.376073C51.6062 0.376073 52.2813 1.05118 52.2813 1.88398V16.4531C52.2813 27.9179 42.9872 37.212 31.5224 37.212Z" fill="#3292F9"/>
+              <path d="M102.786 96.1495H141.747V118.251H102.786V96.1495Z" fill="#3292F9"/>
+            </svg>
+          </div>
+          <div class="card-title">Dúvidas<br>Frequentes</div>
+        </button>
+
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 132 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M43.1395 135.179H89.0302M66.0849 107.001V135.179M20.1942 8.37598H111.976C118.312 8.37598 123.448 14.6839 123.448 22.4652V92.9115C123.448 100.693 118.312 107.001 111.976 107.001H20.1942C13.858 107.001 8.7215 100.693 8.7215 92.9115V22.4652C8.7215 14.6839 13.858 8.37598 20.1942 8.37598Z" stroke="#3292F9" stroke-width="16.102" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="card-title">Informações<br>Curso</div>
+        </button>
+
+        <button class="card" type="button">
+          <div class="card-icon">
+            <svg viewBox="0 0 131 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M76.5616 128.86C75.4411 130.782 73.8327 132.378 71.8975 133.487C69.9624 134.596 67.7683 135.179 65.5351 135.179C63.3019 135.179 61.1079 134.596 59.1727 133.487C57.2376 132.378 55.6292 130.782 54.5086 128.86M103.777 46.4237C103.777 36.3328 99.7483 26.6552 92.5765 19.5199C85.4047 12.3846 75.6776 8.37598 65.5351 8.37598C55.3926 8.37598 45.6656 12.3846 38.4938 19.5199C31.322 26.6552 27.2929 36.3328 27.2929 46.4237C27.2929 90.8127 8.17175 103.495 8.17175 103.495H122.898C122.898 103.495 103.777 90.8127 103.777 46.4237Z" stroke="#3292F9" stroke-width="16.102" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="card-title">Avisos</div>
+        </button>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>
