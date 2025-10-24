@@ -1,0 +1,148 @@
+/**
+ * ============================================================================
+ * CONTEUDO STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para as telas de conteúdo
+ * do painel administrativo da UNIP. Inclui estilos para listagem, visualização,
+ * adição e edição de materiais e disciplinas.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/* Importação da fonte Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap");
+
+/**
+ * ===== VARIÁVEIS CSS (CUSTOM PROPERTIES) =====
+ * 
+ * Define as cores, tamanhos e efeitos padrão do sistema UNIP
+ */
+:root {
+  /* Cores primárias da UNIP */
+  --unip-primary: #023D71;      /* Azul primário institucional */
+  --unip-secondary: #075EBD;    /* Azul secundário */
+  --unip-accent: #1583FF;       /* Azul de destaque */
+  
+  /* Cores de estado */
+  --unip-danger: #DC3545;       /* Vermelho para ações perigosas */
+  --unip-success: #329959;      /* Verde para sucesso */
+  
+  /* Cores de texto */
+  --unip-text-primary: #043057;   /* Texto principal escuro */
+  --unip-text-secondary: #4A4A4A; /* Texto secundário cinza */
+  
+  /* Cores de fundo */
+  --unip-bg-light: #FBFBFB;      /* Fundo claro */
+  --unip-bg-card: #FFFEFE;       /* Fundo de cards */
+  
+  /* Bordas arredondadas */
+  --radius-lg: 26.25px;          /* Raio grande para inputs */
+  --radius-md: 11.25px;          /* Raio médio para botões */
+  
+  /* Sombras */
+  --shadow-md: 0 3px 5.1px 0.75px rgba(0, 0, 0, 0.19);      /* Sombra média */
+  --shadow-panel: 0 3px 11.25px 2.25px rgba(0, 0, 0, 0.25); /* Sombra de painel */
+}
+
+/**
+ * ===== RESET E CONFIGURAÇÃO BASE =====
+ */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Rubik,-apple-system,Roboto,Helvetica,sans-serif;color:var(--unip-text-primary);background:#fff;min-height:100vh}
+
+/**
+ * ===== CABEÇALHO =====
+ */
+.header-main{background:var(--unip-primary);padding:20px 30px 8px}
+.header-content{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.brand-section{display:flex;align-items:center;gap:10px}
+.logo{width:200px;max-width:100%;height:auto}
+.site-title{color:#fff;font-size:32px;font-weight:700}
+.user-section{display:flex;align-items:center;gap:25px}
+.user-info{display:flex;flex-direction:column;align-items:flex-end;gap:15px}
+.user-name,.user-email{color:#fff;font-size:16px;font-weight:700}
+.btn-logout{display:flex;padding:4px 12px;border-radius:6px;background:var(--unip-danger);color:#fff;font-size:18px;font-weight:700;text-decoration:none}
+.header-sub{background:var(--unip-secondary);padding:4px 30px}
+.menu-toggle{display:flex;align-items:center;gap:15px;color:#fff}
+
+/**
+ * ===== ÁREA PRINCIPAL =====
+ */
+.main-container{display:flex;justify-content:center;align-items:flex-start;padding:15px 201px;min-height:calc(100vh - 120px);max-height:calc(100vh - 120px);overflow-y:auto}
+.content-card{display:flex;width:1200px;max-width:100%;padding:15px 40px;flex-direction:column;gap:15px;border-radius:13.5px;background:var(--unip-bg-card);box-shadow:var(--shadow-md)}
+.card-header{display:flex;justify-content:center;align-items:center;gap:20px}
+.header-icon{width:48px;height:48px}
+.page-title{color:var(--unip-primary);font-size:32px;font-weight:700}
+.separator{height:.75px;background:rgba(175,175,175,.96);max-width:1007px;width:100%;align-self:center}
+.separator-blue{height:.75px;background:rgba(21,131,255,.83);width:100%;}
+.alert-container{width:100%}
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:10px;font-weight:500}
+.alert-error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+.alert-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.alert-info{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+
+.actions-bar{display:flex;justify-content:flex-start}
+.add-button{display:flex;align-items:center;gap:10px;border-radius:var(--radius-md);border:.75px solid rgba(50,146,249,.66);background:rgba(167,208,255,.08);box-shadow:0 3px 3px rgba(0,0,0,.17);padding:10px 14px;color:var(--unip-primary);text-decoration:none}
+
+.grid{display:grid;grid-template-columns:280px 1fr;gap:16px}
+.subjects{background:#fff;border-radius:10px;box-shadow:var(--shadow-md);padding:16px}
+.subjects-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:var(--unip-text-secondary)}
+.icon-button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--unip-accent);color:#fff;text-decoration:none}
+.subjects-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.subject-item a{display:block;padding:12px 14px;border-radius:10px;background:var(--unip-bg-light);box-shadow:0 3px 3px rgba(50,146,249,.28);color:var(--unip-text-secondary);text-decoration:none}
+.subject-item.active a{outline:2px solid var(--unip-accent)}
+
+.materials{background:#fff;border-radius:10px;box-shadow:var(--shadow-md);padding:16px}
+.materials-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.materials-title{color:var(--unip-primary);font-size:22px;font-weight:700}
+.materials-block{margin-top:20px}
+.block-title{color:#000;font-size:18px;font-weight:600;margin-bottom:10px}
+.items{list-style:none;display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:10px;background:var(--unip-bg-light);box-shadow:0 3px 3px rgba(50,146,249,.28);border-radius:26px;padding:10px 14px}
+.item-title{flex:1}
+.item-link{color:var(--unip-accent);text-decoration:none}
+.edit-link{color:#3292F9;text-decoration:none}
+
+/* forms */
+.action-header{display:flex;justify-content:center;height:50px}
+.action-title-row{display:flex;gap:20px;align-items:center;justify-content:center}
+.action-title{color:var(--unip-primary);font-size:28px;font-weight:400}
+.form-panel{display:flex;flex-direction:column;gap:18px;width:100%;max-width:1051px;padding:25px;border-radius:7.5px;border:2.25px solid var(--unip-accent);background:#fff;box-shadow:var(--shadow-panel)}
+.form-row{display:grid;grid-template-columns:1fr;gap:18px}
+.form-field{display:flex;flex-direction:column;gap:6px}
+.form-field-large{grid-column:span 1}
+.form-field-small{grid-column:span 1}
+.input-label{color:var(--unip-text-primary);font-size:18px;font-weight:500}
+.text-input{height:42px;padding:10px 15px;border:none;border-radius:var(--radius-lg);background:var(--unip-bg-light);box-shadow:0 3px 3px rgba(50,146,249,.28);color:var(--unip-text-secondary);font-size:16px}
+.file-input{display:block}
+.select-wrapper{position:relative}
+.select-wrapper select{appearance:none;width:100%}
+.select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%)}
+.radio-group{display:flex;gap:15px;flex-wrap:wrap}
+.radio{display:flex;align-items:center;gap:6px}
+
+.form-actions{display:flex;gap:15px;justify-content:center;margin-top:15px}
+.form-btn{display:flex;gap:8px;padding:10px 28px;border-radius:8px;color:#fff;text-decoration:none;border:none;cursor:pointer;font-size:16px;font-weight:500}
+.form-btn-cancel{background:var(--unip-danger)}
+.form-btn-submit{background:var(--unip-accent)}
+.form-btn-save{background:var(--unip-success)}
+
+.empty-state{padding:32px;text-align:center;color:var(--unip-text-secondary)}
+
+@media (min-width: 769px) {
+    .form-row {
+        grid-template-columns: 1.8fr 1fr;
+        gap: 20px;
+    }
+}
+
+@media(max-width:1024px){
+  .main-container{padding:40px 16px}
+  .grid{grid-template-columns:1fr}
+  .action-title{font-size:28px}
+  .form-row{grid-template-columns:1fr}
+}

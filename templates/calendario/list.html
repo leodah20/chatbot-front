@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendário</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/calendario_styles.css') }}">
+</head>
+<body class="page-body">
+  
+  <header class="page-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <h1 class="header-title">Painel Administrativo</h1>
+      </div>
+      <div class="header-user">
+        <div class="user-info-panel">
+          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
+          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+      </div>
+    </div>
+    <div class="header-submenu">
+      <div class="submenu-wrapper">
+        <svg class="icon-menu" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9919 6.66468H1M23.9919 1H1M23.9919 12.3294H1M23.9919 17.994H1" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="submenu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container-card">
+      <div class="calendar-header">
+        <h2 class="calendar-title">Calendário</h2>
+      </div>
+      
+      <div class="add-section">
+        <svg class="icon-add" width="62" height="62" viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M30.5527 5.55273V55.5527M5.55273 30.5527H55.5527" stroke="#2C8DFA" stroke-width="11.1047" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <a href="{{ url_for('calendario_add') }}" class="add-link">Adicionar Matéria</a>
+      </div>
+      
+      <div class="separator-line"></div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="messages-area">
+            {% for category, message in messages %}
+              <div class="message-box message-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if materias %}
+        <ul class="materias-list">
+          {% for m in materias %}
+            <li class="materia-card">
+              <div class="materia-main">
+                <div class="materia-title-text">{{ m.nome }}</div>
+                <div class="materia-professor-text">{{ m.professor }}</div>
+              </div>
+              <div class="materia-badges">
+                <span class="badge-item">{{ m.codigo }}</span>
+                <span class="badge-item">{{ m.carga_horaria }}</span>
+                <span class="badge-item">{{ m.modalidade }}</span>
+                <a class="view-link" href="{{ url_for('calendario_view', materia_id=m.id) }}">Ver</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-text">Nenhuma matéria cadastrada.</p>
+          <a class="btn-add-empty" href="{{ url_for('calendario_add') }}">Adicionar Matéria</a>
+        </div>
+      {% endif %}
+    </div>
+  </main>
+
+</body>
+</html>

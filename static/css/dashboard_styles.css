@@ -1,13 +1,377 @@
-/* :root{--unip-primary:#023D71;--unip-secondary:#075EBD;--unip-accent:#3292F9;--unip-danger:#DC3545;--tile-bg:rgba(241,241,241,.49);--radius:18.115px;--shadow:0 4.025px 6.843px 1.006px rgba(0,0,0,.17)}*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";background:#fff;color:#0f172a}
-.wrap{max-width:1215px;margin:0 auto;padding:0 16px}
-.topbar{background:var(--unip-primary)}.topbar-inner{display:flex;gap:24px;align-items:flex-start;justify-content:space-between;padding:32px 0 12px}.brand{display:flex;align-items:center;gap:16px}.logo{height:72px;width:auto}.title{color:#fff;font-weight:700;font-size:28px;line-height:1.1}
-.user{display:flex;align-items:center;gap:16px}.user-info{display:flex;flex-direction:column;gap:8px;text-align:right}.user-name,.user-email{color:#fff;font-weight:700}.user-name{font-size:18px}.user-email{font-size:18px}
-.btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border-radius:8px;font-weight:700;text-decoration:none}.btn-danger{background:var(--unip-danger);color:#fff}.btn-danger:hover{filter:brightness(.95)}
-.submenu{background:var(--unip-secondary)}.submenu-inner{display:flex;align-items:center;gap:12px;padding:8px 0}.submenu-label{color:#fff;font-weight:500;font-size:20px}.menu-icon{display:block}
-.main{padding:32px 0 48px}
-.grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:24px}
-.card{background:var(--tile-bg);border-radius:var(--radius);padding:32px 40px;display:flex;flex-direction:column;align-items:center;gap:24px;box-shadow:var(--shadow);cursor:pointer;border:0;transition:transform .2s ease,box-shadow .2s ease}.card:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 6px 10px 2px rgba(0,0,0,.25)}.card:focus{outline:3px solid rgba(2,61,113,.3);outline-offset:2px}
-.icon{width:7.5rem;height:7.5rem;display:flex;align-items:center;justify-content:center}
-.icon svg{width:100%;height:100%}.card-title{color:var(--unip-accent);font-weight:700;font-size:26px;line-height:1.2;text-align:center}.two-lines{line-height:1.18}
-@media (min-width:640px){.title{font-size:34px}.logo{height:84px}.submenu-label{font-size:22px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:48px 56px;gap:32px}.icon{width:7.5rem;height:7.5rem}}
-@media (min-width:1024px){.title{font-size:42px}.logo{height:89px}.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px 78px}.card{padding:59px 50px;gap:44px}.card-title{font-size:33px}} */
+/**
+ * ============================================================================
+ * DASHBOARD STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para o dashboard principal
+ * do painel administrativo da UNIP. Inclui estilos para o cabeçalho, cards
+ * de navegação e layout responsivo.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/* ===== RESET E CONFIGURAÇÕES BÁSICAS ===== */
+/**
+ * Reset global para garantir consistência entre navegadores
+ * Remove margens e paddings padrão e define box-sizing como border-box
+ */
+* {
+    box-sizing: border-box;  /* Inclui padding e border no cálculo da largura */
+    margin: 0;               /* Remove margens padrão */
+    padding: 0;              /* Remove paddings padrão */
+}
+
+/**
+ * Configuração base do elemento body
+ * Define a fonte principal, cor de fundo e layout flexbox para estrutura vertical
+ */
+body {
+    font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #FFF;           /* Fundo branco */
+    min-height: 100vh;          /* Altura mínima da viewport */
+    display: flex;              /* Layout flexbox */
+    flex-direction: column;     /* Direção vertical para header + main */
+}
+
+/* ===== CABEÇALHO ===== */
+/**
+ * Container principal do cabeçalho
+ * Define a cor de fundo azul primário da UNIP e largura total
+ */
+.header {
+    background: #023D71; /* Azul primário UNIP - cor institucional */
+    width: 100%;         /* Largura total da tela */
+}
+
+/**
+ * Seção superior do cabeçalho
+ * Contém logo, título e informações do usuário
+ * Layout flexbox responsivo com quebra de linha em telas menores
+ */
+.header-top {
+    display: flex;                    /* Layout flexbox */
+    padding: 20px 30px 8px 30px;     /* Padding: top right bottom left */
+    justify-content: space-between;   /* Distribui elementos nas extremidades */
+    align-items: flex-start;          /* Alinha elementos no topo */
+    flex-wrap: wrap;                  /* Permite quebra de linha */
+    gap: 16px;                       /* Espaçamento entre elementos */
+}
+
+/**
+ * Container da marca (logo + título)
+ * Alinha horizontalmente o logo e o texto do painel
+ */
+.brand {
+    display: flex;        /* Layout flexbox horizontal */
+    align-items: center;  /* Centraliza verticalmente */
+    gap: 10px;           /* Espaçamento entre logo e título */
+}
+
+/**
+ * Logo da UNIP
+ * Dimensões otimizadas para o cabeçalho
+ */
+.logo {
+    width: 200px;   /* Largura fixa do logo */
+    height: 65px;   /* Altura proporcional */
+}
+
+/**
+ * Título "Painel Administrativo"
+ * Texto principal do cabeçalho em branco e negrito
+ */
+.title {
+    color: #FFF;        /* Cor branca para contraste */
+    font-size: 32px;    /* Tamanho grande e legível */
+    font-weight: 700;   /* Negrito para destaque */
+    line-height: normal; /* Altura de linha padrão */
+}
+
+/**
+ * Seção de informações do usuário
+ * Contém nome, email e botão de logout
+ */
+.user-section {
+    display: flex;        /* Layout flexbox horizontal */
+    align-items: center;  /* Centraliza verticalmente */
+    gap: 24.991px;       /* Espaçamento entre elementos */
+}
+
+/**
+ * Container das informações do usuário
+ * Nome e email alinhados à direita
+ */
+.user-info {
+    display: flex;           /* Layout flexbox */
+    flex-direction: column;  /* Direção vertical */
+    align-items: flex-end;   /* Alinha à direita */
+    gap: 14.995px;          /* Espaçamento entre nome e email */
+}
+
+/**
+ * Textos de nome e email do usuário
+ * Estilização comum para ambos os elementos
+ */
+.user-name,
+.user-email {
+    color: #FFF;        /* Cor branca para contraste */
+    text-align: right;  /* Alinhamento à direita */
+    font-size: 16px;    /* Tamanho legível */
+    font-weight: 700;   /* Negrito para destaque */
+    line-height: normal; /* Altura de linha padrão */
+}
+
+/**
+ * Botão de logout/sair
+ * Estilo de botão vermelho com hover effect
+ */
+.btn-sair {
+    display: flex;           /* Layout flexbox */
+    width: 80px;            /* Largura fixa */
+    height: 36px;           /* Altura fixa */
+    padding: 4px 12px;      /* Padding interno */
+    justify-content: center; /* Centraliza conteúdo horizontalmente */
+    align-items: center;     /* Centraliza conteúdo verticalmente */
+    border-radius: 6px;     /* Bordas arredondadas */
+    background: #DC3545;    /* Cor vermelha (Bootstrap danger) */
+    color: #FFF;            /* Texto branco */
+    font-size: 18px;        /* Tamanho da fonte */
+    font-weight: 700;       /* Negrito */
+    text-decoration: none;  /* Remove sublinhado */
+    border: none;           /* Remove borda padrão */
+    cursor: pointer;        /* Cursor de ponteiro */
+}
+
+/**
+ * Efeito hover do botão de sair
+ * Escurece a cor de fundo ao passar o mouse
+ */
+.btn-sair:hover {
+    background: #c82333; /* Vermelho mais escuro no hover */
+}
+
+/**
+ * Barra de submenu
+ * Área inferior do cabeçalho com menu de navegação
+ */
+.submenu {
+    display: flex;        /* Layout flexbox */
+    padding: 4px 30px;   /* Padding reduzido */
+    background: #075EBD; /* Azul secundário da UNIP */
+}
+
+/**
+ * Container do conteúdo do submenu
+ * Alinha ícone e texto do menu
+ */
+.submenu-content {
+    display: flex;        /* Layout flexbox horizontal */
+    align-items: center;  /* Centraliza verticalmente */
+    gap: 14.995px;       /* Espaçamento entre ícone e texto */
+}
+
+/**
+ * Ícone do menu hambúrguer
+ * SVG com dimensões específicas
+ */
+.menu-icon {
+    width: 22.992px;  /* Largura do ícone */
+    height: 16.994px; /* Altura do ícone */
+}
+
+/**
+ * Texto "Menu" do submenu
+ * Estilização do texto de navegação
+ */
+.menu-text {
+    color: #FFF;        /* Cor branca para contraste */
+    font-size: 18px;    /* Tamanho legível */
+    font-weight: 500;   /* Peso médio */
+    line-height: normal; /* Altura de linha padrão */
+}
+
+/**
+ * Área principal do dashboard
+ * Container central com altura calculada e scroll automático
+ */
+.main {
+    min-height: calc(100vh - 120px); /* Altura mínima menos header */
+    max-height: calc(100vh - 120px); /* Altura máxima para evitar scroll desnecessário */
+    display: flex;                    /* Layout flexbox */
+    align-items: center;              /* Centraliza verticalmente */
+    justify-content: center;          /* Centraliza horizontalmente */
+    padding: 15px 20px;              /* Padding interno */
+    overflow-y: auto;                /* Scroll vertical quando necessário */
+}
+
+/**
+ * Container principal do conteúdo
+ * Define largura máxima para centralização
+ */
+.container {
+    width: 100%;        /* Largura total disponível */
+    max-width: 1215px;  /* Largura máxima para telas grandes */
+}
+
+/**
+ * Grid responsivo para os cards do dashboard
+ * Layout adaptativo com colunas automáticas
+ */
+.grid {
+    display: grid;                                    /* Layout grid */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Colunas responsivas */
+    gap: 30px 30px;                                  /* Espaçamento entre cards */
+    row-gap: 12px;                                   /* Espaçamento entre linhas */
+    padding: 12px 11.07px;                          /* Padding interno */
+}
+
+/**
+ * Media query para tablets
+ * Ajusta o grid para 2 colunas em telas médias
+ */
+@media (min-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 colunas iguais */
+    }
+}
+
+/**
+ * Media query para desktops
+ * Ajusta o grid para 3 colunas em telas grandes
+ */
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr); /* 3 colunas iguais */
+    }
+}
+
+/**
+ * Cards de navegação do dashboard
+ * Elementos clicáveis com ícone e título
+ */
+.card {
+    display: flex;                                    /* Layout flexbox */
+    padding: 25px 22px;                              /* Padding interno */
+    flex-direction: column;                          /* Direção vertical */
+    align-items: center;                             /* Centraliza horizontalmente */
+    gap: 18px;                                       /* Espaçamento entre ícone e título */
+    border-radius: 15px;                             /* Bordas arredondadas */
+    background: rgba(241, 241, 241, 0.49);          /* Fundo cinza claro semi-transparente */
+    box-shadow: 0 3px 5px 1px rgba(0, 0, 0, 0.17); /* Sombra sutil */
+    border: none;                                    /* Remove borda padrão */
+    cursor: pointer;                                 /* Cursor de ponteiro */
+    transition: all 0.2s ease;                      /* Transição suave */
+    min-height: 220px;                              /* Altura mínima para consistência */
+}
+
+/**
+ * Efeito hover dos cards
+ * Elevação e escala ao passar o mouse
+ */
+.card:hover {
+    transform: translateY(-4px) scale(1.05);        /* Move para cima e aumenta */
+    box-shadow: 0 6px 10px 2px rgba(0, 0, 0, 0.25); /* Sombra mais intensa */
+}
+
+/**
+ * Estado de foco dos cards
+ * Acessibilidade para navegação por teclado
+ */
+.card:focus {
+    outline: 3px solid rgba(50, 146, 249, 0.5); /* Contorno azul semi-transparente */
+    outline-offset: 2px;                         /* Distância do contorno */
+}
+
+/**
+ * Container dos ícones dos cards
+ * Centraliza os SVGs dentro dos cards
+ */
+.card-icon {
+    width: 70px;                    /* Largura fixa */
+    height: 80px;                   /* Altura fixa */
+    display: flex;                  /* Layout flexbox */
+    align-items: center;            /* Centraliza verticalmente */
+    justify-content: center;        /* Centraliza horizontalmente */
+}
+
+/**
+ * SVGs dentro dos ícones
+ * Ocupam todo o espaço disponível
+ */
+.card-icon svg {
+    width: 100%;  /* Largura total do container */
+    height: 100%; /* Altura total do container */
+}
+
+/**
+ * Títulos dos cards
+ * Texto azul centralizado e em negrito
+ */
+.card-title {
+    color: #3292F9;        /* Azul institucional */
+    text-align: center;    /* Centraliza o texto */
+    font-size: 24px;       /* Tamanho grande */
+    font-weight: 700;      /* Negrito */
+    line-height: 118.98%;  /* Altura de linha otimizada */
+}
+
+/**
+ * ===== MEDIA QUERIES - RESPONSIVIDADE =====
+ */
+
+/**
+ * Media query para dispositivos móveis
+ * Ajusta tamanhos e espaçamentos para telas pequenas
+ */
+@media (max-width: 768px) {
+    /* Header responsivo */
+    .header-top {
+        padding: 32px 24px 12px 24px; /* Padding maior em mobile */
+    }
+
+    .title {
+        font-size: 28px; /* Título menor em mobile */
+    }
+
+    .logo {
+        width: 180px;    /* Logo menor em mobile */
+        height: auto;    /* Altura automática */
+    }
+
+    .user-name,
+    .user-email {
+        font-size: 16px; /* Texto menor em mobile */
+    }
+
+    .btn-sair {
+        font-size: 20px; /* Botão maior em mobile */
+        width: 90px;     /* Largura maior */
+        height: 42px;    /* Altura maior */
+    }
+
+    .menu-text {
+        font-size: 20px; /* Texto do menu maior */
+    }
+
+    .submenu {
+        padding: 6px 24px; /* Padding maior em mobile */
+    }
+
+    /* Cards responsivos */
+    .card {
+        padding: 40px 32px; /* Padding maior em mobile */
+        gap: 32px;          /* Gap maior entre elementos */
+    }
+
+    .card-icon {
+        width: 90px;  /* Ícones maiores em mobile */
+        height: 100px;
+    }
+
+    .card-title {
+        font-size: 26px; /* Títulos maiores em mobile */
+    }
+}

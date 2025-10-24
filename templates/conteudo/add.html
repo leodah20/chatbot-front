@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conteúdo - Adicionar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/conteudo_styles.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-main">
+      <div class="header-content">
+        <div class="brand-section">
+          <img src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP Logo" class="logo" />
+          <h1 class="site-title">Painel Administrativo</h1>
+        </div>
+        <div class="user-section">
+          <div class="user-info">
+            <div class="user-name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
+            <div class="user-email">{{ session.user.email if session.user else '' }}</div>
+          </div>
+          <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+        </div>
+      </div>
+    </div>
+    <div class="header-sub">
+      <div class="menu-toggle">
+        <svg class="menu-icon" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9916 6.66419H0.999756M23.9916 0.999512H0.999756M23.9916 12.3289H0.999756M23.9916 17.9936H0.999756" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="menu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section class="content-card">
+      <div class="action-header">
+        <h2 class="page-title">Conteúdo</h2>
+      </div>
+      <div class="action-title-row">
+        <svg class="action-icon" width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="#1583FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3 class="action-title">Adicionar</h3>
+      </div>
+      <div class="separator-blue"></div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alert-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('conteudo_add') }}" enctype="multipart/form-data" class="form-panel">
+        <div class="form-row">
+          <div class="form-field form-field-large">
+            <label class="input-label">Tipo de Material</label>
+            <div class="radio-group">
+              <label class="radio"><input type="radio" name="tipo" value="aula" checked> <span>Material de Aula</span></label>
+              <label class="radio"><input type="radio" name="tipo" value="complementar"> <span>Material Complementar</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field form-field-large">
+            <label class="input-label">Título do Material</label>
+            <input type="text" name="titulo" class="text-input" required>
+          </div>
+          <div class="form-field form-field-small">
+            <label class="input-label">Disciplinas</label>
+            <div class="select-wrapper">
+              <select name="disciplina" class="text-input">
+                <option value="Ciência da Computação">Ciência da Computação</option>
+                <option value="Análise e Desenvolvimento de Sistemas">Análise e Desenvolvimento de Sistemas</option>
+                <option value="Sistemas de Informação">Sistemas de Informação</option>
+              </select>
+              <svg class="select-arrow" width="14" height="7" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field form-field-large">
+            <label class="input-label">Enviar Arquivo</label>
+            <input type="file" name="arquivo" class="file-input" accept="application/pdf,application/zip,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          </div>
+          <div class="form-field form-field-small">
+            <label class="input-label">Enviar Link</label>
+            <input type="url" name="link" class="text-input" placeholder="Cole o link aqui">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('conteudo_list') }}" class="form-btn form-btn-cancel">
+            <svg class="btn-icon" width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.75 0.75L0.75 9.75M0.75 0.75L9.75 9.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Cancelar</span>
+          </a>
+          <button type="submit" class="form-btn form-btn-submit"><span>Salvar</span></button>
+        </div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

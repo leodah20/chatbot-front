@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adicionar Informação - UNIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/infos_curso_styles.css') }}">
+</head>
+<body class="page-body">
+  <header class="page-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <h1 class="header-title">Painel Administrativo</h1>
+      </div>
+      <div class="header-user">
+        <div class="user-info-panel">
+          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
+          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+      </div>
+    </div>
+    <div class="header-submenu">
+      <div class="submenu-wrapper">
+        <svg class="icon-menu" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9915 6.66419H0.999512M23.9915 0.999512H0.999512M23.9915 12.3289H0.999512M23.9915 17.9936H0.999512" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="submenu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="add-form-container">
+      <div class="add-form-header">
+        <h2 class="add-form-title">Informações do Curso</h2>
+      </div>
+
+      <div class="add-section-header">
+        <svg class="icon-add-circle" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M28 18V38M18 28H38M53 28C53 41.8071 41.8071 53 28 53C14.1929 53 3 41.8071 3 28C3 14.1929 14.1929 3 28 3C41.8071 3 53 14.1929 53 28Z" stroke="#1583FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="add-section-text">Adicionar</span>
+      </div>
+
+      <div class="blue-divider"></div>
+
+      <form method="POST" class="select-type-form">
+        <div class="form-group-select">
+          <label class="form-label-blue">Tipo de Informação:</label>
+          <select name="tipo" class="form-select-tipo" required>
+            <option value="">Selecione</option>
+            <option value="APS">APS</option>
+            <option value="TCC">TCC</option>
+            <option value="Estagio">Estágio</option>
+            <option value="Horas Complementares">Horas Complementares</option>
+          </select>
+        </div>
+
+        <div class="form-actions-center">
+          <a href="{{ url_for('infos_curso_list') }}" class="btn-cancel">
+            <svg class="btn-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Cancelar</span>
+          </a>
+          <button type="submit" class="btn-next">
+            <svg class="btn-icon" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 8.5H18M18 8.5L9.5 1M18 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Próximo</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

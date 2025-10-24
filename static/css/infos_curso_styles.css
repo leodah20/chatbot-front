@@ -1,0 +1,338 @@
+/**
+ * ============================================================================
+ * INFOS CURSO STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para as telas de informações
+ * do curso do painel administrativo da UNIP. Inclui estilos para listagem,
+ * visualização, adição e edição de informações acadêmicas.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/* ===== RESET E CONFIGURAÇÕES BÁSICAS ===== */
+/**
+ * Reset global para garantir consistência entre navegadores
+ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/**
+ * Configuração base do body com otimizações de renderização
+ */
+body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/**
+ * Container principal da página com layout flexbox vertical
+ */
+.page-body{background:#FFF;min-height:100vh;display:flex;flex-direction:column}
+
+/**
+ * ===== CABEÇALHO =====
+ */
+.page-header{background:#023D71;color:#fff;width:100%}
+
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 30px 8px;gap:16px;flex-wrap:wrap}
+
+.header-brand{display:flex;align-items:center;gap:10px;flex:1 1 auto}
+
+.header-logo{width:clamp(150px,18vw,200px);height:auto}
+
+.header-title{font-size:clamp(20px,3.5vw,32px);font-weight:700;line-height:normal;margin:0}
+
+.header-user{display:flex;align-items:center;gap:25px;flex-wrap:wrap}
+
+.user-info-panel{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+
+.user-name-text,.user-email-text{font-size:clamp(14px,1.3vw,16px);font-weight:700;line-height:normal}
+
+.btn-logout{display:inline-flex;align-items:center;justify-content:center;padding:4px 12px;border-radius:6px;background:#DC3545;color:#fff;text-decoration:none;font-size:clamp(14px,1.5vw,18px);font-weight:700;transition:background .2s}
+
+.btn-logout:hover{background:#c82333}
+
+.header-submenu{background:#075EBD;padding:4px 30px}
+
+.submenu-wrapper{display:flex;align-items:center;gap:15px}
+
+.icon-menu{width:23px;height:17px;flex-shrink:0}
+
+.submenu-text{font-size:clamp(14px,1.5vw,18px);font-weight:400}
+
+/**
+ * ===== ÁREA PRINCIPAL =====
+ */
+.page-main{min-height:calc(100vh - 120px);max-height:calc(100vh - 120px);display:flex;justify-content:center;align-items:flex-start;padding:clamp(12px,1.5vw,20px) clamp(12px,1.5vw,25px);background:#FFF;overflow-y:auto}
+
+.container-card{width:100%;max-width:1189px;padding:clamp(16px,2vw,24px) clamp(20px,3vw,35px);background:#FFFEFE;border-radius:18px;box-shadow:0 4px 6.8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(16px,2vw,24px)}
+
+/**
+ * ===== CABEÇALHO DAS INFORMAÇÕES =====
+ */
+.info-header{display:flex;justify-content:center;align-items:center;gap:clamp(30px,3.5vw,42px);padding:clamp(16px,2vw,20px) 0}
+
+.icon-computer{width:clamp(40px,4.2vw,51px);height:auto;flex-shrink:0}
+
+.info-title{color:#023D71;font-size:clamp(28px,3.5vw,40px);font-weight:700;margin:0;text-align:center}
+
+/* Divider */
+.divider-line{width:100%;height:1px;background:rgba(175,175,175,0.96)}
+
+/* Course Code */
+.course-code-wrapper{display:flex;align-items:center;gap:clamp(16px,2vw,23px);flex-wrap:wrap}
+
+.course-code,.course-name{color:#023D71;font-size:clamp(24px,2.8vw,32px);font-weight:400;line-height:normal}
+
+/* Add Info Button */
+.btn-add-info{display:flex;align-items:center;justify-content:center;gap:clamp(16px,1.8vw,22px);padding:9px clamp(13px,1.5vw,17px);border-radius:15px;border:1px solid rgba(50,146,249,0.66);background:rgba(167,208,255,0.08);box-shadow:0 4px 4px 0 rgba(0,0,0,0.17);cursor:pointer;text-decoration:none;transition:all .2s}
+
+.btn-add-info:hover{background:rgba(167,208,255,0.18);transform:translateY(-1px)}
+
+.icon-add-plus{width:clamp(28px,2.8vw,33px);height:clamp(28px,2.8vw,33px);flex-shrink:0}
+
+.add-info-text{color:#1583FF;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+/* Info Sections */
+.info-sections-wrapper{display:flex;flex-direction:column;align-items:flex-end;gap:clamp(12px,1.5vw,16px)}
+
+/* Collapsible Item */
+.info-item{width:100%;max-width:1051px;border-radius:10px;border:3px solid #1583FF;background:#FFF;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25);overflow:hidden}
+
+.info-item-summary{display:flex;align-items:center;padding:0 clamp(16px,1.8vw,22px);min-height:clamp(55px,5.5vw,65px);cursor:pointer;list-style:none;user-select:none}
+
+.info-item-summary::-webkit-details-marker{display:none}
+
+.info-item-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:400;line-height:normal;flex:1}
+
+.info-item-title.expanded{font-weight:700}
+
+.info-item-content{padding:clamp(20px,2.2vw,25px) clamp(20px,2.2vw,26px);display:flex;flex-direction:column;gap:clamp(40px,4.6vw,56px)}
+
+/* Info Fields */
+.info-field-wrapper{display:flex;flex-direction:column;gap:clamp(38px,4.4vw,53px)}
+
+.info-field-group{display:flex;flex-direction:column;gap:clamp(14px,1.8vw,25px)}
+
+.info-field{display:flex;align-items:center;gap:clamp(16px,1.7vw,20px);padding:clamp(14px,1.5vw,17px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);min-height:clamp(54px,5.6vw,67px)}
+
+.field-label{color:#000;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal;white-space:nowrap}
+
+.field-value{color:#4A4A4A;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+/* Section Title */
+.section-title{color:#023D71;font-size:clamp(20px,2vw,24px);font-weight:400;line-height:normal}
+
+/* PDF Link */
+.pdf-link-wrapper{display:flex;flex-direction:column;gap:clamp(18px,1.8vw,22px);max-width:clamp(240px,24vw,281px)}
+
+.pdf-title{color:#023D71;font-size:clamp(20px,2vw,24px);font-weight:400;line-height:normal}
+
+.pdf-link{display:flex;align-items:center;gap:clamp(12px,1.3vw,16px);text-decoration:none;color:#023D71}
+
+.icon-pdf{width:clamp(14px,1.4vw,17px);height:auto;flex-shrink:0}
+
+.pdf-filename{font-size:clamp(18px,1.8vw,22px);font-style:italic;text-decoration:underline;color:#023D71}
+
+/* Category Distribution */
+.category-distribution{display:flex;flex-direction:column;gap:clamp(24px,2.4vw,29px)}
+
+.category-item{display:flex;flex-direction:column;gap:clamp(18px,1.8vw,22px);padding:clamp(16px,1.7vw,20px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.category-name{color:#000;font-size:clamp(20px,2vw,24px);font-weight:400;line-height:normal}
+
+.category-limit{color:#4A4A4A;font-size:clamp(20px,2vw,24px);font-weight:400;line-height:normal}
+
+/* TCC Items */
+.tcc-items-wrapper{display:flex;flex-direction:column;gap:clamp(16px,1.7vw,20px);max-width:100%}
+
+.tcc-item{display:flex;flex-direction:column;gap:clamp(40px,4.6vw,56px)}
+
+.tcc-item-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:400;line-height:normal}
+
+.tcc-info-group{display:flex;flex-direction:column;gap:clamp(14px,1.4vw,17px)}
+
+.tcc-text-field{display:flex;flex-direction:column;gap:clamp(18px,1.8vw,21.5px);padding:clamp(14px,1.4vw,16.5px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);min-height:clamp(108px,11vw,131px)}
+
+.tcc-text-label{color:#000;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+.tcc-text-value{color:#4A4A4A;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal;max-width:100%;word-wrap:break-word}
+
+.tcc-description-field{display:flex;flex-direction:column;gap:clamp(18px,1.8vw,21.5px);padding:clamp(14px,1.4vw,16.5px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);min-height:clamp(200px,21vw,253px)}
+
+.tcc-schedule{display:flex;flex-direction:column;gap:clamp(16px,1.7vw,20px)}
+
+.tcc-schedule-item{display:flex;flex-direction:column;gap:clamp(10px,1vw,12px);padding:clamp(14px,1.5vw,17px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.tcc-schedule-title{color:#000;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+.tcc-schedule-subtitle{color:#043057;font-size:clamp(19px,2vw,24px);font-weight:400;line-height:normal}
+
+.tcc-schedule-date{color:#4A4A4A;font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+.tcc-date-row{display:flex;gap:clamp(12px,1.2vw,14px);flex-wrap:wrap}
+
+.tcc-date-field{display:flex;align-items:center;gap:clamp(16px,1.7vw,20px);padding:clamp(14px,1.5vw,18.5px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);min-height:clamp(54px,5.6vw,67px);flex:1;min-width:clamp(280px,36vw,440px)}
+
+.tcc-divider{width:100%;max-width:clamp(800px,76vw,907px);height:0;background:rgba(50,146,249,0.55);margin:clamp(10px,1vw,12px) 0}
+
+/* Edit Button */
+.btn-edit{display:flex;align-items:center;justify-content:center;gap:clamp(8px,0.8vw,10px);padding:clamp(5px,0.5vw,6px) clamp(30px,3vw,39px);border-radius:8px;background:#1583FF;color:#FFF;text-decoration:none;cursor:pointer;transition:all .2s;align-self:flex-end}
+
+.btn-edit:hover{background:#0d6edb;transform:translateY(-1px)}
+
+.icon-edit{width:clamp(16px,1.7vw,20px);height:auto;flex-shrink:0}
+
+.edit-text{font-size:clamp(20px,2.1vw,25px);font-weight:400;line-height:normal}
+
+/* Add Form Styles */
+.add-form-container{width:100%;max-width:1200px;padding:clamp(20px,2vw,30px) clamp(30px,4vw,47px);background:#FFFEFE;border-radius:18px;box-shadow:0 4px 6.8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(30px,4vw,51px)}
+
+.add-form-header{display:flex;justify-content:center;padding:clamp(16px,2vw,20px) 0}
+
+.add-form-title{color:#023D71;font-size:clamp(28px,3.5vw,40px);font-weight:700;margin:0}
+
+.add-section-header{display:flex;align-items:center;gap:clamp(24px,2.8vw,32px)}
+
+.icon-add-circle{width:clamp(40px,4.4vw,50px);height:clamp(40px,4.4vw,50px);flex-shrink:0}
+
+.add-section-text{color:#023D71;font-size:clamp(28px,3.3vw,38px);font-weight:400}
+
+.blue-divider{width:100%;height:1px;background:rgba(21,131,255,0.83)}
+
+.form-group-select{display:flex;flex-direction:column;gap:clamp(16px,1.6vw,19px);max-width:clamp(500px,55vw,639px)}
+
+.form-label-blue{color:#023D71;font-size:clamp(24px,2.5vw,29px);font-weight:400}
+
+.form-select-tipo,.form-select-readonly{padding:clamp(16px,1.6vw,19px) clamp(18px,2vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);border:none;font-size:clamp(22px,2.6vw,30px);color:#043057;font-family:'Rubik',sans-serif;width:clamp(350px,38vw,440px)}
+
+.form-select-readonly{color:#043057;font-weight:500}
+
+.select-type-form{display:flex;flex-direction:column;gap:clamp(40px,4.4vw,51px)}
+
+.info-form-card{display:flex;flex-direction:column;gap:clamp(40px,4.4vw,51px);padding:clamp(24px,2.8vw,33px) clamp(20px,2.2vw,26px);border-radius:10px;border:3px solid #1583FF;background:#FFF;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25)}
+
+.form-fields-container{display:flex;flex-direction:column;gap:clamp(60px,7.5vw,90px)}
+
+.form-row-double{display:flex;gap:clamp(20px,2.1vw,25px);flex-wrap:wrap}
+
+.form-group{display:flex;flex-direction:column;gap:clamp(8px,0.8vw,10px);flex:1;min-width:clamp(300px,38vw,440px)}
+
+.form-group-full{display:flex;flex-direction:column;gap:clamp(8px,0.8vw,10px)}
+
+.form-label-dark{color:#043057;font-size:clamp(22px,2.2vw,26px);font-weight:400}
+
+.form-input-field,.form-textarea-field{padding:clamp(14px,1.5vw,18px) clamp(18px,1.9vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);border:none;font-size:clamp(18px,1.8vw,22px);color:#4A4A4A;font-family:'Rubik',sans-serif;width:100%}
+
+.form-input-field::placeholder,.form-textarea-field::placeholder{color:rgba(74,74,74,0.58)}
+
+.form-textarea-field{min-height:clamp(300px,34vw,416px);resize:vertical;padding:clamp(20px,2.1vw,25px) clamp(18px,1.9vw,23px)}
+
+.char-counter{color:#023D71;font-size:clamp(16px,1.7vw,20px);text-align:right;margin-top:8px}
+
+.doc-section{display:flex;flex-direction:column;gap:clamp(38px,3.8vw,45px)}
+
+.doc-header{display:flex;align-items:center;gap:clamp(12px,1.2vw,15px)}
+
+.icon-doc{width:clamp(22px,2.3vw,27px);height:auto;flex-shrink:0}
+
+.doc-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:400}
+
+.file-upload-area{display:flex;flex-direction:column;align-items:flex-start;gap:clamp(10px,1vw,12px);padding:clamp(30px,3.2vw,37px) clamp(20px,2.4vw,28px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28);position:relative}
+
+.file-upload-button{display:inline-flex;padding:clamp(10px,1vw,12px) clamp(28px,2.8vw,33px);background:#329959;color:#FFF;font-size:clamp(20px,2.1vw,25px);font-weight:400;border-radius:4px;cursor:pointer;transition:background .2s}
+
+.file-upload-button:hover{background:#287a44}
+
+.file-upload-hint{color:#4A4A4A;font-size:clamp(16px,1.7vw,20px);font-style:italic}
+
+.file-name-display{display:none;color:#043057;font-size:clamp(18px,1.8vw,22px);margin-top:8px;font-style:italic;text-decoration:underline}
+
+.form-actions,.form-actions-center{display:flex;align-items:center;gap:clamp(12px,1.2vw,14px);justify-content:flex-end}
+
+.form-actions-center{justify-content:center}
+
+.btn-cancel,.btn-back,.btn-next,.btn-save{display:inline-flex;align-items:center;justify-content:center;gap:clamp(8px,0.8vw,10px);padding:clamp(8px,0.8vw,10px) clamp(32px,3.3vw,39px);border-radius:8px;font-size:clamp(20px,2.1vw,25px);font-weight:400;border:none;cursor:pointer;transition:all .2s;text-decoration:none;min-width:clamp(140px,14vw,168px);height:clamp(36px,3.6vw,42px)}
+
+.btn-cancel{background:#DC3545;color:#FFF}
+
+.btn-cancel:hover{background:#c82333;transform:translateY(-1px)}
+
+.btn-back,.btn-next{background:#1583FF;color:#FFF}
+
+.btn-back:hover,.btn-next:hover{background:#0d6edb;transform:translateY(-1px)}
+
+.btn-save{background:#329959;color:#FFF}
+
+.btn-save:hover{background:#287a44;transform:translateY(-1px)}
+
+.btn-icon{width:clamp(12px,1.4vw,17px);height:auto;flex-shrink:0}
+
+.wizard-step-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:700}
+
+.add-more-button{display:inline-flex;align-items:center;gap:clamp(8px,0.8vw,10px);padding:clamp(8px,0.8vw,10px) clamp(28px,2.8vw,33px);border-radius:15px;border:1px solid rgba(50,146,249,0.66);background:rgba(167,208,255,0.08);box-shadow:0 4px 4px 0 rgba(0,0,0,0.17);cursor:pointer;text-decoration:none;transition:all .2s;font-size:clamp(20px,2.1vw,25px);color:#023D71;font-weight:400}
+
+.add-more-button:hover{background:rgba(167,208,255,0.18);transform:translateY(-1px)}
+
+.icon-add-plus{width:clamp(22px,2.2vw,26px);height:clamp(22px,2.2vw,26px);flex-shrink:0}
+
+.section-divider{width:100%;height:1px;background:rgba(50,146,249,0.46);margin:clamp(20px,2vw,24px) 0}
+
+.categoria-item{display:flex;flex-direction:column;gap:clamp(30px,3.2vw,35px);padding:clamp(16px,1.7vw,20px) 0}
+
+.category-divider{width:100%;height:1px;background:rgba(50,146,249,0.55);margin-top:clamp(20px,2vw,24px)}
+
+#categorias-container{display:flex;flex-direction:column;gap:clamp(20px,2vw,24px)}
+
+.date-time-section{display:flex;flex-direction:column;gap:clamp(30px,3.2vw,39px)}
+
+.date-time-header{display:flex;align-items:flex-start;gap:clamp(18px,1.8vw,22px)}
+
+.icon-clock{width:clamp(26px,2.8vw,32px);height:auto;flex-shrink:0}
+
+.data-entrega-item{display:flex;flex-direction:column;gap:clamp(30px,3.2vw,35px);padding:clamp(16px,1.7vw,20px) 0}
+
+#datas-container{display:flex;flex-direction:column;gap:clamp(20px,2vw,24px)}
+
+/* Responsive Adjustments */
+@media (max-width:768px){
+  .header-top{flex-direction:column;align-items:stretch;padding:30px 24px 12px}
+  
+  .header-brand{justify-content:center}
+  
+  .header-user{justify-content:center}
+  
+  .user-info-panel{align-items:center}
+  
+  .header-submenu{padding:7px 24px}
+  
+  .page-main{padding:24px 16px}
+  
+  .container-card{padding:20px 16px}
+  
+  .info-header{flex-direction:column;gap:20px}
+  
+  .course-code-wrapper{flex-direction:column;align-items:center;text-align:center;gap:12px}
+  
+  .info-sections-wrapper{align-items:stretch}
+  
+  .info-item{max-width:100%}
+  
+  .tcc-date-row{flex-direction:column}
+  
+  .tcc-date-field{flex:1 1 100%;min-width:100%}
+  
+  .btn-edit{align-self:center;width:100%;max-width:300px}
+}
+
+@media (max-width:480px){
+  .header-title{text-align:center}
+  
+  .info-field{flex-direction:column;align-items:flex-start;gap:8px;padding:12px 16px}
+  
+  .field-label{font-size:18px}
+  
+  .field-value{font-size:18px}
+  
+  .pdf-link-wrapper{max-width:100%}
+}

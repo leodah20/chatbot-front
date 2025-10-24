@@ -1,0 +1,324 @@
+/**
+ * ============================================================================
+ * CALENDARIO STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para as telas de calendário
+ * do painel administrativo da UNIP. Inclui estilos para listagem, visualização,
+ * adição e edição de eventos e matérias.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/* ===== RESET E CONFIGURAÇÕES BÁSICAS ===== */
+/**
+ * Reset global para garantir consistência entre navegadores
+ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/**
+ * Configuração base do body com otimizações de renderização
+ */
+body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/**
+ * Container principal da página com layout flexbox vertical
+ */
+.page-body{background:#FFF;min-height:100vh;display:flex;flex-direction:column}
+
+/**
+ * ===== CABEÇALHO =====
+ */
+.page-header{background:#023D71;color:#fff;width:100%}
+
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 30px 8px;gap:16px;flex-wrap:wrap}
+
+.header-brand{display:flex;align-items:center;gap:10px;flex:1 1 auto}
+
+.header-logo{width:clamp(150px,18vw,200px);height:auto}
+
+.header-title{font-size:clamp(20px,3.5vw,32px);font-weight:700;line-height:normal;margin:0}
+
+.header-user{display:flex;align-items:center;gap:25px;flex-wrap:wrap}
+
+.user-info-panel{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+
+.user-name-text,.user-email-text{font-size:clamp(14px,1.3vw,16px);font-weight:700;line-height:normal}
+
+.btn-logout{display:inline-flex;align-items:center;justify-content:center;padding:4px 12px;border-radius:6px;background:#DC3545;color:#fff;text-decoration:none;font-size:clamp(14px,1.5vw,18px);font-weight:700;transition:background .2s}
+
+.btn-logout:hover{background:#c82333}
+
+.header-submenu{background:#075EBD;padding:4px 30px}
+
+.submenu-wrapper{display:flex;align-items:center;gap:15px}
+
+.icon-menu{width:23px;height:17px;flex-shrink:0}
+
+.submenu-text{font-size:clamp(14px,1.5vw,18px);font-weight:400}
+
+/**
+ * ===== ÁREA PRINCIPAL =====
+ */
+.page-main{min-height:calc(100vh - 120px);max-height:calc(100vh - 120px);display:flex;justify-content:center;align-items:flex-start;padding:clamp(12px,1.5vw,20px) clamp(12px,1.5vw,25px);background:#FFF;overflow-y:auto}
+
+.container-card{width:100%;max-width:1189px;padding:clamp(16px,2vw,24px) clamp(20px,3vw,35px);background:#FFFEFE;border-radius:20px;box-shadow:0 4px 8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(16px,2vw,24px)}
+
+/**
+ * ===== CABEÇALHO DO CALENDÁRIO =====
+ */
+.calendar-header{display:flex;justify-content:center;align-items:center;padding:clamp(16px,2vw,20px) 0}
+
+.calendar-title{color:#023D71;font-size:clamp(28px,3.5vw,40px);font-weight:700;margin:0;text-align:center}
+
+/* Add Section */
+.add-section{display:flex;align-items:center;gap:clamp(20px,2.8vw,36px);padding:clamp(12px,1.5vw,16px) 0}
+
+.icon-add{width:clamp(40px,4.5vw,50px);height:clamp(40px,4.5vw,50px);flex-shrink:0}
+
+.add-link,.add-text{color:#023D71;font-size:clamp(26px,3.2vw,38px);font-weight:500;text-decoration:none;transition:color .2s}
+
+.add-link:hover{color:#1583FF}
+
+/* Separator */
+.separator-line{width:100%;height:1px;background:rgba(21,131,255,0.83)}
+
+/* Messages */
+.messages-area{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+
+.message-box{padding:12px 16px;border-radius:8px;font-size:16px}
+
+.message-success{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+
+.message-error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+
+.message-info{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+
+/* Matérias List */
+.materias-list{list-style:none;display:flex;flex-direction:column;gap:clamp(12px,1.5vw,16px)}
+
+.materia-card{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:clamp(12px,1.5vw,20px);background:#FBFBFB;border-radius:clamp(12px,1.5vw,16px);box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);flex-wrap:wrap}
+
+.materia-main{display:flex;flex-direction:column;gap:6px;flex:1 1 200px}
+
+.materia-title-text{color:#023D71;font-size:clamp(18px,2vw,22px);font-weight:600;line-height:1.3}
+
+.materia-professor-text{color:#4A4A4A;font-size:clamp(14px,1.4vw,16px);line-height:1.3}
+
+.materia-badges{display:flex;align-items:center;gap:clamp(8px,1vw,12px);flex-wrap:wrap}
+
+.badge-item{padding:6px 12px;background:rgba(167,208,255,0.2);border-radius:16px;color:#023D71;font-size:clamp(12px,1.2vw,14px);font-weight:500;white-space:nowrap}
+
+.view-link{color:#1583FF;font-size:clamp(14px,1.4vw,16px);font-weight:500;text-decoration:none;transition:color .2s}
+
+.view-link:hover{color:#0d6efd}
+
+/* Empty State */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:clamp(32px,4vw,48px)}
+
+.empty-text{color:#4A4A4A;font-size:clamp(16px,1.6vw,18px);text-align:center}
+
+.btn-add-empty{display:inline-flex;align-items:center;justify-content:center;padding:12px 24px;background:#1583FF;color:#fff;border-radius:8px;text-decoration:none;font-size:clamp(16px,1.6vw,18px);font-weight:500;transition:background .2s}
+
+.btn-add-empty:hover{background:#0d6efd}
+
+/* Wizard Container */
+.wizard-container{display:flex;flex-direction:column;gap:clamp(24px,3vw,36px);padding:clamp(20px,2.5vw,30px) clamp(20px,2.8vw,36px);background:#FFF;border:3px solid #1583FF;border-radius:10px;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25)}
+
+.wizard-step-label{color:#023D71;font-size:clamp(24px,2.8vw,30px);font-weight:600;text-align:center}
+
+/* Form */
+.wizard-form{display:flex;flex-direction:column;gap:clamp(28px,3.5vw,44px)}
+
+.form-field-group{display:flex;flex-direction:column;gap:clamp(8px,1vw,12px)}
+
+.form-row-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(20px,2.8vw,35px)}
+
+.field-label{color:#043057;font-size:clamp(20px,2.2vw,29px);font-weight:500}
+
+.field-input,.field-select,.field-textarea{width:100%;padding:clamp(16px,1.8vw,19px) clamp(18px,2vw,23px);background:#FBFBFB;border:none;border-radius:35px;box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);color:#4A4A4A;font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;font-size:clamp(18px,1.8vw,22px);transition:box-shadow .2s}
+
+.field-input:focus,.field-select:focus,.field-textarea:focus{outline:none;box-shadow:0 4px 8px 2px rgba(50,146,249,0.4)}
+
+.field-input::placeholder,.field-textarea::placeholder{color:rgba(74,74,74,0.58)}
+
+.field-input.field-half{max-width:602px}
+
+.field-input.field-small{max-width:440px}
+
+.field-select.field-medium{max-width:579px}
+
+.field-select.field-small{max-width:440px}
+
+.field-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='21' height='11' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l9.5 9L20 1' stroke='%234A4A4A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 23px center;padding-right:52px}
+
+.field-textarea{border-radius:20px;resize:vertical;min-height:140px}
+
+.textarea-wrapper{position:relative;display:flex;flex-direction:column}
+
+.char-counter{align-self:flex-end;color:#023D71;font-size:clamp(16px,1.6vw,20px);margin-top:8px}
+
+/* File Upload */
+.file-upload-area{display:flex;flex-wrap:wrap;align-items:center;gap:clamp(12px,1.5vw,16px);padding:clamp(16px,2vw,24px);background:#FBFBFB;border-radius:35px;box-shadow:0 4px 4px 1px rgba(50,146,249,0.28)}
+
+.file-input-hidden{display:none}
+
+.btn-file-select{display:inline-flex;align-items:center;justify-content:center;padding:12px clamp(24px,3vw,33px);background:#329959;color:#fff;border-radius:4px;font-size:clamp(18px,2vw,25px);font-weight:500;cursor:pointer;transition:background .2s}
+
+.btn-file-select:hover{background:#2a7a47}
+
+.file-hint{color:#4A4A4A;font-size:clamp(16px,1.6vw,20px);font-style:italic}
+
+/* Form Actions */
+.form-actions{display:flex;justify-content:flex-end;align-items:center;gap:clamp(12px,1.4vw,14px);flex-wrap:wrap;padding-top:clamp(16px,2vw,24px)}
+
+.btn-action{display:inline-flex;align-items:center;justify-content:center;gap:clamp(8px,1vw,10px);padding:clamp(10px,1.2vw,12px) clamp(28px,3.5vw,39px);border:none;border-radius:8px;font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;font-size:clamp(18px,2vw,25px);font-weight:400;cursor:pointer;text-decoration:none;transition:background .2s,transform .1s}
+
+.btn-action:hover{transform:translateY(-1px)}
+
+.btn-action svg{flex-shrink:0}
+
+.btn-cancel{background:#DC3545;color:#fff}
+.btn-cancel:hover{background:#c82333}
+
+.btn-back{background:#1583FF;color:#fff}
+.btn-back:hover{background:#0d6efd}
+
+.btn-next{background:#1583FF;color:#fff}
+.btn-next:hover{background:#0d6efd}
+
+.btn-save{background:#329959;color:#fff}
+.btn-save:hover{background:#2a7a47}
+
+/* Exam Sections (Step 4) */
+.exam-section{display:flex;flex-direction:column;gap:clamp(24px,3vw,37px);padding:clamp(20px,2.5vw,30px) 0;border-bottom:1px solid rgba(50,146,249,0.2)}
+
+.exam-section:last-of-type{border-bottom:none}
+
+.exam-title{color:#043057;font-size:clamp(22px,2.5vw,29px);font-weight:500;margin:0}
+
+/* Materia View Card */
+.materia-view-card{width:100%;max-width:1189px;padding:clamp(60px,7vw,99px) clamp(24px,2.5vw,27px) clamp(80px,10vw,147px);background:#FFFEFE;border-radius:18px;box-shadow:0 4px 6.8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(40px,5vw,66px)}
+
+.materia-menu-header{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:clamp(24px,3vw,43px);padding:0 clamp(12px,1.2vw,14px);position:relative}
+
+.materia-view-title{color:#023D71;font-size:clamp(32px,3.5vw,40px);font-weight:700;line-height:normal;margin:0;flex:1 1 auto}
+
+.btn-edit-info{display:flex;align-items:center;justify-content:center;gap:clamp(16px,1.8vw,22px);padding:clamp(8px,0.8vw,9px) clamp(12px,1.2vw,13px) clamp(8px,0.8vw,9px) clamp(14px,1.5vw,17px);border-radius:15px;border:1px solid rgba(50,146,249,0.66);background:rgba(167,208,255,0.08);box-shadow:0 4px 4px 0 rgba(0,0,0,0.17);color:#023D71;text-decoration:none;font-size:clamp(20px,2.2vw,25px);font-weight:500;transition:background .2s}
+
+.btn-edit-info:hover{background:rgba(167,208,255,0.2)}
+
+.icon-edit{width:clamp(28px,2.8vw,33px);height:clamp(27px,2.7vw,32px);flex-shrink:0}
+
+.header-separator{width:100%;height:1px;background:rgba(21,131,255,0.83);flex-basis:100%}
+
+.general-info-grid{display:flex;align-items:center;gap:clamp(32px,4.5vw,59px);flex-wrap:wrap;justify-content:center}
+
+.info-item{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(16px,1.8vw,20px);padding:0 clamp(4px,0.4vw,5px);min-width:clamp(160px,15vw,212px)}
+
+.info-item-label{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;text-align:center}
+
+.info-item-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;text-align:center}
+
+.sections-container{display:flex;flex-direction:column;gap:clamp(32px,3.8vw,43px);width:100%;max-width:999px;align-self:center}
+
+.section-details{border-radius:10px;border:3px solid #1583FF;background:#FFF;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25)}
+
+.section-summary{color:#023D71;text-align:center;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;padding:clamp(32px,3.6vw,41px);cursor:pointer;list-style:none;transition:background .2s}
+
+.section-summary:hover{background:rgba(21,131,255,0.05)}
+
+.section-summary::-webkit-details-marker{display:none}
+
+.section-content{padding:0 clamp(20px,2.5vw,24px) clamp(48px,5.5vw,68px)}
+
+.ementa-content{display:flex;flex-direction:column;gap:clamp(28px,3.2vw,37px)}
+
+.ementa-text-box{padding:clamp(7px,0.7vw,8px) clamp(42px,4.6vw,53px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.ementa-text-wrapper{display:flex;flex-direction:column;gap:clamp(16px,1.8vw,20px);padding:clamp(12px,1.4vw,16px) 0}
+
+.ementa-subtitle{color:#023D71;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;margin:0}
+
+.ementa-description{color:#000;font-size:clamp(18px,1.9vw,22px);font-weight:400;line-height:normal;margin:0;word-wrap:break-word}
+
+.ementa-document-access{display:flex;flex-direction:column;gap:clamp(18px,1.9vw,22px)}
+
+.document-label{color:#023D71;font-size:clamp(20px,2.1vw,24px);font-weight:500;line-height:normal}
+
+.document-link-wrapper{display:flex;align-items:center;gap:clamp(12px,1.4vw,16px)}
+
+.icon-document{width:clamp(15px,1.6vw,17px);height:clamp(20px,2vw,23px);flex-shrink:0}
+
+.document-link-text{color:#023D71;font-size:clamp(18px,1.9vw,22px);font-style:italic;font-weight:400;line-height:normal;text-decoration:underline}
+
+.calendario-content{display:flex;flex-direction:column;gap:clamp(20px,2.3vw,26px)}
+
+.calendario-info-row{display:flex;justify-content:space-between;align-items:center;gap:clamp(28px,3.2vw,37px);flex-wrap:wrap}
+
+.calendario-field{display:flex;align-items:center;gap:clamp(16px,1.8vw,20px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);flex:1 1 clamp(320px,40%,432px);min-height:clamp(56px,5.8vw,67px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.calendario-field-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+
+.calendario-field-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+
+.avaliacoes-content{display:flex;flex-direction:column;gap:clamp(28px,3.2vw,35px)}
+
+.avaliacao-block{display:flex;flex-direction:column;gap:clamp(20px,2.3vw,26px)}
+
+.avaliacao-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;margin:0}
+
+.avaliacao-info-row{display:flex;align-items:center;gap:clamp(28px,3.2vw,37px);flex-wrap:wrap}
+
+.avaliacao-field{display:flex;align-items:center;gap:clamp(16px,1.8vw,20px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);flex:1 1 clamp(320px,40%,432px);min-height:clamp(56px,5.8vw,67px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.avaliacao-field-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+
+.avaliacao-field-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+
+.avaliacao-description{display:flex;flex-direction:column;gap:clamp(10px,1vw,11px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
+
+.avaliacao-description-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+
+.avaliacao-description-text{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;margin:0;word-wrap:break-word}
+
+.empty-message{color:#4A4A4A;font-size:clamp(18px,1.9vw,22px);text-align:center;padding:clamp(24px,2.8vw,32px)}
+
+/* View Actions (kept for backwards compatibility) */
+.view-actions{display:flex;justify-content:flex-end;padding-top:clamp(16px,2vw,24px)}
+
+/* Responsive Breakpoints */
+@media (max-width:768px){
+  .header-top{padding:24px 20px 12px;flex-direction:column;align-items:flex-start}
+  .header-brand{flex-direction:column;align-items:flex-start;gap:12px}
+  .header-user{width:100%;justify-content:space-between}
+  .header-submenu{padding:7px 20px}
+  .form-row-group{grid-template-columns:1fr}
+  .form-actions{flex-direction:column-reverse;width:100%}
+  .btn-action{width:100%;justify-content:center}
+  .materia-card{flex-direction:column;align-items:flex-start}
+  .materia-badges{width:100%}
+  .materia-menu-header{flex-direction:column;gap:20px}
+  .materia-view-title{text-align:center}
+  .btn-edit-info{width:100%;justify-content:center}
+  .general-info-grid{flex-direction:column;gap:24px}
+  .info-item{width:100%;min-width:auto}
+  .calendario-info-row,.avaliacao-info-row{flex-direction:column;gap:16px}
+  .calendario-field,.avaliacao-field{flex:1 1 100%;min-width:100%}
+}
+
+@media (max-width:480px){
+  .page-main{padding:16px 12px}
+  .container-card{padding:16px 20px}
+  .wizard-container{padding:16px 20px}
+  .field-input.field-half,.field-input.field-small,.field-select.field-medium,.field-select.field-small{max-width:100%}
+  .materia-view-card{padding:32px 20px 48px}
+  .materia-menu-header{padding:0 8px}
+  .section-summary{padding:24px 16px}
+  .section-content{padding:0 16px 32px}
+  .ementa-text-box{padding:8px 20px}
+  .general-info-grid{gap:16px}
+}

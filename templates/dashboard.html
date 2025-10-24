@@ -1,269 +1,38 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
+  <!-- Configuração básica da página -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>UNIP • Painel Administrativo</title>
+  
+  <!-- Carregamento otimizado de fontes Google -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    
-    body {
-      font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #FFF;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .header {
-      background: #023D71;
-      width: 100%;
-    }
-    
-    .header-top {
-      display: flex;
-      padding: 47px 44px 12px 44px;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 24px;
-    }
-    
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .logo {
-      width: 278.88px;
-      height: 88.976px;
-    }
-    
-    .title {
-      color: #FFF;
-      font-size: 42px;
-      font-weight: 700;
-      line-height: normal;
-    }
-    
-    .user-section {
-      display: flex;
-      align-items: center;
-      gap: 24.991px;
-    }
-    
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 14.995px;
-    }
-    
-    .user-name,
-    .user-email {
-      color: #FFF;
-      text-align: right;
-      font-size: 20px;
-      font-weight: 700;
-      line-height: normal;
-    }
-    
-    .btn-sair {
-      display: flex;
-      width: 106.963px;
-      height: 48.983px;
-      padding: 5.998px 13.995px;
-      justify-content: center;
-      align-items: center;
-      border-radius: 7.997px;
-      background: #DC3545;
-      color: #FFF;
-      font-size: 24.991px;
-      font-weight: 700;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-    }
-    
-    .btn-sair:hover {
-      background: #c82333;
-    }
-    
-    .submenu {
-      display: flex;
-      padding: 6.998px 59.979px;
-      background: #075EBD;
-    }
-    
-    .submenu-content {
-      display: flex;
-      align-items: center;
-      gap: 14.995px;
-    }
-    
-    .menu-icon {
-      width: 22.992px;
-      height: 16.994px;
-    }
-    
-    .menu-text {
-      color: #FFF;
-      font-size: 23.992px;
-      font-weight: 500;
-      line-height: normal;
-    }
-    
-    .main {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 34px 20px;
-    }
-    
-    .container {
-      width: 100%;
-      max-width: 1215px;
-    }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 77.491px 77.491px;
-      row-gap: 17px;
-      padding: 18.115px 11.07px;
-    }
-    
-    @media (min-width: 768px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    
-    @media (min-width: 1024px) {
-      .grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-    
-    .card {
-      display: flex;
-      padding: 59.376px 50.319px;
-      flex-direction: column;
-      align-items: center;
-      gap: 44.28px;
-      border-radius: 18.115px;
-      background: rgba(241, 241, 241, 0.49);
-      box-shadow: 0 4.025px 6.843px 1.006px rgba(0, 0, 0, 0.17);
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      min-height: 341.161px;
-    }
-    
-    .card:hover {
-      transform: translateY(-4px) scale(1.05);
-      box-shadow: 0 6px 10px 2px rgba(0, 0, 0, 0.25);
-    }
-    
-    .card:focus {
-      outline: 3px solid rgba(50, 146, 249, 0.5);
-      outline-offset: 2px;
-    }
-    
-    .card-icon {
-      width: 118.813px;
-      height: 131.788px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .card-icon svg {
-      width: 100%;
-      height: 100%;
-    }
-    
-    .card-title {
-      color: #3292F9;
-      text-align: center;
-      font-size: 33.21px;
-      font-weight: 700;
-      line-height: 118.98%;
-    }
-    
-    @media (max-width: 768px) {
-      .header-top {
-        padding: 32px 24px 12px 24px;
-      }
-      
-      .title {
-        font-size: 28px;
-      }
-      
-      .logo {
-        width: 180px;
-        height: auto;
-      }
-      
-      .user-name,
-      .user-email {
-        font-size: 16px;
-      }
-      
-      .btn-sair {
-        font-size: 20px;
-        width: 90px;
-        height: 42px;
-      }
-      
-      .menu-text {
-        font-size: 20px;
-      }
-      
-      .submenu {
-        padding: 6px 24px;
-      }
-      
-      .card {
-        padding: 40px 32px;
-        gap: 32px;
-      }
-      
-      .card-icon {
-        width: 90px;
-        height: 100px;
-      }
-      
-      .card-title {
-        font-size: 26px;
-      }
-    }
-  </style>
+  
+  <!-- CSS específico do dashboard -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
 </head>
 <body>
+  <!-- Cabeçalho principal -->
   <header class="header">
     <div class="header-top">
+      <!-- Logo e título da UNIP -->
       <div class="brand">
         <img class="logo" src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP">
         <h1 class="title">Painel Administrativo</h1>
-                </div>
+      </div>
+      
+      <!-- Informações do usuário logado -->
       <div class="user-section">
         <div class="user-info">
           <div class="user-name">{{ user.nome|title if user else 'Usuário' }}</div>
           <div class="user-email">{{ user.email if user else '' }}</div>
         </div>
         <a href="{{ url_for('logout') }}" class="btn-sair">sair</a>
-                </div>
-        </div>
+      </div>
+    </div>
     <div class="submenu">
       <div class="submenu-content">
         <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -278,7 +47,7 @@
     <div class="container">
       <div class="grid">
         
-        <button class="card" type="button">
+        <a href="{{ url_for('calendario_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
             <svg viewBox="0 0 120 133" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M0.228394 25.4744C0.228394 23.807 1.5801 22.4553 3.24752 22.4553H9.84888C11.5163 22.4553 12.868 23.807 12.868 25.4744V125.599C12.868 127.266 11.5163 128.618 9.84888 128.618H3.24752C1.5801 128.618 0.228394 127.266 0.228394 125.599V25.4744Z" fill="#3292F9"/>
@@ -296,9 +65,9 @@
             </svg>
           </div>
           <div class="card-title">Calendário</div>
-        </button>
+        </a>
 
-        <button class="card" type="button">
+        <a href="{{ url_for('conteudo_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
             <svg viewBox="0 0 104 139" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M0.716248 14.8168C0.716248 11.1796 3.66478 8.23109 7.30197 8.23109C10.9392 8.23109 13.8877 11.1796 13.8877 14.8168V129.357C13.8877 132.994 10.9392 135.943 7.30197 135.943C3.66478 135.943 0.716248 132.994 0.716248 129.357V14.8168Z" fill="#3292F9"/>
@@ -311,17 +80,18 @@
             </svg>
           </div>
           <div class="card-title">Conteúdo</div>
-        </button>
+        </a>
 
-        <button class="card" type="button">
-          <div class="card-icon">
-            <svg viewBox="0 0 115 128" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M91.9533 33.0046C91.9533 50.9614 76.5438 65.5183 57.5351 65.5183C38.5265 65.5183 23.117 50.9614 23.117 33.0046C23.117 15.0478 38.5265 0.490967 57.5351 0.490967C76.5438 0.490967 91.9533 15.0478 91.9533 33.0046Z" fill="#3292F9"/>
-              <path d="M0.171509 101.438C0.171509 86.987 11.8863 75.2722 26.3373 75.2722H88.733C103.184 75.2722 114.899 86.987 114.899 101.438V119.243C114.899 123.689 111.294 127.294 106.848 127.294H8.2225C3.77606 127.294 0.171509 123.689 0.171509 119.243V101.438Z" fill="#3292F9"/>
-            </svg>
-          </div>
-          <div class="card-title">Informações<br>Docentes</div>
-        </button>
+                <a href="{{ url_for('docentes_list') }}" class="card" style="text-decoration: none;">
+                  <div class="card-icon">
+                    <svg viewBox="0 0 115 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M91.9533 33.0046C91.9533 50.9614 76.5438 65.5183 57.5351 65.5183C38.5265 65.5183 23.117 50.9614 23.117 33.0046C23.117 15.0478 38.5265 0.490967 57.5351 0.490967C76.5438 0.490967 91.9533 15.0478 91.9533 33.0046Z" fill="#3292F9"/>
+                      <path d="M0.171509 101.438C0.171509 86.987 11.8863 75.2722 26.3373 75.2722H88.733C103.184 75.2722 114.899 86.987 114.899 101.438V119.243C114.899 123.689 111.294 127.294 106.848 127.294H8.2225C3.77606 127.294 0.171509 123.689 0.171509 119.243V101.438Z" fill="#3292F9"/>
+                    </svg>
+                  </div>
+                  <div class="card-title">Informações<br>Docentes</div>
+                </a>
+
 
         <button class="card" type="button">
           <div class="card-icon">
@@ -338,23 +108,23 @@
           <div class="card-title">Dúvidas<br>Frequentes</div>
         </button>
 
-        <button class="card" type="button">
+        <a href="{{ url_for('infos_curso_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
             <svg viewBox="0 0 132 144" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M43.1395 135.179H89.0302M66.0849 107.001V135.179M20.1942 8.37598H111.976C118.312 8.37598 123.448 14.6839 123.448 22.4652V92.9115C123.448 100.693 118.312 107.001 111.976 107.001H20.1942C13.858 107.001 8.7215 100.693 8.7215 92.9115V22.4652C8.7215 14.6839 13.858 8.37598 20.1942 8.37598Z" stroke="#3292F9" stroke-width="16.102" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
           <div class="card-title">Informações<br>Curso</div>
-        </button>
+        </a>
 
-        <button class="card" type="button">
+        <a href="{{ url_for('avisos_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
             <svg viewBox="0 0 131 144" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M76.5616 128.86C75.4411 130.782 73.8327 132.378 71.8975 133.487C69.9624 134.596 67.7683 135.179 65.5351 135.179C63.3019 135.179 61.1079 134.596 59.1727 133.487C57.2376 132.378 55.6292 130.782 54.5086 128.86M103.777 46.4237C103.777 36.3328 99.7483 26.6552 92.5765 19.5199C85.4047 12.3846 75.6776 8.37598 65.5351 8.37598C55.3926 8.37598 45.6656 12.3846 38.4938 19.5199C31.322 26.6552 27.2929 36.3328 27.2929 46.4237C27.2929 90.8127 8.17175 103.495 8.17175 103.495H122.898C122.898 103.495 103.777 90.8127 103.777 46.4237Z" stroke="#3292F9" stroke-width="16.102" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
          </div>
           <div class="card-title">Avisos</div>
-        </button>
+        </a>
 
         </div>
     </div>

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adicionar Estágio - UNIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/infos_curso_styles.css') }}">
+</head>
+<body class="page-body">
+  <header class="page-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <h1 class="header-title">Painel Administrativo</h1>
+      </div>
+      <div class="header-user">
+        <div class="user-info-panel">
+          <div class="user-name-text">{{ user.nome|title if user else 'Usuário' }}</div>
+          <div class="user-email-text">{{ user.email if user else 'email@unip.br' }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+      </div>
+    </div>
+    <div class="header-submenu">
+      <div class="submenu-wrapper">
+        <svg class="icon-menu" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9915 6.66419H0.999512M23.9915 0.999512H0.999512M23.9915 12.3289H0.999512M23.9915 17.9936H0.999512" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="submenu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="add-form-container">
+      <div class="add-form-header">
+        <h2 class="add-form-title">Informações do Curso</h2>
+      </div>
+
+      <div class="add-section-header">
+        <svg class="icon-add-circle" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M28 18V38M18 28H38M53 28C53 41.8071 41.8071 53 28 53C14.1929 53 3 41.8071 3 28C3 14.1929 14.1929 3 28 3C41.8071 3 53 14.1929 53 28Z" stroke="#1583FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="add-section-text">Editar Matéria</span>
+      </div>
+
+      <div class="blue-divider"></div>
+
+      <div class="form-group-select">
+        <div class="form-select-readonly">Estágio</div>
+      </div>
+
+      {% if step == 1 %}
+      <form method="POST" enctype="multipart/form-data" class="info-form-card">
+        <div class="form-fields-container">
+          <div class="wizard-step-title">Etapa 1 de 2</div>
+
+          <div class="form-row-double">
+            <div class="form-group">
+              <label class="form-label-dark">Horas de Estágio:</label>
+              <input type="text" name="carga_horaria" class="form-input-field" placeholder="Ex: 440h" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Orientador(a)</label>
+              <select name="orientador" class="form-input-field" required>
+                <option value="">Selecione</option>
+                <option value="prof1">Professor 1</option>
+                <option value="prof2">Professor 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="doc-section">
+            <div class="doc-header">
+              <svg class="icon-doc" viewBox="0 0 30 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.375 1.5H4.875C3.97989 1.5 3.12145 1.81607 2.48851 2.37868C1.85558 2.94129 1.5 3.70435 1.5 4.5V28.5C1.5 29.2956 1.85558 30.0587 2.48851 30.6213C3.12145 31.1839 3.97989 31.5 4.875 31.5H25.125C26.0201 31.5 26.8785 31.1839 27.5115 30.6213C28.1444 30.0587 28.5 29.2956 28.5 28.5V10.5M18.375 1.5L28.5 10.5M18.375 1.5V10.5H28.5M15 25.5V16.5M9.9375 21H20.0625" stroke="#1583FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="doc-title">Documentações de Apoio</span>
+            </div>
+            <div class="form-group-full">
+              <label class="form-label-dark">Kit do Estudante</label>
+              <div class="file-upload-area">
+                <label for="file-estagio" class="file-upload-button">Selecionar Arquivo</label>
+                <input type="file" id="file-estagio" name="kit_estudante" accept=".pdf,.docx" hidden>
+                <span class="file-upload-hint">*Apenas arquivos .pdf ou .docx</span>
+                <div id="file-estagio-name" class="file-name-display"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="{{ url_for('infos_curso_list') }}" class="btn-cancel">
+            <svg class="btn-icon" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Cancelar</span>
+          </a>
+          <button type="submit" name="action" value="next" class="btn-next">
+            <svg class="btn-icon" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 8.5H18M18 8.5L9.5 1M18 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Próximo</span>
+          </button>
+        </div>
+      </form>
+      {% else %}
+      <form method="POST" class="info-form-card">
+        <div class="form-fields-container">
+          <div class="wizard-step-title">Etapa 2 de 2</div>
+
+          <div class="date-time-section">
+            <div class="date-time-header">
+              <svg class="icon-clock" viewBox="0 0 35 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.5 7.7V17L23.9 20.1M33.5 17C33.5 25.5604 26.3366 32.5 17.5 32.5C8.66344 32.5 1.5 25.5604 1.5 17C1.5 8.43959 8.66344 1.5 17.5 1.5C26.3366 1.5 33.5 8.43959 33.5 17Z" stroke="#1583FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div class="section-title">Datas de Entrega</div>
+            </div>
+
+            <div id="datas-container">
+              <div class="data-entrega-item">
+                <div class="form-group-full">
+                  <label class="form-label-dark">Descrição:</label>
+                  <input type="text" name="descricao[]" class="form-input-field" placeholder="Ex: 1ª versão do relatório" required>
+                </div>
+
+                <div class="form-row-double">
+                  <div class="form-group">
+                    <label class="form-label-dark">Data</label>
+                    <input type="date" name="data[]" class="form-input-field" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label-dark">Horário</label>
+                    <input type="time" name="horario[]" class="form-input-field" placeholder="Ex: 00h" required>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label-dark">Tipo</label>
+                  <select name="tipo[]" class="form-input-field" required>
+                    <option value="">Selecione</option>
+                    <option value="revisao">Revisão</option>
+                    <option value="entrega">Entrega Final</option>
+                    <option value="apresentacao">Apresentação</option>
+                  </select>
+                </div>
+
+                <div class="section-divider"></div>
+              </div>
+            </div>
+
+            <button type="button" class="add-more-button" onclick="adicionarData()">
+              <svg class="icon-add-plus" viewBox="0 0 29 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.5 1.5V25.5M1.5 13.5H27.5" stroke="#3292F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Adicionar mais Datas</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" name="action" value="back" class="btn-back">
+            <svg class="btn-icon" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 8.5H1M1 8.5L9.5 1M1 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Voltar</span>
+          </button>
+          <button type="submit" name="action" value="save" class="btn-save">
+            <svg class="btn-icon" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 1L6 12L1 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    const fileEstagio = document.getElementById('file-estagio');
+    if (fileEstagio) {
+      fileEstagio.addEventListener('change', function(e) {
+        const fileName = e.target.files[0]?.name || '';
+        const display = document.getElementById('file-estagio-name');
+        if (fileName) {
+          display.textContent = `Arquivo selecionado: ${fileName}`;
+          display.style.display = 'block';
+        } else {
+          display.style.display = 'none';
+        }
+      });
+    }
+
+    function adicionarData() {
+      const container = document.getElementById('datas-container');
+      const novaData = document.createElement('div');
+      novaData.className = 'data-entrega-item';
+      novaData.innerHTML = `
+        <div class="form-group-full">
+          <label class="form-label-dark">Descrição:</label>
+          <input type="text" name="descricao[]" class="form-input-field" placeholder="Ex: 1ª versão do relatório" required>
+        </div>
+
+        <div class="form-row-double">
+          <div class="form-group">
+            <label class="form-label-dark">Data</label>
+            <input type="date" name="data[]" class="form-input-field" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label-dark">Horário</label>
+            <input type="time" name="horario[]" class="form-input-field" placeholder="Ex: 00h" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-dark">Tipo</label>
+          <select name="tipo[]" class="form-input-field" required>
+            <option value="">Selecione</option>
+            <option value="revisao">Revisão</option>
+            <option value="entrega">Entrega Final</option>
+            <option value="apresentacao">Apresentação</option>
+          </select>
+        </div>
+
+        <div class="section-divider"></div>
+      `;
+      container.appendChild(novaData);
+    }
+  </script>
+</body>
+</html>

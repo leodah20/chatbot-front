@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editar Matéria - Etapa {{ step }} de 4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/calendario_styles.css') }}">
+</head>
+<body class="page-body">
+  
+  <header class="page-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <h1 class="header-title">Painel Administrativo</h1>
+      </div>
+      <div class="header-user">
+        <div class="user-info-panel">
+          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
+          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+      </div>
+    </div>
+    <div class="header-submenu">
+      <div class="submenu-wrapper">
+        <svg class="icon-menu" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9919 6.66468H1M23.9919 1H1M23.9919 12.3294H1M23.9919 17.994H1" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="submenu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container-card">
+      
+      <div class="calendar-header">
+        <h2 class="calendar-title">Calendário</h2>
+      </div>
+
+      <div class="add-section">
+        <svg class="icon-add" width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24.3643 7.27132H6.96985C5.65177 7.27132 4.38766 7.79493 3.45564 8.72696C2.52361 9.65899 2 10.9231 2 12.2412V47.0301C2 48.3482 2.52361 49.6123 3.45564 50.5444C4.38766 51.4764 5.65177 52 6.96985 52H41.7588C43.0769 52 44.341 51.4764 45.273 50.5444C46.2051 49.6123 46.7287 48.3482 46.7287 47.0301V29.6357M43.0013 3.54394C43.9898 2.55537 45.3306 2 46.7287 2C48.1267 2 49.4675 2.55537 50.4561 3.54394C51.4446 4.5325 52 5.87328 52 7.27132C52 8.66937 51.4446 10.0101 50.4561 10.9987L26.8493 34.6055L16.9096 37.0904L19.3945 27.1507L43.0013 3.54394Z" stroke="#1583FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="add-text">Editar Matéria</span>
+      </div>
+
+      <div class="separator-line"></div>
+
+      <div class="wizard-container">
+        <h3 class="wizard-step-label">Etapa {{ step }} de 4</h3>
+
+        {% if step == 1 %}
+        <form class="wizard-form" method="post">
+          <input type="hidden" name="step" value="1">
+          
+          <div class="form-field-group">
+            <label class="field-label">Nome da Matéria:</label>
+            <input class="field-input" name="nome" type="text" placeholder="Ex: Engenharia de Software" value="{{ wizard.nome or '' }}" required>
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Professor Responsável</label>
+            <select class="field-select" name="professor" required>
+              <option value="">Selecione</option>
+              <option value="José Zesinho" {% if wizard.professor == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
+              <option value="Maria Silva" {% if wizard.professor == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+              <option value="Myriam da Silva" {% if wizard.professor == 'Myriam da Silva' %}selected{% endif %}>Myriam da Silva</option>
+            </select>
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Código Disciplina:</label>
+            <input class="field-input field-half" name="codigo" type="text" placeholder="Ex: N78452" value="{{ wizard.codigo or '' }}">
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Carga Horária:</label>
+            <input class="field-input field-half" name="carga_horaria" type="text" placeholder="Ex: 60h" value="{{ wizard.carga_horaria or '' }}">
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Modalidade</label>
+            <select class="field-select field-medium" name="modalidade">
+              <option value="">Selecione</option>
+              <option value="Presencial" {% if wizard.modalidade == 'Presencial' %}selected{% endif %}>Presencial</option>
+              <option value="Online" {% if wizard.modalidade == 'Online' %}selected{% endif %}>Online</option>
+              <option value="Híbrido" {% if wizard.modalidade == 'Híbrido' %}selected{% endif %}>Híbrido</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <a class="btn-action btn-cancel" href="{{ url_for('calendario_view', materia_id=materia_id) }}">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Cancelar
+            </a>
+            <button class="btn-action btn-next" type="submit">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 8.5H18M18 8.5L9.5 1M18 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Próximo
+            </button>
+          </div>
+        </form>
+
+        {% elif step == 2 %}
+        <form class="wizard-form" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="step" value="2">
+
+          <div class="form-field-group">
+            <label class="field-label">Ementa da Matéria</label>
+            <div class="textarea-wrapper">
+              <textarea class="field-textarea" name="ementa_resumo" maxlength="1000" placeholder="Faça um breve resumo da ementa da disciplina, abordando o objetivo geral e os principais tópicos.">{{ wizard.ementa_resumo or '' }}</textarea>
+              <span class="char-counter">0 / 1000 caracteres</span>
+            </div>
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Documento da Ementa Completa</label>
+            <div class="file-upload-area">
+              <input type="file" name="ementa_arquivo" id="ementa_arquivo" class="file-input-hidden" accept=".pdf,.docx">
+              <label for="ementa_arquivo" class="btn-file-select">Selecionar Arquivo</label>
+              <span class="file-hint">*Apenas arquivos .pdf ou .docx</span>
+              {% if wizard.ementa_arquivo_nome %}
+              <div class="file-selected-info">
+                <svg width="29" height="29" viewBox="0 0 29 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.125 41H6.625C5.92881 41 5.26113 41.295 4.76884 41.8201C4.27656 42.3452 4 43.0574 4 43.8V66.2C4 66.9426 4.27656 67.6548 4.76884 68.1799C5.26113 68.705 5.92881 69 6.625 69H22.375C23.0712 69 23.7389 68.705 24.2312 68.1799C24.7234 67.6548 25 66.9426 25 66.2V49.4M17.125 41L25 49.4M17.125 41V49.4H25M14.5 63.4V55M10.5625 59.2H18.4375" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{{ wizard.ementa_arquivo_nome }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a class="btn-action btn-cancel" href="{{ url_for('calendario_view', materia_id=materia_id) }}">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Cancelar
+            </a>
+            <a class="btn-action btn-back" href="{{ url_for('calendario_edit', materia_id=materia_id, step=1) }}">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 8.5L1 8.5M1 8.5L9.5 16M1 8.5L9.5 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Voltar
+            </a>
+            <button class="btn-action btn-next" type="submit">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 8.5H18M18 8.5L9.5 1M18 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Próximo
+            </button>
+          </div>
+        </form>
+
+        {% elif step == 3 %}
+        <form class="wizard-form" method="post">
+          <input type="hidden" name="step" value="3">
+
+          <div class="form-field-group">
+            <label class="field-label">Dia da Semana:</label>
+            <select class="field-select" name="dia_semana">
+              <option value="">Selecione</option>
+              <option value="Segunda-feira" {% if wizard.dia_semana == 'Segunda-feira' %}selected{% endif %}>Segunda-feira</option>
+              <option value="Terça-feira" {% if wizard.dia_semana == 'Terça-feira' %}selected{% endif %}>Terça-feira</option>
+              <option value="Quarta-feira" {% if wizard.dia_semana == 'Quarta-feira' %}selected{% endif %}>Quarta-feira</option>
+              <option value="Quinta-feira" {% if wizard.dia_semana == 'Quinta-feira' %}selected{% endif %}>Quinta-feira</option>
+              <option value="Sexta-feira" {% if wizard.dia_semana == 'Sexta-feira' %}selected{% endif %}>Sexta-feira</option>
+              <option value="Sábado" {% if wizard.dia_semana == 'Sábado' %}selected{% endif %}>Sábado</option>
+            </select>
+          </div>
+
+          <div class="form-row-group">
+            <div class="form-field-group">
+              <label class="field-label">Horário Início:</label>
+              <input class="field-input" name="hora_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.hora_inicio or '' }}">
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Horário Fim:</label>
+              <input class="field-input" name="hora_fim" type="text" placeholder="Ex: 22h40" value="{{ wizard.hora_fim or '' }}">
+            </div>
+          </div>
+
+          <div class="form-field-group">
+            <label class="field-label">Sala:</label>
+            <select class="field-select field-small" name="sala">
+              <option value="">Selecione</option>
+              <option value="427" {% if wizard.sala == '427' %}selected{% endif %}>427</option>
+              <option value="428" {% if wizard.sala == '428' %}selected{% endif %}>428</option>
+              <option value="429" {% if wizard.sala == '429' %}selected{% endif %}>429</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <a class="btn-action btn-cancel" href="{{ url_for('calendario_view', materia_id=materia_id) }}">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Cancelar
+            </a>
+            <a class="btn-action btn-back" href="{{ url_for('calendario_edit', materia_id=materia_id, step=2) }}">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 8.5L1 8.5M1 8.5L9.5 16M1 8.5L9.5 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Voltar
+            </a>
+            <button class="btn-action btn-next" type="submit">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 8.5H18M18 8.5L9.5 1M18 8.5L9.5 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Próximo
+            </button>
+          </div>
+        </form>
+
+        {% elif step == 4 %}
+        <form class="wizard-form" method="post">
+          <input type="hidden" name="step" value="4">
+
+          <div class="exam-section">
+            <h3 class="exam-title">NP1</h3>
+            <div class="form-field-group">
+              <label class="field-label">Data:</label>
+              <input class="field-input field-small" name="np1_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.np1.data if wizard.provas and wizard.provas.np1 else '' }}">
+            </div>
+            <div class="form-row-group">
+              <div class="form-field-group">
+                <label class="field-label">Horário Início:</label>
+                <input class="field-input" name="np1_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.np1.inicio if wizard.provas and wizard.provas.np1 else '' }}">
+              </div>
+              <div class="form-field-group">
+                <label class="field-label">Horário Fim:</label>
+                <input class="field-input" name="np1_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.np1.fim if wizard.provas and wizard.provas.np1 else '' }}">
+              </div>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Sala:</label>
+              <select class="field-select field-small" name="np1_sala">
+                <option value="">Selecione</option>
+                <option value="427" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.sala == '427' %}selected{% endif %}>427</option>
+                <option value="428" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.sala == '428' %}selected{% endif %}>428</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Aplicador(a):</label>
+              <select class="field-select" name="np1_aplicador">
+                <option value="">Selecione</option>
+                <option value="José Zesinho" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
+                <option value="Maria Silva" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Conteúdo da Prova</label>
+              <div class="textarea-wrapper">
+                <textarea class="field-textarea" name="np1_conteudo" maxlength="250" placeholder="Descreva o conteúdo da prova...">{{ wizard.provas.np1.conteudo if wizard.provas and wizard.provas.np1 else '' }}</textarea>
+                <span class="char-counter">0 / 250 caracteres</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="exam-section">
+            <h3 class="exam-title">NP2</h3>
+            <div class="form-field-group">
+              <label class="field-label">Data:</label>
+              <input class="field-input field-small" name="np2_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.np2.data if wizard.provas and wizard.provas.np2 else '' }}">
+            </div>
+            <div class="form-row-group">
+              <div class="form-field-group">
+                <label class="field-label">Horário Início:</label>
+                <input class="field-input" name="np2_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.np2.inicio if wizard.provas and wizard.provas.np2 else '' }}">
+              </div>
+              <div class="form-field-group">
+                <label class="field-label">Horário Fim:</label>
+                <input class="field-input" name="np2_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.np2.fim if wizard.provas and wizard.provas.np2 else '' }}">
+              </div>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Sala:</label>
+              <select class="field-select field-small" name="np2_sala">
+                <option value="">Selecione</option>
+                <option value="427" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.sala == '427' %}selected{% endif %}>427</option>
+                <option value="428" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.sala == '428' %}selected{% endif %}>428</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Aplicador(a):</label>
+              <select class="field-select" name="np2_aplicador">
+                <option value="">Selecione</option>
+                <option value="José Zesinho" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
+                <option value="Maria Silva" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Conteúdo da Prova</label>
+              <div class="textarea-wrapper">
+                <textarea class="field-textarea" name="np2_conteudo" maxlength="250" placeholder="Descreva o conteúdo da prova...">{{ wizard.provas.np2.conteudo if wizard.provas and wizard.provas.np2 else '' }}</textarea>
+                <span class="char-counter">0 / 250 caracteres</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="exam-section">
+            <h3 class="exam-title">Exame</h3>
+            <div class="form-field-group">
+              <label class="field-label">Data:</label>
+              <input class="field-input field-small" name="exame_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.exame.data if wizard.provas and wizard.provas.exame else '' }}">
+            </div>
+            <div class="form-row-group">
+              <div class="form-field-group">
+                <label class="field-label">Horário Início:</label>
+                <input class="field-input" name="exame_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.exame.inicio if wizard.provas and wizard.provas.exame else '' }}">
+              </div>
+              <div class="form-field-group">
+                <label class="field-label">Horário Fim:</label>
+                <input class="field-input" name="exame_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.exame.fim if wizard.provas and wizard.provas.exame else '' }}">
+              </div>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Sala:</label>
+              <select class="field-select field-small" name="exame_sala">
+                <option value="">Selecione</option>
+                <option value="427" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.sala == '427' %}selected{% endif %}>427</option>
+                <option value="428" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.sala == '428' %}selected{% endif %}>428</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Aplicador(a):</label>
+              <select class="field-select" name="exame_aplicador">
+                <option value="">Selecione</option>
+                <option value="José Zesinho" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
+                <option value="Maria Silva" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Conteúdo da Prova</label>
+              <div class="textarea-wrapper">
+                <textarea class="field-textarea" name="exame_conteudo" maxlength="250" placeholder="Descreva o conteúdo da prova...">{{ wizard.provas.exame.conteudo if wizard.provas and wizard.provas.exame else '' }}</textarea>
+                <span class="char-counter">0 / 250 caracteres</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="exam-section">
+            <h3 class="exam-title">Sub</h3>
+            <div class="form-field-group">
+              <label class="field-label">Data:</label>
+              <input class="field-input field-small" name="sub_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.sub.data if wizard.provas and wizard.provas.sub else '' }}">
+            </div>
+            <div class="form-row-group">
+              <div class="form-field-group">
+                <label class="field-label">Horário Início:</label>
+                <input class="field-input" name="sub_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.sub.inicio if wizard.provas and wizard.provas.sub else '' }}">
+              </div>
+              <div class="form-field-group">
+                <label class="field-label">Horário Fim:</label>
+                <input class="field-input" name="sub_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.sub.fim if wizard.provas and wizard.provas.sub else '' }}">
+              </div>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Sala:</label>
+              <select class="field-select field-small" name="sub_sala">
+                <option value="">Selecione</option>
+                <option value="427" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.sala == '427' %}selected{% endif %}>427</option>
+                <option value="428" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.sala == '428' %}selected{% endif %}>428</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Aplicador(a):</label>
+              <select class="field-select" name="sub_aplicador">
+                <option value="">Selecione</option>
+                <option value="José Zesinho" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
+                <option value="Maria Silva" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Conteúdo da Prova</label>
+              <div class="textarea-wrapper">
+                <textarea class="field-textarea" name="sub_conteudo" maxlength="250" placeholder="Descreva o conteúdo da prova...">{{ wizard.provas.sub.conteudo if wizard.provas and wizard.provas.sub else '' }}</textarea>
+                <span class="char-counter">0 / 250 caracteres</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a class="btn-action btn-back" href="{{ url_for('calendario_edit', materia_id=materia_id, step=3) }}">
+              <svg width="19" height="17" viewBox="0 0 19 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 8.5L1 8.5M1 8.5L9.5 16M1 8.5L9.5 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Voltar
+            </a>
+            <a class="btn-action btn-cancel" href="{{ url_for('calendario_view', materia_id=materia_id) }}">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 1L1 13M1 1L13 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Cancelar
+            </a>
+            <button class="btn-action btn-save" type="submit">
+              <svg width="18" height="13" viewBox="0 0 18 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17 1L6 12L1 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Salvar
+            </button>
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

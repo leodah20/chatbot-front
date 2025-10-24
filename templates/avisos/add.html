@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <!-- Configuração básica da página -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Novo Aviso - Painel Administrativo</title>
+
+    <!-- Carregamento otimizado de fontes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS específico da seção de avisos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
+</head>
+<body>
+    <!-- Cabeçalho principal -->
+    <header>
+        <div class="top">
+            <!-- Logo e título da UNIP -->
+            <div class="brand">
+                <img src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP Logo">
+                <h1>Painel Administrativo</h1>
+            </div>
+            
+            <!-- Informações do usuário logado -->
+            <div class="user">
+                <div class="meta">
+                    <div class="name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
+                    <div class="email">{{ session.user.email if session.user else '' }}</div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout">sair</a>
+            </div>
+        </div>
+        
+        <!-- Navegação -->
+        <div class="bottom">
+            <!-- Link para voltar à lista de avisos -->
+            <a href="{{ url_for('avisos_list') }}" style="color: white; text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                <svg class="icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.8333 10H4.16667M10 4.16667L4.16667 10L10 15.8333" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Voltar aos Avisos</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Conteúdo principal -->
+    <main class="container">
+        <!-- Card principal -->
+        <div class="card">
+            <!-- Cabeçalho da seção -->
+            <div class="section-title">
+                <svg class="icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M35 15H5C3.61929 15 2.5 16.1193 2.5 17.5V32.5C2.5 33.8807 3.61929 35 5 35H35C36.3807 35 37.5 33.8807 37.5 32.5V17.5C37.5 16.1193 36.3807 15 35 15Z" fill="#1583FF"/>
+                    <path d="M35 5H5C3.61929 5 2.5 6.11929 2.5 7.5V12.5C2.5 13.8807 3.61929 15 5 15H35C36.3807 15 37.5 13.8807 37.5 12.5V7.5C37.5 6.11929 36.3807 5 35 5Z" fill="#1583FF"/>
+                    <path d="M8.75 8.75H31.25V11.25H8.75V8.75Z" fill="white"/>
+                    <path d="M8.75 20H31.25V22.5H8.75V20Z" fill="white"/>
+                    <path d="M8.75 25H31.25V27.5H8.75V25Z" fill="white"/>
+                    <path d="M8.75 30H31.25V32.5H8.75V30Z" fill="white"/>
+                </svg>
+                <div>
+                    <h2>Novo Aviso</h2>
+                    <p>Crie um novo aviso para comunicar com os usuários</p>
+                </div>
+            </div>
+
+            <!-- Sistema de mensagens flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Formulário de criação -->
+            <form method="POST" class="form-container">
+                <div class="form-grid">
+                    <!-- Título do aviso -->
+                    <div class="form-group">
+                        <label for="titulo" class="form-label">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.5 5H17.5M2.5 10H17.5M2.5 15H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Título do Aviso *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="titulo" 
+                            name="titulo" 
+                            class="form-input" 
+                            placeholder="Digite o título do aviso"
+                            required
+                            maxlength="200"
+                        >
+                        <small class="form-help">Máximo 200 caracteres</small>
+                    </div>
+
+                    <!-- Data do aviso -->
+                    <div class="form-group">
+                        <label for="data" class="form-label">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15.8333 3.33333H4.16667C3.24619 3.33333 2.5 4.07952 2.5 5V16.6667C2.5 17.5871 3.24619 18.3333 4.16667 18.3333H15.8333C16.7538 18.3333 17.5 17.5871 17.5 16.6667V5C17.5 4.07952 16.7538 3.33333 15.8333 3.33333Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M13.3333 1.66667V5M6.66667 1.66667V5M2.5 8.33333H17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Data do Aviso *
+                        </label>
+                        <input 
+                            type="date" 
+                            id="data" 
+                            name="data" 
+                            class="form-input" 
+                            required
+                        >
+                        <small class="form-help">Data de publicação do aviso</small>
+                    </div>
+
+                    <!-- Conteúdo do aviso -->
+                    <div class="form-group full-width">
+                        <label for="conteudo" class="form-label">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.5 5H17.5M2.5 10H17.5M2.5 15H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Conteúdo do Aviso *
+                        </label>
+                        <textarea 
+                            id="conteudo" 
+                            name="conteudo" 
+                            class="form-textarea" 
+                            placeholder="Digite o conteúdo completo do aviso..."
+                            required
+                            rows="8"
+                            maxlength="2000"
+                        ></textarea>
+                        <small class="form-help">Máximo 2000 caracteres</small>
+                    </div>
+
+                    <!-- Autor do aviso -->
+                    <div class="form-group">
+                        <label for="id_professor" class="form-label">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
+                                <path d="M0 17.5C0 13.9101 2.91015 11 6.5 11H13.5C17.0899 11 20 13.9101 20 17.5V20H0V17.5Z" fill="currentColor"/>
+                            </svg>
+                            Professor Responsável
+                        </label>
+                        <select id="id_professor" name="id_professor" class="form-select">
+                            <option value="">Selecione um professor (opcional)</option>
+                            <option value="1">João Silva</option>
+                            <option value="2">Maria Santos</option>
+                            <option value="3">Carlos Oliveira</option>
+                        </select>
+                        <small class="form-help">Deixe em branco se for um aviso geral</small>
+                    </div>
+
+                    <!-- Coordenador responsável -->
+                    <div class="form-group">
+                        <label for="id_coordenador" class="form-label">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
+                                <path d="M0 17.5C0 13.9101 2.91015 11 6.5 11H13.5C17.0899 11 20 13.9101 20 17.5V20H0V17.5Z" fill="currentColor"/>
+                            </svg>
+                            Coordenador Responsável
+                        </label>
+                        <select id="id_coordenador" name="id_coordenador" class="form-select">
+                            <option value="">Selecione um coordenador (opcional)</option>
+                            <option value="1">Ana Coordenadora</option>
+                            <option value="2">Pedro Coordenador</option>
+                        </select>
+                        <small class="form-help">Deixe em branco se for um aviso geral</small>
+                    </div>
+                </div>
+
+                <!-- Botões de ação -->
+                <div class="form-actions">
+                    <a href="{{ url_for('avisos_list') }}" class="btn btn-secondary">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.8333 10H4.16667M10 4.16667L4.16667 10L10 15.8333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Cancelar
+                    </a>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 4.16667V15.8333M4.16667 10H15.8333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Criar Aviso
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- JavaScript para funcionalidades do formulário -->
+    <script>
+        // Contador de caracteres
+        const conteudoTextarea = document.getElementById('conteudo');
+        const tituloInput = document.getElementById('titulo');
+        
+        // Criar contadores
+        const tituloCounter = document.createElement('small');
+        tituloCounter.className = 'form-help';
+        tituloCounter.style.float = 'right';
+        tituloInput.parentNode.appendChild(tituloCounter);
+        
+        const conteudoCounter = document.createElement('small');
+        conteudoCounter.className = 'form-help';
+        conteudoCounter.style.float = 'right';
+        conteudoTextarea.parentNode.appendChild(conteudoCounter);
+        
+        // Atualizar contadores
+        function updateCounters() {
+            tituloCounter.textContent = `${tituloInput.value.length}/200`;
+            conteudoCounter.textContent = `${conteudoTextarea.value.length}/2000`;
+            
+            // Mudar cor se estiver próximo do limite
+            if (tituloInput.value.length > 180) {
+                tituloCounter.style.color = '#DC3545';
+            } else {
+                tituloCounter.style.color = '#6B7280';
+            }
+            
+            if (conteudoTextarea.value.length > 1800) {
+                conteudoCounter.style.color = '#DC3545';
+            } else {
+                conteudoCounter.style.color = '#6B7280';
+            }
+        }
+        
+        tituloInput.addEventListener('input', updateCounters);
+        conteudoTextarea.addEventListener('input', updateCounters);
+        
+        // Inicializar contadores
+        updateCounters();
+        
+        // Validação do formulário
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const titulo = tituloInput.value.trim();
+            const conteudo = conteudoTextarea.value.trim();
+            const data = document.getElementById('data').value;
+            
+            if (!titulo || !conteudo || !data) {
+                e.preventDefault();
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+            
+            if (titulo.length > 200) {
+                e.preventDefault();
+                alert('O título deve ter no máximo 200 caracteres.');
+                return;
+            }
+            
+            if (conteudo.length > 2000) {
+                e.preventDefault();
+                alert('O conteúdo deve ter no máximo 2000 caracteres.');
+                return;
+            }
+        });
+        
+        // Definir data padrão como hoje
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('data').value = today;
+    </script>
+</body>
+</html>

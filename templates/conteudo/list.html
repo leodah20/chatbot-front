@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conteúdo - Lista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/conteudo_styles.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-main">
+      <div class="header-content">
+        <div class="brand-section">
+          <img src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP Logo" class="logo" />
+          <h1 class="site-title">Painel Administrativo</h1>
+        </div>
+        <div class="user-section">
+          <div class="user-info">
+            <div class="user-name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
+            <div class="user-email">{{ session.user.email if session.user else '' }}</div>
+          </div>
+          <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+        </div>
+      </div>
+    </div>
+    <div class="header-sub">
+      <div class="menu-toggle">
+        <svg class="menu-icon" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9916 6.66419H0.999649M23.9916 0.999512H0.999649M23.9916 12.3289H0.999649M23.9916 17.9936H0.999649" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="menu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section class="content-card">
+      <div class="card-header">
+        <svg class="header-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 6H21M8 12H21M8 18H21M3 6H3.01M3 12H3.01M3 18H3.01" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h2 class="page-title">Conteúdo</h2>
+      </div>
+      <div class="separator"></div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alert-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="actions-bar">
+        <a class="add-button" href="{{ url_for('conteudo_add') }}">
+          <svg class="add-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="#1583FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Adicionar Conteúdo</span>
+        </a>
+      </div>
+
+      {% if grouped %}
+      <div class="grid">
+        <aside class="subjects">
+          <div class="subjects-header">
+            <span class="course-code">{{ curso_codigo or '' }}</span>
+            <span class="course-name">{{ curso_nome or '' }}</span>
+            <a class="icon-button" title="Adicionar" href="{{ url_for('conteudo_add') }}">+</a>
+          </div>
+          <ul class="subjects-list">
+            {% for disciplina, itens in grouped.items() %}
+              <li class="subject-item {{ 'active' if disciplina == disciplina_selecionada else '' }}">
+                <a href="{{ url_for('conteudo_list', disciplina=disciplina) }}">{{ disciplina }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </aside>
+
+        <section class="materials">
+          <header class="materials-header">
+            <h3 class="materials-title">{{ disciplina_selecionada }}</h3>
+          </header>
+
+          <div class="materials-block">
+            <h4 class="block-title">Materiais de Aula</h4>
+            <ul class="items">
+              {% for c in grouped.get(disciplina_selecionada, []) if (c.tipo == 'aula' or c.tipo == 'Material de Aula') %}
+                <li class="item">
+                  <span class="item-title">{{ c.titulo }}</span>
+                  {% if c.url_arquivo %}
+                    <a href="{{ c.url_arquivo }}" target="_blank" rel="noopener" class="item-link">Arquivo</a>
+                  {% endif %}
+                  {% if c.link %}
+                    <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
+                  {% endif %}
+                  <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="materials-block">
+            <h4 class="block-title">Materiais Complementares</h4>
+            <ul class="items">
+              {% for c in grouped.get(disciplina_selecionada, []) if (c.tipo == 'complementar' or c.tipo == 'Material Complementar') %}
+                <li class="item">
+                  <span class="item-title">{{ c.titulo }}</span>
+                  {% if c.url_arquivo %}
+                    <a href="{{ c.url_arquivo }}" target="_blank" rel="noopener" class="item-link">Arquivo</a>
+                  {% endif %}
+                  {% if c.link %}
+                    <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
+                  {% endif %}
+                  <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </section>
+      </div>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhum conteúdo cadastrado.</p>
+          <a class="add-button" href="{{ url_for('conteudo_add') }}">Adicionar Conteúdo</a>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

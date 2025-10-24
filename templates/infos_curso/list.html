@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informações do Curso - UNIP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/infos_curso_styles.css') }}">
+</head>
+<body class="page-body">
+  <header class="page-header">
+    <div class="header-top">
+      <div class="header-brand">
+        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <h1 class="header-title">Painel Administrativo</h1>
+      </div>
+      <div class="header-user">
+        <div class="user-info-panel">
+          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
+          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+      </div>
+    </div>
+    <div class="header-submenu">
+      <div class="submenu-wrapper">
+        <svg class="icon-menu" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9915 6.66419H0.999512M23.9915 0.999512H0.999512M23.9915 12.3289H0.999512M23.9915 17.9936H0.999512" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="submenu-text">Menu</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container-card">
+      <div class="info-header">
+        <svg class="icon-computer" viewBox="0 0 61 73" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.3 68H40.7M30.5 54V68M10.1 5H50.9C53.7167 5 56 8.13401 56 12V47C56 50.866 53.7167 54 50.9 54H10.1C7.28335 54 5 50.866 5 47V12C5 8.13401 7.28335 5 10.1 5Z" stroke="#023D71" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h2 class="info-title">Informações do Curso</h2>
+      </div>
+
+      <div class="divider-line"></div>
+
+      <div class="course-code-wrapper">
+        <span class="course-code">13701 -</span>
+        <span class="course-name">Ciência da Computação</span>
+      </div>
+
+      <a href="{{ url_for('infos_curso_add') }}" class="btn-add-info">
+        <svg class="icon-add-plus" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.5 11.9V25.1M11.9 18.5H25.1M35 18.5C35 27.6127 27.6127 35 18.5 35C9.3873 35 2 27.6127 2 18.5C2 9.3873 9.3873 2 18.5 2C27.6127 2 35 9.3873 35 18.5Z" stroke="#1583FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="add-info-text">Adicionar Informações</span>
+      </a>
+
+      <div class="info-sections-wrapper">
+        <!-- APS Section -->
+        <details class="info-item">
+          <summary class="info-item-summary">
+            <span class="info-item-title">APS - Atividades Práticas Supervisionadas</span>
+          </summary>
+          <div class="info-item-content">
+            <div class="info-field-wrapper">
+              <div class="info-field">
+                <span class="field-label">Semestre:</span>
+                <span class="field-value">7º Semestre</span>
+              </div>
+              <div class="info-field">
+                <span class="field-label">Tema:</span>
+                <span class="field-value">Desenvolvimento de um Chatbot Assistente Acadêmico</span>
+              </div>
+              <div class="info-field">
+                <span class="field-label">Data de Entrega:</span>
+                <span class="field-value">14/08/2025</span>
+              </div>
+            </div>
+
+            <div class="pdf-link-wrapper">
+              <div class="pdf-title">Manual APS</div>
+              <a href="#" class="pdf-link">
+                <svg class="icon-pdf" viewBox="0 0 19 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.625 1H3.125C2.56141 1 2.02091 1.24232 1.6224 1.67365C1.22388 2.10499 1 2.69 1 3.3V21.7C1 22.31 1.22388 22.895 1.6224 23.3263C2.02091 23.7577 2.56141 24 3.125 24H15.875C16.4386 24 16.9791 23.7577 17.3776 23.3263C17.7761 22.895 18 22.31 18 21.7V7.9M11.625 1L18 7.9M11.625 1V7.9H18M13.75 13.65H5.25M13.75 18.25H5.25M7.375 9.05H5.25" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="pdf-filename">ManualAPS.pdf</span>
+              </a>
+            </div>
+
+            <a href="#" class="btn-edit">
+              <svg class="icon-edit" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1.82843C16.2626 1.56578 16.5744 1.35744 16.9176 1.2153C17.2608 1.07316 17.6286 1 18 1C18.3714 1 18.7392 1.07316 19.0824 1.2153C19.4256 1.35744 19.7374 1.56578 20 1.82843C20.2626 2.09107 20.471 2.40287 20.6131 2.74603C20.7553 3.0892 20.8284 3.45699 20.8284 3.82843C20.8284 4.19986 20.7553 4.56766 20.6131 4.91082C20.471 5.25398 20.2626 5.56578 20 5.82843L6.5 19.3284L1 20.8284L2.5 15.3284L16 1.82843Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="edit-text">Editar</span>
+            </a>
+          </div>
+        </details>
+
+        <!-- TCC Section -->
+        <details class="info-item">
+          <summary class="info-item-summary">
+            <span class="info-item-title">TCC - Trabalho de Conclusão de Curso</span>
+          </summary>
+          <div class="info-item-content">
+            <div class="tcc-items-wrapper">
+              <!-- TC I -->
+              <div class="tcc-item">
+                <h3 class="tcc-item-title">TC I</h3>
+
+                <div class="info-field">
+                  <span class="field-label">Professor(a):</span>
+                  <span class="field-value">Álvaro</span>
+                </div>
+
+                <div class="tcc-text-field">
+                  <span class="tcc-text-label">Dia de Orientação</span>
+                  <span class="tcc-text-value">Terças, das 18h às 19h</span>
+                </div>
+
+                <div class="tcc-description-field">
+                  <span class="tcc-text-label">Regras</span>
+                  <span class="tcc-text-value">O TCC I consiste na elaboração do projeto de pesquisa, incluindo a definição do tema, justificativa, objetivos e metodologia...</span>
+                </div>
+
+                <div class="tcc-schedule">
+                  <div class="section-title">Cronograma de Entregas</div>
+                  <div class="tcc-schedule-item">
+                    <div class="tcc-schedule-title">Etapas de Revisão:</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                  </div>
+
+                  <div class="tcc-schedule-item">
+                    <div class="tcc-schedule-title">Entrega de Alterações</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                  </div>
+
+                  <div class="tcc-date-row">
+                    <div class="tcc-date-field">
+                      <span class="field-label">Banca Final:</span>
+                      <span class="field-value">17/12/2025</span>
+                    </div>
+                    <div class="tcc-date-field">
+                      <span class="field-label">Entrega Final:</span>
+                      <span class="field-value">17/12/2025</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tcc-divider"></div>
+              </div>
+
+              <!-- TC II -->
+              <div class="tcc-item">
+                <h3 class="tcc-item-title">TC II</h3>
+
+                <div class="info-field">
+                  <span class="field-label">Professor(a):</span>
+                  <span class="field-value">Álvaro</span>
+                </div>
+
+                <div class="tcc-text-field">
+                  <span class="tcc-text-label">Dia de Orientação</span>
+                  <span class="tcc-text-value">Terças, das 18h às 19h</span>
+                </div>
+
+                <div class="tcc-description-field">
+                  <span class="tcc-text-label">Regras</span>
+                  <span class="tcc-text-value">O TCC I consiste na elaboração do projeto de pesquisa, incluindo a definição do tema, justificativa, objetivos e metodologia...</span>
+                </div>
+
+                <div class="tcc-schedule">
+                  <div class="section-title">Cronograma de Entregas</div>
+                  <div class="tcc-schedule-item">
+                    <div class="tcc-schedule-title">Etapas de Revisão:</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                  </div>
+
+                  <div class="tcc-schedule-item">
+                    <div class="tcc-schedule-title">Entrega de Alterações</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                    <div class="tcc-schedule-subtitle">Módulo de Testes</div>
+                    <div class="tcc-schedule-date">17/08/2025</div>
+                  </div>
+
+                  <div class="tcc-date-row">
+                    <div class="tcc-date-field">
+                      <span class="field-label">Banca Final:</span>
+                      <span class="field-value">17/12/2025</span>
+                    </div>
+                    <div class="tcc-date-field">
+                      <span class="field-label">Entrega Final:</span>
+                      <span class="field-value">17/12/2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <a href="{{ url_for('infos_curso_add_tcc') }}" class="btn-edit">
+              <svg class="icon-edit" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1.82843C16.2626 1.56578 16.5744 1.35744 16.9176 1.2153C17.2608 1.07316 17.6286 1 18 1C18.3714 1 18.7392 1.07316 19.0824 1.2153C19.4256 1.35744 19.7374 1.56578 20 1.82843C20.2626 2.09107 20.471 2.40287 20.6131 2.74603C20.7553 3.0892 20.8284 3.45699 20.8284 3.82843C20.8284 4.19986 20.7553 4.56766 20.6131 4.91082C20.471 5.25398 20.2626 5.56578 20 5.82843L6.5 19.3284L1 20.8284L2.5 15.3284L16 1.82843Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="edit-text">Editar</span>
+            </a>
+          </div>
+        </details>
+
+        <!-- Estágio Section -->
+        <details class="info-item">
+          <summary class="info-item-summary">
+            <span class="info-item-title">Estágio</span>
+          </summary>
+          <div class="info-item-content">
+            <div class="info-field-wrapper">
+              <div class="info-field-group">
+                <div class="info-field">
+                  <span class="field-label">Carga Horária:</span>
+                  <span class="field-value">440h</span>
+                </div>
+                <div class="info-field">
+                  <span class="field-label">Orientador Responsável:</span>
+                  <span class="field-value">Álvaro</span>
+                </div>
+              </div>
+
+              <div class="pdf-link-wrapper">
+                <div class="pdf-title">Kit do Estudante</div>
+                <a href="#" class="pdf-link">
+                  <svg class="icon-pdf" viewBox="0 0 19 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.625 1H3.125C2.56141 1 2.02091 1.24232 1.6224 1.67365C1.22388 2.10499 1 2.69 1 3.3V21.7C1 22.31 1.22388 22.895 1.6224 23.3263C2.02091 23.7577 2.56141 24 3.125 24H15.875C16.4386 24 16.9791 23.7577 17.3776 23.3263C17.7761 22.895 18 22.31 18 21.7V7.9M11.625 1L18 7.9M11.625 1V7.9H18M13.75 13.65H5.25M13.75 18.25H5.25M7.375 9.05H5.25" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="pdf-filename">Manual do Estágio.pdf</span>
+                </a>
+                <a href="#" class="pdf-link">
+                  <svg class="icon-pdf" viewBox="0 0 19 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.625 1H3.125C2.56141 1 2.02091 1.24232 1.6224 1.67365C1.22388 2.10499 1 2.69 1 3.3V21.7C1 22.31 1.22388 22.895 1.6224 23.3263C2.02091 23.7577 2.56141 24 3.125 24H15.875C16.4386 24 16.9791 23.7577 17.3776 23.3263C17.7761 22.895 18 22.31 18 21.7V7.9M11.625 1L18 7.9M11.625 1V7.9H18M13.75 13.65H5.25M13.75 18.25H5.25M7.375 9.05H5.25" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="pdf-filename">Manual do Estágio.pdf</span>
+                </a>
+                <a href="#" class="pdf-link">
+                  <svg class="icon-pdf" viewBox="0 0 19 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.625 1H3.125C2.56141 1 2.02091 1.24232 1.6224 1.67365C1.22388 2.10499 1 2.69 1 3.3V21.7C1 22.31 1.22388 22.895 1.6224 23.3263C2.02091 23.7577 2.56141 24 3.125 24H15.875C16.4386 24 16.9791 23.7577 17.3776 23.3263C17.7761 22.895 18 22.31 18 21.7V7.9M11.625 1L18 7.9M11.625 1V7.9H18M13.75 13.65H5.25M13.75 18.25H5.25M7.375 9.05H5.25" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="pdf-filename">Manual do Estágio.pdf</span>
+                </a>
+              </div>
+            </div>
+
+            <div class="tcc-schedule">
+              <div class="section-title">Cronograma de Entregas</div>
+              <div class="tcc-schedule-item">
+                <div class="tcc-schedule-title">Revisão Relatório</div>
+                <div class="tcc-schedule-subtitle">Primeira Versão</div>
+                <div class="tcc-schedule-date">17/08/2025</div>
+                <div class="tcc-schedule-subtitle">Segunda Versão</div>
+                <div class="tcc-schedule-date">17/08/2025</div>
+              </div>
+
+              <div class="tcc-date-field">
+                <span class="field-label">Relatório Final:</span>
+                <span class="field-value">17/12/2025</span>
+              </div>
+            </div>
+
+            <a href="{{ url_for('infos_curso_add_estagio') }}" class="btn-edit">
+              <svg class="icon-edit" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1.82843C16.2626 1.56578 16.5744 1.35744 16.9176 1.2153C17.2608 1.07316 17.6286 1 18 1C18.3714 1 18.7392 1.07316 19.0824 1.2153C19.4256 1.35744 19.7374 1.56578 20 1.82843C20.2626 2.09107 20.471 2.40287 20.6131 2.74603C20.7553 3.0892 20.8284 3.45699 20.8284 3.82843C20.8284 4.19986 20.7553 4.56766 20.6131 4.91082C20.471 5.25398 20.2626 5.56578 20 5.82843L6.5 19.3284L1 20.8284L2.5 15.3284L16 1.82843Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="edit-text">Editar</span>
+            </a>
+          </div>
+        </details>
+
+        <!-- Horas Complementares Section -->
+        <details class="info-item">
+          <summary class="info-item-summary">
+            <span class="info-item-title">Horas Complementares</span>
+          </summary>
+          <div class="info-item-content">
+            <div class="info-field">
+              <span class="field-label">Carga Horária:</span>
+              <span class="field-value">440h</span>
+            </div>
+
+            <div class="pdf-link-wrapper">
+              <div class="pdf-title">Regulamento</div>
+              <a href="#" class="pdf-link">
+                <svg class="icon-pdf" viewBox="0 0 19 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.625 1H3.125C2.56141 1 2.02091 1.24232 1.6224 1.67365C1.22388 2.10499 1 2.69 1 3.3V21.7C1 22.31 1.22388 22.895 1.6224 23.3263C2.02091 23.7577 2.56141 24 3.125 24H15.875C16.4386 24 16.9791 23.7577 17.3776 23.3263C17.7761 22.895 18 22.31 18 21.7V7.9M11.625 1L18 7.9M11.625 1V7.9H18M13.75 13.65H5.25M13.75 18.25H5.25M7.375 9.05H5.25" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="pdf-filename">Manual do Estágio.pdf</span>
+              </a>
+            </div>
+
+            <div class="category-distribution">
+              <div class="section-title">Distribuição Por Categoria:</div>
+              <div class="category-item">
+                <div class="category-name">Cursos Extras</div>
+                <div class="category-limit">Limite de até 40% (100 horas)</div>
+              </div>
+              <div class="category-item">
+                <div class="category-name">Cultural</div>
+                <div class="category-limit">Limite de até 40% (100 horas)</div>
+              </div>
+              <div class="category-item">
+                <div class="category-name">Científico</div>
+                <div class="category-limit">Limite de até 40% (100 horas)</div>
+              </div>
+            </div>
+
+            <a href="#" class="btn-edit">
+              <svg class="icon-edit" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1.82843C16.2626 1.56578 16.5744 1.35744 16.9176 1.2153C17.2608 1.07316 17.6286 1 18 1C18.3714 1 18.7392 1.07316 19.0824 1.2153C19.4256 1.35744 19.7374 1.56578 20 1.82843C20.2626 2.09107 20.471 2.40287 20.6131 2.74603C20.7553 3.0892 20.8284 3.45699 20.8284 3.82843C20.8284 4.19986 20.7553 4.56766 20.6131 4.91082C20.471 5.25398 20.2626 5.56578 20 5.82843L6.5 19.3284L1 20.8284L2.5 15.3284L16 1.82843Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="edit-text">Editar</span>
+            </a>
+          </div>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Add class to title when details is opened
+    document.querySelectorAll('.info-item').forEach(details => {
+      details.addEventListener('toggle', function() {
+        const title = this.querySelector('.info-item-title');
+        if (this.open) {
+          title.classList.add('expanded');
+        } else {
+          title.classList.remove('expanded');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

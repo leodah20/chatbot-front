@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Informações Docentes - Lista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-main">
+            <div class="header-content">
+                <div class="brand-section">
+                    <img src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP Logo" class="logo">
+                    <h1 class="site-title">Painel Administrativo</h1>
+                </div>
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
+                        <div class="user-email">{{ session.user.email if session.user else '' }}</div>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+                </div>
+            </div>
+        </div>
+        <div class="header-sub">
+            <div class="menu-toggle">
+                <svg class="menu-icon" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23.9916 6.66419H0.999649M23.9916 0.999512H0.999649M23.9916 12.3289H0.999649M23.9916 17.9936H0.999649" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="menu-text">Menu</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="content-card">
+            <div class="card-header">
+                <svg class="header-icon" width="52" height="63" viewBox="0 0 52 63" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M41.4 16.1539C41.4 25.0754 34.4492 32.3077 25.875 32.3077C17.3008 32.3077 10.35 25.0754 10.35 16.1539C10.35 7.23233 17.3008 0 25.875 0C34.4492 0 41.4 7.23233 41.4 16.1539Z" fill="#023D71"/>
+                    <path d="M0 56.4244C0 45.7816 7.437 37.1538 16.611 37.1538H35.139C44.313 37.1538 51.75 45.7816 51.75 56.4244V57.0706C51.75 60.3453 49.4617 63 46.6389 63H5.11108C2.28831 63 0 60.3453 0 57.0706V56.4244Z" fill="#023D71"/>
+                </svg>
+                <h2 class="page-title">Informações Docentes</h2>
+            </div>
+            <div class="separator"></div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alert-container">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <a href="{{ url_for('docentes_add') }}" class="add-button">
+                <svg class="add-icon" width="34" height="30" viewBox="0 0 34 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.6023 28.125V25.125C22.6023 23.5337 21.9989 22.0076 20.9248 20.8824C19.8507 19.7571 18.394 19.125 16.875 19.125H6.85227C5.33331 19.125 3.87655 19.7571 2.80248 20.8824C1.72841 22.0076 1.125 23.5337 1.125 25.125V28.125M28.3295 8.625V17.625M32.625 13.125H24.0341M17.5909 7.125C17.5909 10.4387 15.0267 13.125 11.8636 13.125C8.70055 13.125 6.13636 10.4387 6.13636 7.125C6.13636 3.81129 8.70055 1.125 11.8636 1.125C15.0267 1.125 17.5909 3.81129 17.5909 7.125Z" stroke="#1583FF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="add-text">Adicionar Docente</span>
+            </a>
+
+            <div class="selector-container">
+                <label class="selector-label">Selecione o Docente:</label>
+                <div class="custom-select" onclick="toggleDropdown(event)">
+                    <span class="selected-value">Selecione</span>
+                    <svg class="dropdown-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                {% if docentes %}
+                    <div id="dropdown-menu" class="dropdown-menu">
+                        {% for docente in docentes %}
+                            <div class="dropdown-option" onclick="selectDocente({{ docente.id }}, '{{ docente.nome_professor }} {{ docente.sobrenome_professor }}')">
+                                {{ docente.nome_professor }} {{ docente.sobrenome_professor }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleDropdown(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('dropdown-menu');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function selectDocente(id, nome) {
+            document.querySelector('.selected-value').textContent = nome;
+            const dropdown = document.getElementById('dropdown-menu');
+            if (dropdown) {
+                dropdown.classList.remove('active');
+            }
+            window.location.href = `/docentes/view/${id}`;
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('dropdown-menu');
+            const customSelect = document.querySelector('.custom-select');
+            if (dropdown && customSelect && !customSelect.contains(event.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

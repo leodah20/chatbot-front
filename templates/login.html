@@ -1,17 +1,23 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
+    <!-- Configuração básica da página -->
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login - Painel Admin Chatbot</title>
+    
+    <!-- Carregamento otimizado de fontes Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+    
+    <!-- CSS específico da página de login -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login_styles.css') }}" />
 </head>
 <body>
     <main class="page">
       <section class="container">
+        <!-- Logo da UNIP -->
         <img
           class="logo"
           src="https://api.builder.io/api/v1/image/assets/TEMP/dca42af74849142d727a41685e465a6b5dc99c42?width=533"
@@ -19,27 +25,35 @@
           width="266"
           height="85"
         />
+        
+        <!-- Títulos da página -->
         <h1 class="title">Área Administrativa</h1>
         <h2 class="subtitle">ChatBot</h2>
 
+        <!-- Sistema de mensagens flash (sucesso/erro) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages mb-4 w-full max-w-[650px]"> {% for category, message in messages %}
-                    <div class="p-3 rounded {{ 'bg-red-100 text-red-700 border border-red-200' if category == 'error' else 'bg-blue-100 text-blue-700 border border-blue-200' }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+                <div class="flash-messages mb-4 w-full max-w-[650px]"> 
+                    {% for category, message in messages %}
+                        <div class="p-3 rounded {{ 'bg-red-100 text-red-700 border border-red-200' if category == 'error' else 'bg-blue-100 text-blue-700 border border-blue-200' }}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
             {% endif %}
         {% endwith %}
 
+        <!-- Formulário de login -->
         <form class="form" action="{{ url_for('login') }}" method="post">
+          <!-- Campo de email -->
           <label class="sr-only" for="email">Email</label>
           <input id="email" name="email" type="email" placeholder="Email" required class="input" />
 
+          <!-- Campo de senha -->
           <label class="sr-only" for="senha">Senha</label>
           <input id="senha" name="password" type="password" placeholder="Senha" required class="input" />
 
+          <!-- Botão de submissão -->
           <button type="submit" class="btn-primary">Entrar</button>
 
           <div class="actions">

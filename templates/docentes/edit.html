@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Informações Docentes - Editar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-main">
+            <div class="header-content">
+                <div class="brand-section">
+                    <img src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP Logo" class="logo">
+                    <h1 class="site-title">Painel Administrativo</h1>
+                </div>
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
+                        <div class="user-email">{{ session.user.email if session.user else '' }}</div>
+                    </div>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+                </div>
+            </div>
+        </div>
+        <div class="header-sub">
+            <div class="menu-toggle">
+                <svg class="menu-icon" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23.9915 6.66419H0.999512M23.9915 0.999512H0.999512M23.9915 12.3289H0.999512M23.9915 17.9936H0.999512" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="menu-text">Menu</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="content-card">
+            <div class="action-header">
+                <h2 class="page-title">Informações Docentes</h2>
+            </div>
+            
+            <div class="action-title-row">
+                <svg class="action-icon" width="53" height="53" viewBox="0 0 53 53" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M26.5 51.5H51.5M39 3.31446C40.1051 2.15268 41.6039 1.5 43.1667 1.5C43.9405 1.5 44.7067 1.66024 45.4217 1.97156C46.1366 2.28289 46.7862 2.73921 47.3333 3.31446C47.8805 3.88972 48.3146 4.57265 48.6107 5.32426C48.9068 6.07586 49.0592 6.88143 49.0592 7.69497C49.0592 8.5085 48.9068 9.31407 48.6107 10.0657C48.3146 10.8173 47.8805 11.5002 47.3333 12.0755L12.6111 48.5797L1.5 51.5L4.27778 39.8187L39 3.31446Z" stroke="#3292F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h3 class="action-title">Editar</h3>
+            </div>
+            <div class="separator-blue"></div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="alert-container">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('docentes_edit', id=docente.id) }}" class="form-panel">
+                <div class="form-row">
+                    <div class="form-field form-field-large">
+                        <label class="input-label">Nome do Docente:</label>
+                        <input type="text" name="nome" value="{{ docente.nome_professor }} {{ docente.sobrenome_professor }}" class="text-input" required>
+                    </div>
+                    <div class="form-field form-field-small">
+                        <label class="input-label">Nível de Acesso:</label>
+                        <div class="select-wrapper">
+                            <select name="nivel_acesso" class="text-input">
+                                <option value="">Selecione</option>
+                                {% if docente.nivel_acesso == 'professor' %}
+                                <option value="professor" selected>Professor</option>
+                                <option value="coordenador">Coordenador</option>
+                                {% elif docente.nivel_acesso == 'coordenador' %}
+                                <option value="professor">Professor</option>
+                                <option value="coordenador" selected>Coordenador</option>
+                                {% else %}
+                                <option value="professor">Professor</option>
+                                <option value="coordenador">Coordenador</option>
+                                {% endif %}
+                            </select>
+                            <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field form-field-large">
+                        <label class="input-label">Email institucional:</label>
+                        <input type="email" name="email" value="{{ docente.email_institucional }}" class="text-input" required>
+                    </div>
+                    <div class="form-field form-field-small">
+                        <label class="input-label">Matrícula:</label>
+                        <input type="text" value="{{ docente.id_funcional }}" class="text-input" readonly style="background-color: #f5f5f5;">
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="input-label">Disciplinas</label>
+                    <div class="select-wrapper">
+                        <select name="disciplinas" class="text-input">
+                            <option value="">Selecione</option>
+                            <option value="ciencia_computacao">Ciência da Computação</option>
+                            <option value="ads">Análise e Desenvolvimento de Sistemas</option>
+                            <option value="sistemas_info">Sistemas de Informação</option>
+                        </select>
+                        <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="schedule-section">
+                    <h3 class="schedule-title">Horário de Atendimento:</h3>
+                    
+                    <div class="form-field">
+                        <label class="schedule-label">Dia da Semana:</label>
+                        <div class="select-wrapper">
+                            <select name="dia_semana" class="text-input">
+                                <option value="">Selecione</option>
+                                <option value="segunda">Segunda-feira</option>
+                                <option value="terca">Terça-feira</option>
+                                <option value="quarta">Quarta-feira</option>
+                                <option value="quinta">Quinta-feira</option>
+                                <option value="sexta">Sexta-feira</option>
+                            </select>
+                            <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="time-inputs">
+                        <div class="form-field">
+                            <label class="schedule-label">Horário de Início</label>
+                            <div class="select-wrapper">
+                                <select name="horario_inicio" class="text-input">
+                                    <option value="">Selecione</option>
+                                    <option value="08:00">08:00</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="18:00">18:00</option>
+                                </select>
+                                <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label class="schedule-label">Horário Fim</label>
+                            <div class="select-wrapper">
+                                <select name="horario_fim" class="text-input">
+                                    <option value="">Selecione</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="18:00">18:00</option>
+                                    <option value="22:00">22:00</option>
+                                </select>
+                                <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('docentes_view', id=docente.id) }}" class="form-btn form-btn-cancel">
+                        <svg class="btn-icon" width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.75 0.75L0.75 9.75M0.75 0.75L9.75 9.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Cancelar</span>
+                    </a>
+                    <button type="submit" class="form-btn form-btn-save">
+                        <svg class="btn-icon" width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.75 0.75L4.5 9L0.75 5.25" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Salvar</span>
+                    </button>
+                </div>
+
+                <script>
+                    // Set selected values after page load
+                    document.addEventListener('DOMContentLoaded', function() {
+                        {% if docente.dia_semana %}
+                        document.querySelector('select[name="dia_semana"]').value = '{{ docente.dia_semana }}';
+                        {% endif %}
+                        {% if docente.horario_inicio %}
+                        document.querySelector('select[name="horario_inicio"]').value = '{{ docente.horario_inicio }}';
+                        {% endif %}
+                        {% if docente.horario_fim %}
+                        document.querySelector('select[name="horario_fim"]').value = '{{ docente.horario_fim }}';
+                        {% endif %}
+                    });
+                </script>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

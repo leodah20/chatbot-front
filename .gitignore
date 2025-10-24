@@ -23,5 +23,14 @@ Thumbs.db
 .env*
 *.env
 
+# Diretórios de desenvolvimento
+plano_desenvolvimento/
+ChatBot_API/
+chatbot_rasa/
+
+# Configurações do Builder.io
+.config/builderio/
+
 # Outros
 *.local
+.config/
