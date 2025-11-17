@@ -74,7 +74,13 @@ lerna-debug.log*
 # Ficheiros de configuração local
 # ============================================
 .env*
+!/.env.example
 *.env
+!.env.example
+env.example
+# Versões alternativas do .env.example (sem ponto inicial)
+env.example.txt
+.env.example.txt
 .env.local
 .env.development.local
 .env.test.local
@@ -108,6 +114,11 @@ docs/
 README*.md
 !README*.md
 *.md.bak
+# Arquivos de documentação temporária
+COMO_CONFIGURAR_ENV.txt
+*_CONFIGURACAO*.txt
+*_GUIA*.txt
+*_INSTRUCOES*.txt
 
 # ============================================
 # Arquivos temporários
@@ -124,6 +135,13 @@ README*.md
 *~
 .cache/
 *.cache
+# Arquivos de teste e rascunhos
+*_test.txt
+*_temp.txt
+*_rascunho.txt
+*_draft.txt
+test_*.txt
+!requirements.txt
 
 # ============================================
 # Python específico

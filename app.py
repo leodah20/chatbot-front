@@ -5,13 +5,87 @@ from functools import wraps
 import os
 import re
 import uuid
+from dotenv import load_dotenv
+import sys
 
-# Configuração da aplicação Flask
+# ===== CARREGAMENTO E VALIDAÇÃO DE VARIÁVEIS DE AMBIENTE =====
+# Carrega as variáveis do arquivo .env
+load_dotenv()
+
+# Validação obrigatória: SECRET_KEY
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    print("=" * 80)
+    print("ERRO CRÍTICO: Variável de ambiente SECRET_KEY não encontrada!")
+    print("=" * 80)
+    print("\nPor favor, configure o arquivo .env na raiz do projeto com:")
+    print("  SECRET_KEY=sua-chave-secreta-aqui")
+    print("\nPara gerar uma chave segura, execute:")
+    print("  python -c \"import secrets; print(secrets.token_hex(32))\"")
+    print("\nConsulte o README.md para mais informações.")
+    print("=" * 80)
+    sys.exit(1)
+
+# Validação obrigatória: API_BASE_URL
+API_BASE_URL = os.getenv('API_BASE_URL')
+if not API_BASE_URL:
+    print("=" * 80)
+    print("ERRO CRÍTICO: Variável de ambiente API_BASE_URL não encontrada!")
+    print("=" * 80)
+    print("\nPor favor, configure o arquivo .env na raiz do projeto com:")
+    print("  API_BASE_URL=http://127.0.0.1:8000")
+    print("\nAjuste a URL conforme necessário se a API estiver em outro servidor.")
+    print("\nConsulte o README.md para mais informações.")
+    print("=" * 80)
+    sys.exit(1)
+
+# Validação: Verifica se o arquivo .env existe
+if not os.path.exists('.env'):
+    print("=" * 80)
+    print("AVISO: Arquivo .env não encontrado na raiz do projeto!")
+    print("=" * 80)
+    print("\nO arquivo .env é OBRIGATÓRIO para executar esta aplicação.")
+    print("\nCrie o arquivo .env na raiz do projeto com as seguintes variáveis:")
+    print("  FLASK_APP=app.py")
+    print("  FLASK_ENV=development")
+    print("  SECRET_KEY=sua-chave-secreta-aqui")
+    print("  API_BASE_URL=http://127.0.0.1:8000")
+    print("\nPara gerar uma chave segura, execute:")
+    print("  python -c \"import secrets; print(secrets.token_hex(32))\"")
+    print("\nConsulte o README.md para instruções detalhadas.")
+    print("=" * 80)
+    sys.exit(1)
+
+# Validação de formato da URL da API
+if not API_BASE_URL.startswith(('http://', 'https://')):
+    print("=" * 80)
+    print("ERRO: API_BASE_URL deve começar com 'http://' ou 'https://'")
+    print("=" * 80)
+    print(f"Valor atual: {API_BASE_URL}")
+    print("\nExemplo correto: http://127.0.0.1:8000")
+    print("=" * 80)
+    sys.exit(1)
+
+# Configurações opcionais com valores padrão
+FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+# ===== CONFIGURAÇÃO DA APLICAÇÃO FLASK =====
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Chave secreta para sessões
+app.secret_key = SECRET_KEY  # Chave secreta para sessões (obrigatória)
 
-# URL da API (ajustar conforme necessário)
-API_BASE_URL = "http://127.0.0.1:8000"
+# Configuração do modo debug baseado na variável de ambiente
+if FLASK_ENV == 'development':
+    app.config['DEBUG'] = True
+    print(f"[INFO] Modo de desenvolvimento ativado")
+else:
+    app.config['DEBUG'] = DEBUG
+    print(f"[INFO] Modo de produção ativado (DEBUG={DEBUG})")
+
+# Log de configuração bem-sucedida
+print(f"[INFO] Configuração carregada com sucesso!")
+print(f"[INFO] API_BASE_URL: {API_BASE_URL}")
+print(f"[INFO] SECRET_KEY configurada: {'*' * 20}...{SECRET_KEY[-8:]}")
 
 # ===== FUNÇÃO HELPER PARA AUTENTICAÇÃO =====
 def get_auth_headers():

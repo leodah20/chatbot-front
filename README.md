@@ -96,6 +96,7 @@ Antes de começar, certifique-se de ter instalado:
 - **pip** (gerenciador de pacotes Python)
 - **Git** (para clonar o repositório)
 - **API Backend** rodando e acessível (veja [Configuração](#-configuração))
+- **Arquivo `.env` configurado** ⚠️ **OBRIGATÓRIO** (veja [Instalação - Passo 4](#4-configure-a-aplicação--obrigatório))
 
 ### Verificação de Versão
 
@@ -137,16 +138,83 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure a Aplicação
+### 4. Configure a Aplicação ⚠️ OBRIGATÓRIO
 
-Crie um arquivo `.env` na raiz do projeto (opcional, para desenvolvimento):
+**O arquivo `.env` é OBRIGATÓRIO para executar a aplicação.** Sem ele, a aplicação não iniciará.
+
+#### Opção 1: Usar o template `.env.example` (Recomendado)
+
+**Windows (PowerShell):**
+```powershell
+# Copie o arquivo de exemplo
+Copy-Item .env.example .env
+```
+
+**Linux/Mac:**
+```bash
+# Copie o arquivo de exemplo
+cp .env.example .env
+```
+
+#### Opção 2: Criar manualmente
+
+**Windows (PowerShell):**
+```powershell
+# Crie o arquivo .env
+New-Item -Path .env -ItemType File
+```
+
+**Linux/Mac:**
+```bash
+# Crie o arquivo .env
+touch .env
+```
+
+#### Conteúdo mínimo obrigatório do arquivo `.env`:
 
 ```env
+# ============================================
+# ⚠️ VARIÁVEIS OBRIGATÓRIAS
+# ============================================
+
+# Chave secreta para criptografia de sessões Flask
+# OBRIGATÓRIO: Gere uma chave segura usando o comando abaixo:
+# python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY=sua-chave-secreta-aqui
+
+# URL base da API Backend (ChatBot_API)
+# OBRIGATÓRIO: URL onde a API backend está rodando
+API_BASE_URL=http://127.0.0.1:8000
+
+# ============================================
+# Configurações Recomendadas
+# ============================================
+
 FLASK_APP=app.py
 FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-API_BASE_URL=http://127.0.0.1:8000
+DEBUG=True
 ```
+
+**📝 Explicação das variáveis OBRIGATÓRIAS:**
+
+- **`SECRET_KEY`** ⚠️ **OBRIGATÓRIA**: Chave secreta usada para criptografar dados de sessão Flask. **Essencial para segurança e autenticação!**
+  - Para gerar uma chave segura, execute: `python -c "import secrets; print(secrets.token_hex(32))"`
+  - Copie a chave gerada e cole no lugar de `sua-chave-secreta-aqui`
+  - **NUNCA** compartilhe esta chave publicamente
+- **`API_BASE_URL`** ⚠️ **OBRIGATÓRIA**: URL onde a API backend está rodando (padrão: `http://127.0.0.1:8000`)
+  - Ajuste se a API estiver em outro servidor ou porta
+
+**📝 Variáveis opcionais (com valores padrão):**
+
+- **`FLASK_APP`**: Nome do arquivo principal da aplicação (padrão: `app.py`)
+- **`FLASK_ENV`**: Ambiente de execução (`development` para desenvolvimento, `production` para produção)
+- **`DEBUG`**: Modo debug (`True` para desenvolvimento, `False` para produção)
+
+**⚠️ IMPORTANTE:**
+- O arquivo `.env` é **OBRIGATÓRIO** - a aplicação não funcionará sem ele
+- O arquivo `.env` está no `.gitignore` e **NUNCA** será commitado no repositório
+- Use o arquivo `.env.example` como template se necessário
+- Em produção, use uma `SECRET_KEY` diferente da usada em desenvolvimento
 
 ### 5. Execute a Aplicação
 
@@ -164,40 +232,114 @@ A aplicação estará disponível em: **http://127.0.0.1:5000**
 
 ## ⚙️ Configuração
 
-### Configuração da API
+### 📋 Arquivo `.env` - Guia Completo
 
-Por padrão, a aplicação está configurada para se conectar à API em `http://127.0.0.1:8000`. 
+O arquivo `.env` é usado para configurar variáveis de ambiente da aplicação. Ele deve ser criado na **raiz do projeto** (mesmo nível do `app.py`).
 
-Para alterar a URL da API, edite o arquivo `app.py`:
-
-```python
-API_BASE_URL = "http://sua-url-api.com:8000"
-```
-
-### Configuração de Segurança
-
-A chave secreta da aplicação é gerada automaticamente. Para produção, recomenda-se definir uma chave secreta fixa:
-
-```python
-app.secret_key = os.environ.get('SECRET_KEY', 'sua-chave-secreta-muito-segura-aqui')
-```
-
-### Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto:
+#### 📝 Exemplo Completo de `.env`
 
 ```env
-# Configurações da Aplicação
-FLASK_APP=app.py
-FLASK_ENV=production  # ou development
-SECRET_KEY=sua-chave-secreta-aqui
+# ============================================
+# Configurações da Aplicação Flask
+# ============================================
 
-# Configurações da API
+# Nome do arquivo principal da aplicação
+FLASK_APP=app.py
+
+# Ambiente: 'development' (desenvolvimento) ou 'production' (produção)
+FLASK_ENV=development
+
+# Chave secreta para criptografia de sessões Flask
+# ⚠️ MUITO IMPORTANTE: Use uma chave forte e única!
+# 
+# Como gerar uma chave segura:
+# Windows PowerShell:
+#   python -c "import secrets; print(secrets.token_hex(32))"
+# 
+# Linux/Mac:
+#   python3 -c "import secrets; print(secrets.token_hex(32))"
+#
+# Exemplo de chave gerada:
+#   a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
+SECRET_KEY=cole-aqui-a-chave-gerada-pelo-comando-acima
+
+# ============================================
+# Configurações da API Backend
+# ============================================
+
+# URL base da API Backend (ChatBot_API)
+# Se a API estiver rodando localmente na porta 8000:
 API_BASE_URL=http://127.0.0.1:8000
 
-# Configurações de Debug
-DEBUG=False
+# Se a API estiver em outro servidor, ajuste:
+# API_BASE_URL=http://seu-servidor.com:8000
+
+# ============================================
+# Configurações Opcionais
+# ============================================
+
+# Porta onde o Flask irá rodar (padrão: 5000)
+# FLASK_RUN_PORT=5000
+
+# Host onde o Flask irá rodar (padrão: 127.0.0.1)
+# Para permitir acesso externo, use: 0.0.0.0
+# FLASK_RUN_HOST=127.0.0.1
 ```
+
+#### 🔑 O que é o `SECRET_KEY`?
+
+O `SECRET_KEY` é uma string aleatória usada pelo Flask para:
+- **Criptografar dados de sessão** (cookies, informações de login)
+- **Assinar tokens** e garantir que não foram alterados
+- **Proteger contra ataques CSRF** (Cross-Site Request Forgery)
+
+**⚠️ Segurança:**
+- **NUNCA** compartilhe sua `SECRET_KEY` publicamente
+- **NUNCA** commite o arquivo `.env` no Git (já está no `.gitignore`)
+- Use uma chave **diferente** para desenvolvimento e produção
+- Gere uma chave **única** para cada ambiente
+
+#### 🚀 Configuração Rápida (Passo a Passo)
+
+1. **Gere a chave secreta:**
+   ```bash
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+2. **Crie o arquivo `.env`** na raiz do projeto com o conteúdo acima
+
+3. **Cole a chave gerada** no lugar de `cole-aqui-a-chave-gerada-pelo-comando-acima`
+
+4. **Verifique se a API está rodando** na URL configurada em `API_BASE_URL`
+
+5. **Inicie a aplicação:**
+   ```bash
+   flask run
+   ```
+
+#### 🔧 Configuração da API
+
+Por padrão, a aplicação se conecta à API em `http://127.0.0.1:8000`. 
+
+**Para alterar a URL da API:**
+- Edite o arquivo `.env` e altere o valor de `API_BASE_URL`
+- Certifique-se de que a API backend está rodando e acessível nesta URL
+
+**Exemplo para API em servidor remoto:**
+```env
+API_BASE_URL=http://192.168.1.100:8000
+```
+
+#### ✅ Verificação
+
+Após configurar o `.env`, verifique se tudo está correto:
+
+1. ✅ Arquivo `.env` existe na raiz do projeto
+2. ✅ `SECRET_KEY` foi gerada e configurada
+3. ✅ `API_BASE_URL` aponta para a URL correta da API
+4. ✅ API backend está rodando e acessível
+5. ✅ Ambiente virtual está ativado
+6. ✅ Dependências estão instaladas (`pip install -r requirements.txt`)
 
 ---
 
