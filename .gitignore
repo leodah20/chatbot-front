@@ -1,36 +1,262 @@
-# Ambiente Virtual (ajusta o nome se for diferente)
+# ============================================
+# Ambiente Virtual Python
+# ============================================
 .venv*/
 venv/
 env/
+ENV/
+.ENV/
+virtualenv/
+.venv/
+venv.bak/
+venv_backup/
 
+# ============================================
 # Ficheiros compilados do Python
+# ============================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.egg-info
+.eggs/
 
-# Ficheiros de IDEs
+# ============================================
+# Ficheiros de IDEs e Editores
+# ============================================
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+.vscode-test
+*.code-workspace
+*.sublime-*
+.fleet/
+.history/
 
+# ============================================
 # Ficheiros de sistema operativo
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+*.lnk
 
-# Ficheiros de log
+# ============================================
+# Ficheiros de log e debug
+# ============================================
 *.log
+*.log.*
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.log.*
 
-# Ficheiros de configuração local (ex: .env)
+# ============================================
+# Ficheiros de configuração local
+# ============================================
 .env*
 *.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+config.local.*
+*.local
+.secrets/
 
-# Diretórios de desenvolvimento
+# ============================================
+# Diretórios de desenvolvimento (outros projetos)
+# ============================================
 plano_desenvolvimento/
 ChatBot_API/
 chatbot_rasa/
 
-# Configurações do Builder.io
+# ============================================
+# Configurações do Builder.io e outros
+# ============================================
 .config/builderio/
-
-# Outros
-*.local
 .config/
+*.config.local
+*.config.local.*
+
+# ============================================
+# Documentação
+# ============================================
+docs/
+*.md
+!README.md
+README*.md
+!README*.md
+*.md.bak
+
+# ============================================
+# Arquivos temporários
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*.swo
+*~
+.cache/
+*.cache
+
+# ============================================
+# Python específico
+# ============================================
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+cython_debug/
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+test-results/
+*.pytest_cache/
+
+# ============================================
+# Flask específico
+# ============================================
+instance/
+.webassets-cache
+flask_session/
+
+# ============================================
+# Banco de dados local
+# ============================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ============================================
+# Arquivos de upload e mídia temporária
+# ============================================
+uploads/
+temp/
+tmp/
+media/temp/
+static/uploads/
+static/temp/
+*.upload
+*.uploaded
+
+# ============================================
+# Arquivos de certificados e chaves
+# ============================================
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+*.keystore
+*.jks
+secrets/
+*.secret
+
+# ============================================
+# Arquivos de teste e coverage
+# ============================================
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+.nox/
+.hypothesis/
+test-results/
+test-reports/
+junit.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.nyc_output/
+
+# ============================================
+# Arquivos de build e distribuição
+# ============================================
+dist/
+build/
+*.egg-info/
+*.whl
+*.tar.gz
+*.zip
+sdist/
+wheel/
+*.egg
+
+# ============================================
+# Arquivos de dependências
+# ============================================
+pip-log.txt
+pip-delete-this-directory.txt
+node_modules/
+package-lock.json
+yarn.lock
+.npm
+.yarn-integrity
+
+# ============================================
+# Arquivos de sessão e cookies
+# ============================================
+*.session
+*.cookie
+flask_session/
+sessions/
+
+# ============================================
+# Arquivos Jupyter Notebook (se houver)
+# ============================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# ============================================
+# Arquivos de configuração do sistema
+# ============================================
+*.conf.local
+*.ini.local
+*.yaml.local
+*.yml.local
+*.json.local
+*.toml.local

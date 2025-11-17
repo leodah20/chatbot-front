@@ -1,9 +1,10 @@
 # Imports necessários
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import requests
 from functools import wraps
 import os
 import re
+import uuid
 
 # Configuração da aplicação Flask
 app = Flask(__name__)
@@ -11,6 +12,24 @@ app.secret_key = os.urandom(24)  # Chave secreta para sessões
 
 # URL da API (ajustar conforme necessário)
 API_BASE_URL = "http://127.0.0.1:8000"
+
+# ===== FUNÇÃO HELPER PARA AUTENTICAÇÃO =====
+def get_auth_headers():
+    # Retorna os headers de autenticação com o access_token da sessão atual.
+    # Usado para todas as requisições autenticadas à API.
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    # Adiciona o token Bearer se existir na sessão
+    if 'user' in session and session['user'].get('access_token'):
+        headers["Authorization"] = f"Bearer {session['user']['access_token']}"
+        print(f"[DEBUG] Token incluído nos headers: {session['user']['access_token'][:20]}...")
+    else:
+        print("[DEBUG] ATENÇÃO: Nenhum access_token encontrado na sessão!")
+    
+    return headers
+
 # Decorator para proteger rotas que precisam de login
 def login_required(f):
     @wraps(f)
@@ -55,12 +74,23 @@ def login():
             print(f"[DEBUG] Response: {response.text}")
             
             response.raise_for_status()
-            user_data = response.json()
-            print(f"[DEBUG] User Data JSON: {user_data}")
+            api_response = response.json()
+            print(f"[DEBUG] API Response JSON: {api_response}")
+
+            # A API retorna os dados do usuário dentro de um objeto 'user'
+            # Estrutura esperada: {"message": "...", "access_token": "...", "user": {"id": "...", "email": "...", "name": "...", "role": "..."}}
+            user_data = api_response.get('user', {}) if 'user' in api_response else api_response
+            
+            # Se ainda não encontrou, tenta usar o objeto raiz como fallback
+            if not user_data and api_response:
+                user_data = api_response
+
+            print(f"[DEBUG] User Data extraído: {user_data}")
 
             # Extrai o ID do usuário de forma flexível
             user_id = (
                 user_data.get('id') or 
+                api_response.get('id') or
                 user_data.get('id_aluno') or
                 user_data.get('id_professor') or 
                 user_data.get('id_coordenador') or 
@@ -97,11 +127,12 @@ def login():
             
             print(f"[DEBUG] Nome original: '{nome}', Sobrenome: '{sobrenome}', Nome final: '{user_nome}'")
             
-            # Extrai o tipo de usuário
+            # Extrai o tipo de usuário (a API retorna 'role' dentro de 'user')
             user_tipo = (
                 user_data.get('tipo') or 
                 user_data.get('type') or 
                 user_data.get('role') or
+                api_response.get('role') or
                 'usuario'
             )
 
@@ -113,21 +144,33 @@ def login():
             )
 
             # Guarda informações na sessão
+            access_token = api_response.get('access_token', '')
             session['user'] = {
                 'id': user_id,
                 'nome': user_nome,
                 'email': user_email,
                 'tipo': user_tipo,
                 'matricula': user_data.get('matricula_ra', ''),
-                'raw_data': user_data  # Guarda dados brutos para debug
+                'access_token': access_token,  # Guarda o token de acesso
+                'raw_data': api_response  # Guarda dados brutos para debug
             }
             
-            print(f"[DEBUG] Session User: {session['user']}")
+            print(f"[INFO] ====== LOGIN REALIZADO COM SUCESSO ======")
+            print(f"[INFO] POST /auth/login - Status: 200 - Login bem-sucedido")
+            print(f"[INFO] User ID: {user_id}")
+            print(f"[INFO] User Email: {user_email}")
+            print(f"[INFO] User Role: {user_tipo}")
+            print(f"[DEBUG] User role: {user_tipo}")
+            print(f"[DEBUG] Access Token: {access_token}")
+            print(f"[DEBUG] Token Length: {len(access_token)} caracteres")
+            print(f"[DEBUG] Token Preview: {access_token[:50]}...")
+            print(f"[INFO] ===========================================")
             
             # Verifica se pelo menos um ID foi obtido
             if not session['user']['id']:
                 print("[DEBUG] ERRO: Nenhum ID de usuário encontrado na resposta da API")
-                print(f"[DEBUG] Estrutura recebida: {user_data.keys()}")
+                print(f"[DEBUG] Estrutura recebida da API: {list(api_response.keys())}")
+                print(f"[DEBUG] User data extraído: {list(user_data.keys()) if isinstance(user_data, dict) else user_data}")
                 flash("Erro ao processar dados do utilizador recebidos da API.", "error")
                 session.pop('user', None)
                 return redirect(url_for('index'))
@@ -142,6 +185,8 @@ def login():
             print(f"[DEBUG] Response Text: {e.response.text if hasattr(e, 'response') else 'N/A'}")
             
             if e.response.status_code == 401:
+                print(f"[ERROR] POST /auth/login - Status: 401 - Credenciais inválidas")
+                print(f"[ERROR] Token inválido ou não fornecido")
                 flash("Credenciais inválidas. Verifique seu email e senha.", "error")
             elif e.response.status_code == 404:
                 flash("Endpoint de login não encontrado na API. Verifique a configuração.", "error")
@@ -187,6 +232,26 @@ def logout():
     flash("Logout realizado com sucesso. Até logo!", "info")
     return redirect(url_for('index'))
 
+# Rota de debug para visualizar o access_token da sessão atual
+@app.route('/debug/token')
+@login_required
+def debug_token():
+    user = session.get('user', {})
+    token = user.get('access_token', 'N/A')
+    
+    debug_info = {
+        'access_token': token,
+        'token_length': len(token) if token != 'N/A' else 0,
+        'token_preview': token[:50] + '...' if token != 'N/A' and len(token) > 50 else token,
+        'user_id': user.get('id', 'N/A'),
+        'user_email': user.get('email', 'N/A'),
+        'user_role': user.get('tipo', 'N/A'),
+        'session_exists': 'user' in session
+    }
+    
+    # Retorna como JSON para fácil visualização
+    return jsonify(debug_info), 200
+
 # ===== ROTAS PROTEGIDAS =====
 
 @app.route('/dashboard')
@@ -206,8 +271,9 @@ def dashboard():
     
     # Busca avisos da API
     try:
-        print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/")
-        response = requests.get(f"{API_BASE_URL}/aviso/", timeout=5)
+        print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/get_lista_aviso/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/aviso/get_lista_aviso/", headers=headers, timeout=5)
         print(f"[DEBUG] Avisos - Status: {response.status_code}")
         
         if response.status_code == 200:
@@ -248,12 +314,14 @@ def test_api():
         print(f"[DEBUG] API Root - Status: {response.status_code}")
         
         # Teste do endpoint de avisos (que sabemos que funciona)
-        response_avisos = requests.get(f"{API_BASE_URL}/aviso/", timeout=5)
+        headers = get_auth_headers()
+        response_avisos = requests.get(f"{API_BASE_URL}/aviso/get_lista_aviso/", headers=headers, timeout=5)
         print(f"[DEBUG] Avisos - Status: {response_avisos.status_code}")
         
         # Teste do endpoint de professores (GET não existe)
         try:
-            response_professores = requests.get(f"{API_BASE_URL}/professores/", timeout=5)
+            headers = get_auth_headers()
+            response_professores = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=5)
             print(f"[DEBUG] Professores GET - Status: {response_professores.status_code}")
             professores_get_status = response_professores.status_code
         except:
@@ -311,10 +379,25 @@ def test_api():
 @app.route('/docentes')
 @login_required
 def docentes_list():
-    """ Lista docentes - usa dados mock (API não tem GET) """
-    print(f"[DEBUG] API não suporta GET /professores/ - usando dados mock")
+    """ Lista docentes - busca da API """
+    try:
+        print(f"[DEBUG] Buscando professores em: {API_BASE_URL}/professores/lista_professores/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            docentes = response.json()
+            print(f"[DEBUG] {len(docentes)} professores encontrados")
+            # Salva na sessão para uso posterior
+            session['docentes_list'] = docentes
+        else:
+            print(f"[DEBUG] Professores retornou status {response.status_code}")
+            docentes = get_docentes_list()  # Fallback para mock
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar professores: {e}")
+        flash("Erro ao carregar professores. Usando dados locais.", "warning")
+        docentes = get_docentes_list()  # Fallback para mock
     
-    docentes = get_docentes_list()
     return render_template('docentes/list.html', docentes=docentes)
 
 @app.route('/docentes/add', methods=['GET', 'POST'])
@@ -365,8 +448,8 @@ def docentes_add():
             
             print(f"[DEBUG] Criando docente: {docente_data}")
             print(f"[DEBUG] URL da API: {API_BASE_URL}/professores/")
-            
-            response = requests.post(f"{API_BASE_URL}/professores/", json=docente_data, timeout=10)
+            headers = get_auth_headers()
+            response = requests.post(f"{API_BASE_URL}/professores/", json=docente_data, headers=headers, timeout=10)
             print(f"[DEBUG] Status Code: {response.status_code}")
             print(f"[DEBUG] Response Headers: {dict(response.headers)}")
             print(f"[DEBUG] Response Text: {response.text}")
@@ -408,29 +491,34 @@ def docentes_add():
 @app.route('/docentes/view/<int:id>')
 @login_required
 def docentes_view(id):
-    """ Visualiza docente - busca na lista da sessão """
-    print(f"[DEBUG] Buscando docente {id} na lista da sessão")
-    
-    # Busca o docente na lista da sessão
-    docentes_list = get_docentes_list()
-    docente = next((d for d in docentes_list if d.get('id') == id), None)
-    
-    if not docente:
-        flash("Docente não encontrado.", "error")
+    """ Visualiza docente - busca da API ou sessão """
+    try:
+        print(f"[DEBUG] Buscando professor {id}")
+        headers = get_auth_headers()
+        # Tenta buscar da API primeiro
+        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        
+        docente = None
+        if response.status_code == 200:
+            professores = response.json()
+            docente = next((p for p in professores if str(p.get('id')) == str(id)), None)
+        
+        # Se não encontrou na API, tenta da sessão
+        if not docente:
+            docentes_list = get_docentes_list()
+            docente = next((d for d in docentes_list if str(d.get('id')) == str(id)), None)
+        
+        if not docente:
+            flash("Docente não encontrado.", "error")
+            return redirect(url_for('docentes_list'))
+        
+        print(f"[DEBUG] Docente encontrado: {docente}")
+        return render_template('docentes/view.html', docente=docente)
+        
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar professor: {e}")
+        flash("Erro ao carregar dados do docente.", "error")
         return redirect(url_for('docentes_list'))
-    
-    # Adiciona dados extras para exibição (não salvos na API)
-    docente_completo = {
-        **docente,
-        'nivel_acesso': 'professor',
-        'disciplinas': ['Ciência da Computação', 'Análise e Desenvolvimento de Sistemas'],
-        'dia_semana': 'terça',
-        'horario_inicio': '14:00',
-        'horario_fim': '18:00'
-    }
-    
-    print(f"[DEBUG] Docente encontrado: {docente_completo}")
-    return render_template('docentes/view.html', docente=docente_completo)
 
 @app.route('/docentes/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -463,7 +551,8 @@ def docentes_edit(id):
             print(f"[DEBUG] Dados extras (futura implementação): {dados_extras}")
             
             print(f"[DEBUG] Atualizando docente {id}: {docente_data}")
-            response = requests.put(f"{API_BASE_URL}/professores/{id}", json=docente_data, timeout=10)
+            headers = get_auth_headers()
+            response = requests.put(f"{API_BASE_URL}/professores/update/{id}", json=docente_data, headers=headers, timeout=10)
             print(f"[DEBUG] Status Code: {response.status_code}")
             print(f"[DEBUG] Response: {response.text}")
             
@@ -547,7 +636,8 @@ def docentes_delete(id):
     try:
         print(f"[DEBUG] Removendo docente {id}")
         # DELETE /professores/{id} - conforme documentação da API
-        response = requests.delete(f"{API_BASE_URL}/professores/{id}", timeout=10)
+        headers = get_auth_headers()
+        response = requests.delete(f"{API_BASE_URL}/professores/detele/{id}", headers=headers, timeout=10)
         print(f"[DEBUG] Status Code: {response.status_code}")
         
         response.raise_for_status()
@@ -649,7 +739,8 @@ def resolve_content_endpoint():
 def get_conteudos_api():
     endpoint = resolve_content_endpoint()
     try:
-        resp = requests.get(_join_url(API_BASE_URL, f"{endpoint}/"), timeout=8)
+        headers = get_auth_headers()
+        resp = requests.get(_join_url(API_BASE_URL, f"{endpoint}/"), headers=headers, timeout=8)
         if resp.status_code == 200 and isinstance(resp.json(), list):
             return resp.json()
     except requests.exceptions.RequestException as e:
@@ -660,11 +751,14 @@ def create_conteudo_api(data, file_storage=None):
     endpoint = resolve_content_endpoint()
     url = _join_url(API_BASE_URL, f"{endpoint}/")
     try:
+        headers = get_auth_headers()
         if file_storage and file_storage.filename:
+            # Remove Content-Type para multipart/form-data
+            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
             files = {"arquivo": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-            resp = requests.post(url, data=data, files=files, timeout=15)
+            resp = requests.post(url, data=data, files=files, headers=headers_multipart, timeout=15)
         else:
-            resp = requests.post(url, json=data, timeout=10)
+            resp = requests.post(url, json=data, headers=headers, timeout=10)
         if resp.status_code in (200, 201):
             try:
                 return True, resp.json()
@@ -678,11 +772,14 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
     endpoint = resolve_content_endpoint()
     url = _join_url(API_BASE_URL, f"{endpoint}/{conteudo_id}")
     try:
+        headers = get_auth_headers()
         if file_storage and file_storage.filename:
+            # Remove Content-Type para multipart/form-data
+            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
             files = {"arquivo": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-            resp = requests.put(url, data=data, files=files, timeout=15)
+            resp = requests.put(url, data=data, files=files, headers=headers_multipart, timeout=15)
         else:
-            resp = requests.put(url, json=data, timeout=10)
+            resp = requests.put(url, json=data, headers=headers, timeout=10)
         return resp.status_code in (200, 204)
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] Conteúdo PUT falhou: {e}")
@@ -692,7 +789,8 @@ def delete_conteudo_api(conteudo_id):
     endpoint = resolve_content_endpoint()
     url = _join_url(API_BASE_URL, f"{endpoint}/{conteudo_id}")
     try:
-        resp = requests.delete(url, timeout=8)
+        headers = get_auth_headers()
+        resp = requests.delete(url, headers=headers, timeout=8)
         return resp.status_code in (200, 204)
     except requests.exceptions.RequestException:
         return False
@@ -830,8 +928,9 @@ def conteudo_edit(conteudo_id):
 def avisos_list():
     """ Lista avisos - busca da API """
     try:
-        print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/")
-        response = requests.get(f"{API_BASE_URL}/aviso/", timeout=10)
+        print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/get_lista_aviso/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/aviso/get_lista_aviso/", headers=headers, timeout=10)
         print(f"[DEBUG] Avisos - Status: {response.status_code}")
         
         if response.status_code == 200:
@@ -852,21 +951,61 @@ def avisos_list():
 @login_required
 def avisos_add():
     """ Adiciona novo aviso via API """
+    # Carregar professores e coordenadores para o formulário
+    professores = []
+    coordenadores = []
+    
+    try:
+        headers = get_auth_headers()
+        # Buscar professores
+        prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        if prof_response.status_code == 200:
+            professores = prof_response.json()
+        
+        # Buscar coordenadores
+        coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+        if coord_response.status_code == 200:
+            coordenadores = coord_response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao carregar professores/coordenadores: {e}")
+        # Continua com listas vazias
+    
     if request.method == 'POST':
         try:
             # Coleta dados do formulário
+            id_professor = request.form.get('id_professor', '').strip()
+            id_coordenador = request.form.get('id_coordenador', '').strip()
+            
+            # Validar UUIDs - se vazio ou inválido, usar None
+            id_professor_uuid = None
+            id_coordenador_uuid = None
+            
+            if id_professor:
+                try:
+                    id_professor_uuid = str(uuid.UUID(id_professor))
+                except (ValueError, AttributeError):
+                    flash(f"ID do professor inválido: {id_professor}. Use um UUID válido ou deixe em branco.", "error")
+                    return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            
+            if id_coordenador:
+                try:
+                    id_coordenador_uuid = str(uuid.UUID(id_coordenador))
+                except (ValueError, AttributeError):
+                    flash(f"ID do coordenador inválido: {id_coordenador}. Use um UUID válido ou deixe em branco.", "error")
+                    return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            
             aviso_data = {
                 'titulo': request.form.get('titulo', '').strip(),
                 'conteudo': request.form.get('conteudo', '').strip(),
                 'data': request.form.get('data', '').strip(),
-                'id_professor': request.form.get('id_professor', '').strip() or None,
-                'id_coordenador': request.form.get('id_coordenador', '').strip() or None
+                'id_professor': id_professor_uuid,
+                'id_coordenador': id_coordenador_uuid
             }
             
             # Validação obrigatória
             if not aviso_data['titulo'] or not aviso_data['conteudo'] or not aviso_data['data']:
                 flash("Título, conteúdo e data são obrigatórios.", "error")
-                return render_template('avisos/add.html')
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
             
             # Validação de data
             try:
@@ -874,26 +1013,55 @@ def avisos_add():
                 datetime.strptime(aviso_data['data'], '%Y-%m-%d')
             except ValueError:
                 flash("Formato de data inválido. Use YYYY-MM-DD.", "error")
-                return render_template('avisos/add.html')
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
             
+            # Log do usuário que está criando o aviso
+            user_role = session.get('user', {}).get('tipo', 'unknown')
+            user_email = session.get('user', {}).get('email', 'unknown')
+            print(f"[INFO] POST /aviso/ - Usuário: {user_email}, Role: {user_role}")
             print(f"[DEBUG] Criando aviso: {aviso_data}")
-            response = requests.post(f"{API_BASE_URL}/aviso/", json=aviso_data, timeout=10)
-            print(f"[DEBUG] Status Code: {response.status_code}")
+            
+            headers = get_auth_headers()
+            response = requests.post(f"{API_BASE_URL}/aviso/", json=aviso_data, headers=headers, timeout=10)
+            
+            print(f"[INFO] POST /aviso/ - Status: {response.status_code}")
             print(f"[DEBUG] Response: {response.text}")
             
             if response.status_code == 201:
+                print(f"[INFO] POST /aviso/ - Status: 201 - Aviso criado com sucesso")
+                print(f"[DEBUG] User role: {user_role}")
+                print(f"[DEBUG] Aviso criado com sucesso")
                 flash("Aviso criado com sucesso!", "success")
                 return redirect(url_for('avisos_list'))
             elif response.status_code == 400:
+                print(f"[ERROR] POST /aviso/ - Status: 400 - Dados inválidos")
                 try:
                     error_detail = response.json()
                     flash(f"Dados inválidos: {error_detail}", "error")
                 except:
                     flash("Dados inválidos. Verifique se todos os campos estão preenchidos corretamente.", "error")
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            elif response.status_code == 403:
+                print(f"[WARN] POST /aviso/ - Status: 403 - Acesso negado")
+                print(f"[WARN] User role: {user_role}")
+                try:
+                    error_detail = response.json()
+                    detail_msg = error_detail.get('detail', 'Acesso negado')
+                    print(f"[WARN] Acesso negado. Roles permitidos: admin, coordenador. Seu role: {user_role}")
+                    flash(f"Acesso negado: {detail_msg}", "error")
+                except:
+                    flash("Acesso negado. Apenas administradores e coordenadores podem criar avisos.", "error")
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            elif response.status_code == 401:
+                print(f"[ERROR] POST /aviso/ - Status: 401 - Token inválido ou não fornecido")
+                flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
+                return redirect(url_for('index'))
             else:
                 response.raise_for_status()
             
         except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if hasattr(e, 'response') else 'N/A'
+            print(f"[ERROR] POST /aviso/ - HTTPError: Status {status_code}")
             print(f"[DEBUG] HTTPError: {e}")
             if e.response.status_code == 422:
                 try:
@@ -901,8 +1069,26 @@ def avisos_add():
                     flash(f"Dados inválidos: {error_detail}", "error")
                 except:
                     flash("Dados inválidos. Verifique o formato.", "error")
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            elif e.response.status_code == 403:
+                print(f"[WARN] POST /aviso/ - Status: 403 - Acesso negado")
+                user_role = session.get('user', {}).get('tipo', 'unknown')
+                print(f"[WARN] User role: {user_role}")
+                try:
+                    error_detail = e.response.json()
+                    detail_msg = error_detail.get('detail', 'Acesso negado')
+                    print(f"[WARN] Acesso negado. Roles permitidos: admin, coordenador. Seu role: {user_role}")
+                    flash(f"Acesso negado: {detail_msg}", "error")
+                except:
+                    flash("Acesso negado. Apenas administradores e coordenadores podem criar avisos.", "error")
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
+            elif e.response.status_code == 401:
+                print(f"[ERROR] POST /aviso/ - Status: 401 - Token inválido ou não fornecido")
+                flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
+                return redirect(url_for('index'))
             else:
                 flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
+                return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
         except requests.exceptions.RequestException as e:
             print(f"[DEBUG] RequestException: {e}")
             flash("Erro de comunicação com o servidor.", "error")
@@ -910,7 +1096,7 @@ def avisos_add():
             print(f"[DEBUG] Exception: {e}")
             flash("Erro inesperado ao criar aviso.", "error")
     
-    return render_template('avisos/add.html')
+    return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
 
 @app.route('/avisos/view/<aviso_id>')
 @login_required
@@ -918,7 +1104,8 @@ def avisos_view(aviso_id):
     """ Visualiza aviso espec��fico """
     try:
         print(f"[DEBUG] Buscando aviso {aviso_id}")
-        response = requests.get(f"{API_BASE_URL}/aviso/{aviso_id}", timeout=10)
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/aviso/get_aviso_id/{aviso_id}", headers=headers, timeout=10)
         print(f"[DEBUG] Status Code: {response.status_code}")
         
         if response.status_code == 200:
@@ -960,7 +1147,68 @@ def avisos_edit(aviso_id):
             # Validação obrigatória
             if not aviso_data['titulo'] or not aviso_data['conteudo'] or not aviso_data['data']:
                 flash("Título, conteúdo e data são obrigatórios.", "error")
-                return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data})
+                # Recarregar professores e coordenadores em caso de erro
+                professores = []
+                coordenadores = []
+                try:
+                    headers = get_auth_headers()
+                    prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+                    if prof_response.status_code == 200:
+                        professores = prof_response.json()
+                    coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+                    if coord_response.status_code == 200:
+                        coordenadores = coord_response.json()
+                except:
+                    pass
+                return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data}, professores=professores, coordenadores=coordenadores)
+            
+            # Validar UUIDs - se vazio ou inválido, usar None
+            id_professor_uuid = None
+            id_coordenador_uuid = None
+            
+            if aviso_data['id_professor']:
+                try:
+                    id_professor_uuid = str(uuid.UUID(aviso_data['id_professor']))
+                except (ValueError, AttributeError):
+                    flash(f"ID do professor inválido: {aviso_data['id_professor']}. Use um UUID válido ou deixe em branco.", "error")
+                    # Recarregar professores e coordenadores em caso de erro
+                    professores = []
+                    coordenadores = []
+                    try:
+                        headers = get_auth_headers()
+                        prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+                        if prof_response.status_code == 200:
+                            professores = prof_response.json()
+                        coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+                        if coord_response.status_code == 200:
+                            coordenadores = coord_response.json()
+                    except:
+                        pass
+                    return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data}, professores=professores, coordenadores=coordenadores)
+            
+            if aviso_data['id_coordenador']:
+                try:
+                    id_coordenador_uuid = str(uuid.UUID(aviso_data['id_coordenador']))
+                except (ValueError, AttributeError):
+                    flash(f"ID do coordenador inválido: {aviso_data['id_coordenador']}. Use um UUID válido ou deixe em branco.", "error")
+                    # Recarregar professores e coordenadores em caso de erro
+                    professores = []
+                    coordenadores = []
+                    try:
+                        headers = get_auth_headers()
+                        prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+                        if prof_response.status_code == 200:
+                            professores = prof_response.json()
+                        coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+                        if coord_response.status_code == 200:
+                            coordenadores = coord_response.json()
+                    except:
+                        pass
+                    return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data}, professores=professores, coordenadores=coordenadores)
+            
+            # Atualizar aviso_data com UUIDs validados
+            aviso_data['id_professor'] = id_professor_uuid
+            aviso_data['id_coordenador'] = id_coordenador_uuid
             
             # Validação de data
             try:
@@ -968,10 +1216,24 @@ def avisos_edit(aviso_id):
                 datetime.strptime(aviso_data['data'], '%Y-%m-%d')
             except ValueError:
                 flash("Formato de data inválido. Use YYYY-MM-DD.", "error")
-                return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data})
+                # Recarregar professores e coordenadores em caso de erro
+                professores = []
+                coordenadores = []
+                try:
+                    headers = get_auth_headers()
+                    prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+                    if prof_response.status_code == 200:
+                        professores = prof_response.json()
+                    coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+                    if coord_response.status_code == 200:
+                        coordenadores = coord_response.json()
+                except:
+                    pass
+                return render_template('avisos/edit.html', aviso={'id_aviso': aviso_id, **aviso_data}, professores=professores, coordenadores=coordenadores)
             
             print(f"[DEBUG] Atualizando aviso {aviso_id}: {aviso_data}")
-            response = requests.put(f"{API_BASE_URL}/aviso/{aviso_id}", json=aviso_data, timeout=10)
+            headers = get_auth_headers()
+            response = requests.put(f"{API_BASE_URL}/aviso/update/{aviso_id}", json=aviso_data, headers=headers, timeout=10)
             print(f"[DEBUG] Status Code: {response.status_code}")
             print(f"[DEBUG] Response: {response.text}")
             
@@ -1002,15 +1264,35 @@ def avisos_edit(aviso_id):
             flash("Erro inesperado ao atualizar aviso.", "error")
     
     # GET - Buscar dados do aviso para edição
+    # Carregar professores e coordenadores para o formulário
+    professores = []
+    coordenadores = []
+    
+    try:
+        headers = get_auth_headers()
+        # Buscar professores
+        prof_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        if prof_response.status_code == 200:
+            professores = prof_response.json()
+        
+        # Buscar coordenadores
+        coord_response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+        if coord_response.status_code == 200:
+            coordenadores = coord_response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao carregar professores/coordenadores: {e}")
+        # Continua com listas vazias
+    
     try:
         print(f"[DEBUG] Buscando aviso {aviso_id} para edição")
-        response = requests.get(f"{API_BASE_URL}/aviso/{aviso_id}", timeout=10)
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/aviso/get_aviso_id/{aviso_id}", headers=headers, timeout=10)
         print(f"[DEBUG] Status Code: {response.status_code}")
         
         if response.status_code == 200:
             aviso = response.json()
             print(f"[DEBUG] Aviso encontrado para edição: {aviso}")
-            return render_template('avisos/edit.html', aviso=aviso)
+            return render_template('avisos/edit.html', aviso=aviso, professores=professores, coordenadores=coordenadores)
         elif response.status_code == 404:
             flash("Aviso não encontrado.", "error")
             return redirect(url_for('avisos_list'))
@@ -1035,7 +1317,8 @@ def avisos_delete(aviso_id):
     """ Remove aviso via API """
     try:
         print(f"[DEBUG] Removendo aviso {aviso_id}")
-        response = requests.delete(f"{API_BASE_URL}/aviso/{aviso_id}", timeout=10)
+        headers = get_auth_headers()
+        response = requests.delete(f"{API_BASE_URL}/aviso/delete/{aviso_id}", headers=headers, timeout=10)
         print(f"[DEBUG] Status Code: {response.status_code}")
         
         if response.status_code == 204:
@@ -1365,10 +1648,469 @@ def infos_curso_add_horas():
 
     return render_template('infos_curso/add_horas.html', user=session.get('user', {}))
 
+# ===== ROTAS DE ALUNOS =====
+@app.route('/alunos')
+@login_required
+def alunos_list():
+    """ Lista alunos - busca da API """
+    try:
+        print(f"[DEBUG] Buscando alunos em: {API_BASE_URL}/alunos/get_list_alunos/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/alunos/get_list_alunos/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            alunos = response.json()
+            print(f"[DEBUG] {len(alunos)} alunos encontrados")
+            return jsonify(alunos), 200
+        else:
+            flash(f"Erro ao carregar alunos (Status {response.status_code})", "error")
+            return jsonify([]), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar alunos: {e}")
+        flash("Erro ao carregar alunos.", "error")
+        return jsonify([]), 500
+
+@app.route('/alunos/get_email/<email>')
+@login_required
+def alunos_get_by_email(email):
+    """ Busca aluno por email """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/alunos/get_email/{email}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Aluno não encontrado"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE DISCIPLINAS =====
+@app.route('/disciplinas')
+@login_required
+def disciplinas_list():
+    """ Lista disciplinas - busca da API """
+    try:
+        print(f"[DEBUG] Buscando disciplinas em: {API_BASE_URL}/disciplinas/lista_disciplina/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            disciplinas = response.json()
+            print(f"[DEBUG] {len(disciplinas)} disciplinas encontradas")
+            return jsonify(disciplinas), 200
+        else:
+            return jsonify([]), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar disciplinas: {e}")
+        return jsonify([]), 500
+
+@app.route('/disciplinas/get/<disciplina_id>')
+@login_required
+def disciplinas_get(disciplina_id):
+    """ Busca disciplina por ID """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/get_diciplina_id/{disciplina_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Disciplina não encontrada"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE CURSOS =====
+@app.route('/cursos')
+@login_required
+def cursos_list():
+    """ Lista cursos - busca da API """
+    try:
+        headers = get_auth_headers()
+        # Nota: API pode não ter endpoint de lista, verificar
+        response = requests.get(f"{API_BASE_URL}/curso/get_curso/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            cursos = response.json() if isinstance(response.json(), list) else [response.json()]
+            return jsonify(cursos), 200
+        return jsonify([]), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar cursos: {e}")
+        return jsonify([]), 500
+
+@app.route('/cursos/get/<curso_id>')
+@login_required
+def cursos_get(curso_id):
+    """ Busca curso por ID """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/curso/get_curso/{curso_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Curso não encontrado"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE CRONOGRAMA =====
+@app.route('/cronograma')
+@login_required
+def cronograma_list():
+    """ Lista cronogramas - busca da API """
+    try:
+        headers = get_auth_headers()
+        # Nota: API pode precisar de disciplina_id, verificar
+        response = requests.get(f"{API_BASE_URL}/cronograma/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            cronogramas = response.json() if isinstance(response.json(), list) else [response.json()]
+            return jsonify(cronogramas), 200
+        return jsonify([]), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar cronograma: {e}")
+        return jsonify([]), 500
+
+@app.route('/cronograma/disciplina/<disciplina_id>')
+@login_required
+def cronograma_by_disciplina(disciplina_id):
+    """ Busca cronograma por disciplina """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/cronograma/disciplina/{disciplina_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Cronograma não encontrado"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE COORDENADORES =====
+@app.route('/coordenadores')
+@login_required
+def coordenadores_list():
+    """ Lista coordenadores - busca da API """
+    try:
+        print(f"[DEBUG] Buscando coordenadores em: {API_BASE_URL}/coordenador/get_list_coordenador/")
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/coordenador/get_list_coordenador/", headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            coordenadores = response.json()
+            print(f"[DEBUG] {len(coordenadores)} coordenadores encontrados")
+            return jsonify(coordenadores), 200
+        else:
+            return jsonify([]), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar coordenadores: {e}")
+        return jsonify([]), 500
+
+# ===== ROTAS DE AVALIAÇÃO =====
+@app.route('/avaliacoes/disciplina/<disciplina_id>')
+@login_required
+def avaliacoes_by_disciplina(disciplina_id):
+    """ Busca avaliações por disciplina """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/avaliacao/disciplina/{disciplina_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Avaliações não encontradas"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE TRABALHO ACADÊMICO =====
+@app.route('/trabalho_academico', methods=['GET', 'POST'])
+@login_required
+def trabalho_academico_list_create():
+    """ Lista trabalhos acadêmicos ou cria novo """
+    if request.method == 'GET':
+        try:
+            headers = get_auth_headers()
+            # Nota: API não tem endpoint de listagem geral, retorna vazio
+            return jsonify([]), 200
+        except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Erro ao buscar trabalhos acadêmicos: {e}")
+            return jsonify([]), 500
+    elif request.method == 'POST':
+        try:
+            headers = get_auth_headers()
+            data = request.get_json() if request.is_json else request.form.to_dict()
+            response = requests.post(f"{API_BASE_URL}/trabalho_academico/", json=data, headers=headers, timeout=10)
+            if response.status_code == 201:
+                return jsonify(response.json()), 201
+            return jsonify({"error": response.json().get("detail", "Erro ao criar trabalho acadêmico")}), response.status_code
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": str(e)}), 500
+
+@app.route('/trabalho_academico/<trabalho_id>')
+@login_required
+def trabalho_academico_get(trabalho_id):
+    """ Busca trabalho acadêmico por ID """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/trabalho_academico/{trabalho_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Trabalho acadêmico não encontrado"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/trabalho_academico/curso/<curso_id>')
+@login_required
+def trabalho_academico_by_curso(curso_id):
+    """ Lista trabalhos acadêmicos por curso """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/trabalho_academico/curso/{curso_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify([]), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/trabalho_academico/disciplina/<disciplina_id>')
+@login_required
+def trabalho_academico_by_disciplina(disciplina_id):
+    """ Lista trabalhos acadêmicos por disciplina """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/trabalho_academico/disciplina/{disciplina_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify([]), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/trabalho_academico/update/<trabalho_id>', methods=['PUT'])
+@login_required
+def trabalho_academico_update(trabalho_id):
+    """ Atualiza trabalho acadêmico """
+    try:
+        headers = get_auth_headers()
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        response = requests.put(f"{API_BASE_URL}/trabalho_academico/update/{trabalho_id}", json=data, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao atualizar trabalho acadêmico")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/trabalho_academico/delete/<trabalho_id>', methods=['DELETE'])
+@login_required
+def trabalho_academico_delete(trabalho_id):
+    """ Deleta trabalho acadêmico """
+    try:
+        headers = get_auth_headers()
+        response = requests.delete(f"{API_BASE_URL}/trabalho_academico/delete/{trabalho_id}", headers=headers, timeout=10)
+        if response.status_code == 204:
+            return jsonify({"message": "Trabalho acadêmico deletado com sucesso"}), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao deletar trabalho acadêmico")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE BASE DE CONHECIMENTO =====
+@app.route('/baseconhecimento', methods=['GET', 'POST'])
+@login_required
+def base_conhecimento_list_create():
+    """ Lista base de conhecimento ou cria novo """
+    if request.method == 'GET':
+        try:
+            headers = get_auth_headers()
+            query = request.args.get('q', '')
+            if query:
+                response = requests.get(f"{API_BASE_URL}/baseconhecimento/get_buscar?q={query}", headers=headers, timeout=10)
+            else:
+                # Se não houver query, retorna lista vazia
+                return jsonify([]), 200
+            if response.status_code == 200:
+                resultados = response.json()
+                return jsonify(resultados), 200
+            return jsonify([]), response.status_code
+        except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Erro ao buscar base de conhecimento: {e}")
+            return jsonify([]), 500
+    elif request.method == 'POST':
+        try:
+            headers = get_auth_headers()
+            data = request.get_json() if request.is_json else request.form.to_dict()
+            response = requests.post(f"{API_BASE_URL}/baseconhecimento/", json=data, headers=headers, timeout=10)
+            if response.status_code == 201:
+                return jsonify(response.json()), 201
+            return jsonify({"error": response.json().get("detail", "Erro ao criar base de conhecimento")}), response.status_code
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": str(e)}), 500
+
+@app.route('/baseconhecimento/buscar')
+@login_required
+def base_conhecimento_buscar():
+    """ Busca na base de conhecimento """
+    try:
+        headers = get_auth_headers()
+        query = request.args.get('q', '')
+        if not query or len(query) < 3:
+            return jsonify({"error": "Query deve ter pelo menos 3 caracteres"}), 400
+        response = requests.get(f"{API_BASE_URL}/baseconhecimento/get_buscar?q={query}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify([]), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/baseconhecimento/<item_id>')
+@login_required
+def base_conhecimento_get(item_id):
+    """ Busca base de conhecimento por ID """
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/baseconhecimento/get_baseconhecimento_id/{item_id}", headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": "Item não encontrado"}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/baseconhecimento/update/<item_id>', methods=['PUT'])
+@login_required
+def base_conhecimento_update(item_id):
+    """ Atualiza base de conhecimento """
+    try:
+        headers = get_auth_headers()
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        response = requests.put(f"{API_BASE_URL}/baseconhecimento/update/{item_id}", json=data, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao atualizar base de conhecimento")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/baseconhecimento/delete/<item_id>', methods=['DELETE'])
+@login_required
+def base_conhecimento_delete(item_id):
+    """ Deleta base de conhecimento """
+    try:
+        headers = get_auth_headers()
+        response = requests.delete(f"{API_BASE_URL}/baseconhecimento/delete/{item_id}", headers=headers, timeout=10)
+        if response.status_code == 204:
+            return jsonify({"message": "Item deletado com sucesso"}), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao deletar item")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE MENSAGENS DE ALUNO =====
+@app.route('/mensagens_aluno', methods=['GET', 'POST'])
+@login_required
+def mensagens_aluno_list_create():
+    """ Lista mensagens de aluno ou cria nova """
+    if request.method == 'GET':
+        try:
+            headers = get_auth_headers()
+            response = requests.get(f"{API_BASE_URL}/mensagens_aluno/get_lista_msg/", headers=headers, timeout=10)
+            if response.status_code == 200:
+                mensagens = response.json() if isinstance(response.json(), list) else [response.json()]
+                return jsonify(mensagens), 200
+            return jsonify([]), response.status_code
+        except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Erro ao buscar mensagens de aluno: {e}")
+            return jsonify([]), 500
+    elif request.method == 'POST':
+        try:
+            headers = get_auth_headers()
+            data = request.get_json() if request.is_json else request.form.to_dict()
+            response = requests.post(f"{API_BASE_URL}/mensagens_aluno/", json=data, headers=headers, timeout=10)
+            if response.status_code == 201:
+                return jsonify(response.json()), 201
+            return jsonify({"error": response.json().get("detail", "Erro ao criar mensagem")}), response.status_code
+        except requests.exceptions.RequestException as e:
+            return jsonify({"error": str(e)}), 500
+
+@app.route('/mensagens_aluno/update/<item_id>', methods=['PUT'])
+@login_required
+def mensagens_aluno_update(item_id):
+    """ Atualiza mensagem de aluno """
+    try:
+        headers = get_auth_headers()
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        response = requests.put(f"{API_BASE_URL}/mensagens_aluno/update/{item_id}", json=data, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao atualizar mensagem")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/mensagens_aluno/delete/<item_id>', methods=['DELETE'])
+@login_required
+def mensagens_aluno_delete(item_id):
+    """ Deleta mensagem de aluno """
+    try:
+        headers = get_auth_headers()
+        response = requests.delete(f"{API_BASE_URL}/mensagens_aluno/delete/{item_id}", headers=headers, timeout=10)
+        if response.status_code == 204:
+            return jsonify({"message": "Mensagem deletada com sucesso"}), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao deletar mensagem")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE DOCUMENTOS =====
+@app.route('/documentos/upload', methods=['POST'])
+@login_required
+def documentos_upload():
+    """ Upload de documento """
+    try:
+        headers = get_auth_headers()
+        # Remove Content-Type do header para permitir que requests defina automaticamente com boundary
+        upload_headers = {k: v for k, v in headers.items() if k.lower() != 'content-type'}
+        
+        if 'file' not in request.files:
+            return jsonify({"error": "Nenhum arquivo enviado"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Nome de arquivo vazio"}), 400
+        
+        files = {'file': (file.filename, file.stream, file.content_type)}
+        response = requests.post(f"{API_BASE_URL}/documentos/upload", files=files, headers=upload_headers, timeout=30)
+        
+        if response.status_code == 201:
+            return jsonify(response.json()), 201
+        return jsonify({"error": response.json().get("detail", "Erro ao fazer upload do documento")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+# ===== ROTAS DE IA SERVICES =====
+@app.route('/ia/gerar-resposta', methods=['POST'])
+@login_required
+def ia_gerar_resposta():
+    """ Gera resposta usando IA """
+    try:
+        headers = get_auth_headers()
+        data = request.get_json() if request.is_json else request.form.to_dict()
+        
+        # Validação básica
+        if 'pergunta' not in data:
+            return jsonify({"error": "Campo 'pergunta' é obrigatório"}), 400
+        
+        response = requests.post(f"{API_BASE_URL}/ia/gerar-resposta", json=data, headers=headers, timeout=60)
+        
+        if response.status_code == 200:
+            return jsonify(response.json()), 200
+        return jsonify({"error": response.json().get("detail", "Erro ao gerar resposta com IA")}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
 # ===== ERROS =====
 @app.errorhandler(404)
 def handle_404(e):
-    return render_template('404.html'), 404
+    """ Handler para erros 404 - Página não encontrada """
+    if request.path.startswith('/debug/'):
+        # Para rotas de debug, retorna JSON
+        return jsonify({
+            'error': 'Not Found',
+            'message': 'A rota solicitada não foi encontrada.',
+            'path': request.path
+        }), 404
+    else:
+        # Para outras rotas, redireciona para a página inicial
+        flash("Página não encontrada.", "error")
+        return redirect(url_for('index'))
 
 # Execução da aplicação
 if __name__ == '__main__':

@@ -1,3 +1,25 @@
+# ============================================
+# Dependências Principais do Projeto
+# ============================================
+
+# Framework Web
 Flask==3.0.0
+
+# Cliente HTTP para comunicação com a API
 requests==2.31.0
 
+# ============================================
+# Dependências Transitivas (gerenciadas automaticamente)
+# ============================================
+# As seguintes dependências são instaladas automaticamente:
+# - blinker==1.9.0 (usado pelo Flask para signals)
+# - certifi==2025.10.5 (usado pelo requests para certificados SSL)
+# - charset-normalizer==3.4.4 (usado pelo requests para decodificação)
+# - click==8.3.0 (usado pelo Flask CLI)
+# - colorama==0.4.6 (usado pelo click no Windows)
+# - idna==3.11 (usado pelo requests para nomes de domínio)
+# - itsdangerous==2.2.0 (usado pelo Flask para assinatura segura)
+# - Jinja2==3.1.6 (usado pelo Flask para templates)
+# - MarkupSafe==3.0.3 (usado pelo Jinja2)
+# - urllib3==2.5.0 (usado pelo requests)
+# - Werkzeug==3.1.3 (usado pelo Flask como WSGI toolkit)

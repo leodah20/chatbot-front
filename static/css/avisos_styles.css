@@ -1,0 +1,835 @@
+/**
+ * ============================================================================
+ * AVISOS STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para as telas de avisos
+ * do painel administrativo da UNIP. Design baseado no Builder.io e adaptado
+ * para seguir o padrão visual do painel.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/**
+ * ===== SEÇÃO DE AVISOS =====
+ */
+.avisos-section {
+    background-color: var(--unip-bg-card);
+    border-radius: 12px;
+    padding: 48px;
+    box-shadow: var(--shadow-md);
+    width: 100%;
+}
+
+.section-header {
+    margin-bottom: 48px;
+}
+
+.section-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.icon-bell {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    line-height: normal;
+    color: var(--unip-text-primary);
+    margin: 0;
+}
+
+.section-subtitle {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    line-height: normal;
+    color: var(--unip-text-secondary);
+    margin: 4px 0 0 0;
+}
+
+/**
+ * ===== CABEÇALHO DO CURSO E AÇÕES =====
+ */
+.course-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.course-title {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 500;
+    font-size: 32px;
+    line-height: normal;
+    color: var(--unip-text-primary);
+    margin: 0;
+}
+
+.actions-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.btn-create-aviso {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 500;
+    font-size: 25px;
+    line-height: normal;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-create-aviso:hover {
+    background-color: #2980b9;
+}
+
+.btn-create-aviso:focus {
+    outline: 2px solid #005a9c;
+    outline-offset: 2px;
+}
+
+.btn-icon-plus {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.search-input {
+    padding: 10px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--unip-text-primary);
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.filter-select {
+    padding: 10px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--unip-text-primary);
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/**
+ * ===== LISTA DE AVISOS =====
+ */
+.avisos-content {
+    margin-top: 32px;
+}
+
+.avisos-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.aviso-item {
+    margin: 0;
+}
+
+.aviso-button {
+    width: 100%;
+    background-color: white;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.aviso-button:hover {
+    background-color: #e8f4f8;
+    border-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.aviso-button:focus {
+    outline: 2px solid #005a9c;
+    outline-offset: 2px;
+}
+
+.aviso-button-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.aviso-text {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 25px;
+    line-height: normal;
+    color: var(--unip-text-primary);
+    display: block;
+    text-align: left;
+}
+
+.aviso-meta-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.aviso-date {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--unip-text-secondary);
+}
+
+.aviso-author {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    color: #3498db;
+    background-color: #e8f4f8;
+    padding: 4px 12px;
+    border-radius: 4px;
+}
+
+.aviso-actions-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: white;
+    color: var(--unip-text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    padding: 0;
+}
+
+.btn-action:hover {
+    background-color: #f5f5f5;
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.btn-action-danger:hover {
+    background-color: #fee;
+    border-color: var(--unip-danger);
+    color: var(--unip-danger);
+}
+
+/**
+ * ===== ESTADO VAZIO =====
+ */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 32px;
+    text-align: center;
+}
+
+.empty-state svg {
+    margin-bottom: 24px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    color: var(--unip-text-primary);
+    margin: 0 0 12px 0;
+}
+
+.empty-state p {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--unip-text-secondary);
+    margin: 0 0 32px 0;
+}
+
+/**
+ * ===== MENSAGENS FLASH =====
+ */
+.flash-messages {
+    margin-bottom: 24px;
+}
+
+.alert {
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/**
+ * ===== RESPONSIVIDADE =====
+ */
+@media (max-width: 768px) {
+    .avisos-section {
+        padding: 24px;
+    }
+
+    .section-title {
+        font-size: 32px;
+    }
+
+    .course-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .actions-filters {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filters {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .search-input,
+    .filter-select {
+        width: 100%;
+    }
+
+    .aviso-button {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .aviso-actions-inline {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 12px;
+    }
+}
+
+/**
+ * ===== FORMULÁRIO DE ADICIONAR AVISO =====
+ * Estilos baseados no design do Builder.io
+ */
+.menu-infos-curso {
+    display: flex;
+    height: 112px;
+    align-items: center;
+    justify-content: center;
+    gap: 42px;
+    padding: 0;
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+}
+
+.text-wrapper-6 {
+    position: relative;
+    width: fit-content;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 700;
+    color: #023d71;
+    font-size: 40px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.adicionar-materia {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 32px;
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.adicionar-materia .img {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+
+.text-wrapper-7 {
+    position: relative;
+    width: fit-content;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 500;
+    color: #023d71;
+    font-size: 38px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.barra {
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+    height: 1px;
+    border: none;
+    background-color: #e0e0e0;
+    margin: 20px 0;
+}
+
+.caixa-infos {
+    width: 100%;
+    align-items: flex-end;
+    gap: 45px;
+    padding: 63px 44px;
+    flex: 0 0 auto;
+    background-color: #ffffff;
+    border-radius: 10px;
+    border: 3px solid #1583ff;
+    box-shadow: 0px 4px 15px 3px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.frame {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 45px;
+    align-self: stretch;
+    width: 100%;
+    display: flex;
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.div-2 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+    flex: 0 0 auto;
+    gap: 12px;
+}
+
+.text-wrapper-8,
+.text-wrapper-9 {
+    position: relative;
+    width: 100%;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 500;
+    color: #043057;
+    font-size: 29px;
+    letter-spacing: 0;
+    line-height: normal;
+    margin: 0;
+}
+
+.nome-materia {
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+    height: 67px;
+    background-color: #fbfbfb;
+    border-radius: 35px;
+    box-shadow: 0px 4px 4.1px 1px rgba(50, 146, 249, 0.28);
+    border: none;
+    padding: 19px 23px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #494949;
+    font-size: 22px;
+    letter-spacing: 0;
+    line-height: normal;
+    transition: all 0.3s ease;
+}
+
+.nome-materia::placeholder {
+    color: #49494994;
+}
+
+.nome-materia:focus {
+    outline: 2px solid #1583ff;
+    outline-offset: 2px;
+    box-shadow: 0px 4px 8px 2px rgba(21, 131, 255, 0.3);
+}
+
+.caixa-texto {
+    min-height: 400px;
+    align-items: flex-start;
+    align-self: stretch;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    gap: 12px;
+}
+
+.resumo-ementa {
+    position: relative;
+    align-self: stretch;
+    width: 100%;
+    min-height: 343px;
+    background-color: #fbfbfb;
+    border-radius: 35px;
+    box-shadow: 0px 4px 4.1px 1px rgba(50, 146, 249, 0.28);
+    border: none;
+    padding: 19px 23px;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #494949;
+    font-size: 22px;
+    letter-spacing: 0;
+    line-height: 1.5;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+.resumo-ementa::placeholder {
+    color: #49494994;
+}
+
+.resumo-ementa:focus {
+    outline: 2px solid #1583ff;
+    outline-offset: 2px;
+    box-shadow: 0px 4px 8px 2px rgba(21, 131, 255, 0.3);
+}
+
+.data,
+.selecione {
+    display: flex;
+    width: 100%;
+    max-width: 544px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 19px 23px;
+    position: relative;
+    flex: 0 0 auto;
+    background-color: #fbfbfb;
+    border-radius: 35px;
+    box-shadow: 0px 4px 4.1px 1px rgba(50, 146, 249, 0.28);
+    transition: all 0.3s ease;
+}
+
+.data:focus-within,
+.selecione:focus-within {
+    outline: 2px solid #1583ff;
+    outline-offset: 2px;
+    box-shadow: 0px 4px 8px 2px rgba(21, 131, 255, 0.3);
+}
+
+.data-input {
+    position: relative;
+    width: 100%;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #494949;
+    font-size: 25px;
+    letter-spacing: 0;
+    line-height: normal;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+}
+
+.data-2 {
+    position: relative;
+    width: 100%;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #494949;
+    font-size: 25px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+    background: none;
+    border: none;
+    appearance: none;
+    cursor: pointer;
+    flex: 1;
+    outline: none;
+}
+
+.data-2:focus {
+    outline: none;
+}
+
+.vector-2 {
+    position: relative;
+    width: 21px;
+    height: 11px;
+    flex-shrink: 0;
+    pointer-events: none;
+    margin-left: 12px;
+}
+
+.botoes {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.botao-cancelar {
+    background-color: #dc3545;
+    display: flex;
+    width: 168px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 1px 39px;
+    position: relative;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+.botao-cancelar:hover {
+    background-color: #c82333;
+}
+
+.botao-cancelar:focus {
+    outline: 2px solid #dc3545;
+    outline-offset: 2px;
+}
+
+.vector-3 {
+    position: relative;
+    width: 14px;
+    height: 14px;
+}
+
+.text-wrapper-10 {
+    position: relative;
+    width: fit-content;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #ffffff;
+    font-size: 25px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+}
+
+.botao-salvar {
+    background-color: #319959;
+    display: flex;
+    width: 168px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 1px 39px;
+    position: relative;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.botao-salvar:hover {
+    background-color: #28a745;
+}
+
+.botao-salvar:focus {
+    outline: 2px solid #319959;
+    outline-offset: 2px;
+}
+
+.vector-4 {
+    position: relative;
+    width: 18px;
+    height: 13px;
+}
+
+.text-wrapper-11 {
+    position: relative;
+    width: fit-content;
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    color: #ffffff;
+    font-size: 25px;
+    letter-spacing: 0;
+    line-height: normal;
+    white-space: nowrap;
+}
+
+.char-counter {
+    font-family: Rubik, Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    color: #49494994;
+    text-align: right;
+    margin-top: 4px;
+    align-self: flex-end;
+}
+
+/**
+ * ===== RESPONSIVIDADE PARA FORMULÁRIO =====
+ */
+@media (max-width: 768px) {
+    .menu-infos-curso {
+        padding: 0 20px;
+    }
+
+    .text-wrapper-6 {
+        font-size: 32px;
+    }
+
+    .text-wrapper-7 {
+        font-size: 28px;
+    }
+
+    .adicionar-materia {
+        gap: 16px;
+    }
+
+    .adicionar-materia .img {
+        width: 40px;
+        height: 40px;
+    }
+
+    .caixa-infos {
+        padding: 32px 24px;
+    }
+
+    .frame {
+        gap: 32px;
+    }
+
+    .div-2 {
+        gap: 8px;
+    }
+
+    .text-wrapper-8,
+    .text-wrapper-9 {
+        font-size: 24px;
+    }
+
+    .nome-materia {
+        height: 56px;
+        padding: 16px 20px;
+        font-size: 20px;
+    }
+
+    .resumo-ementa {
+        min-height: 280px;
+        padding: 16px 20px;
+        font-size: 20px;
+    }
+
+    .data {
+        padding: 16px 20px;
+    }
+
+    .data-input,
+    .data-2 {
+        font-size: 20px;
+    }
+
+    .botoes {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .botao-cancelar,
+    .botao-salvar {
+        width: 100%;
+    }
+}
+
