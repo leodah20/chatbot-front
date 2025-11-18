@@ -1,0 +1,519 @@
+/**
+ * ============================================================================
+ * DÚVIDAS FREQUENTES STYLES - UNIP ADMINISTRATIVE PANEL
+ * ============================================================================
+ * 
+ * Este arquivo contém todos os estilos específicos para as telas de dúvidas
+ * frequentes do painel administrativo da UNIP. Adaptado do builder.io para
+ * seguir o padrão visual do painel.
+ * 
+ * @author Sistema UNIP
+ * @version 1.0.0
+ * @since 2024
+ * ============================================================================
+ */
+
+/* Importação da fonte Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap");
+
+/**
+ * ===== VARIÁVEIS CSS (CUSTOM PROPERTIES) =====
+ */
+:root {
+  --unip-primary: #023D71;
+  --unip-secondary: #075EBD;
+  --unip-accent: #1583FF;
+  --unip-danger: #DC3545;
+  --unip-success: #329959;
+  --unip-text-primary: #043057;
+  --unip-text-secondary: #4A4A4A;
+  --unip-bg-light: #FBFBFB;
+  --unip-bg-card: #FFFEFE;
+  --radius-lg: 26.25px;
+  --radius-md: 11.25px;
+  --shadow-md: 0 3px 5.1px 0.75px rgba(0, 0, 0, 0.19);
+  --shadow-panel: 0 3px 11.25px 2.25px rgba(0, 0, 0, 0.25);
+}
+
+/**
+ * ===== RESET E CONFIGURAÇÃO BASE =====
+ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--unip-text-primary);
+  background: #fff;
+  min-height: 100vh;
+}
+
+/**
+ * ===== CABEÇALHO =====
+ */
+.header-main {
+  background: var(--unip-primary);
+  padding: 20px 30px 8px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+}
+
+.site-title {
+  color: #fff;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.user-name,
+.user-email {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.btn-logout {
+  display: flex;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--unip-danger);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: #c82333;
+}
+
+.header-sub {
+  background: var(--unip-secondary);
+  padding: 4px 30px;
+  position: relative;
+  overflow: visible;
+}
+
+.menu-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #fff;
+  position: relative;
+  cursor: pointer;
+}
+
+.menu-icon {
+  width: 25px;
+  height: 19px;
+}
+
+.menu-text {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* Dropdown menu */
+.menu-toggle .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #FFF;
+  min-width: 250px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 8px 0;
+  margin-top: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  z-index: 10000;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+.menu-toggle:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: block;
+  padding: 12px 20px;
+  color: #023D71;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dropdown-item:hover {
+  background: #F0F7FF;
+  color: #075EBD;
+}
+
+.dropdown-button {
+  font-family: inherit;
+}
+
+/**
+ * ===== ÁREA PRINCIPAL =====
+ */
+.main-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 15px 20px;
+  min-height: calc(100vh - 120px);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.content-card {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  padding: 40px;
+  flex-direction: column;
+  gap: 30px;
+  border-radius: 18px;
+  background: var(--unip-bg-card);
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 27px;
+}
+
+.header-icon {
+  width: 100px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.page-title {
+  color: var(--unip-primary);
+  font-size: 43px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.separator {
+  height: 1px;
+  background: rgba(175, 175, 175, 0.96);
+  width: 100%;
+  border: none;
+  margin: 0;
+}
+
+.alert-container {
+  width: 100%;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.alert-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.alert-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+/**
+ * ===== INFORMAÇÕES DO CURSO =====
+ */
+.course-info {
+  display: flex;
+  align-items: center;
+  gap: 23px;
+  margin-top: 10px;
+}
+
+.course-code {
+  color: var(--unip-primary);
+  font-size: 35px;
+  font-weight: 500;
+}
+
+.course-name {
+  color: var(--unip-primary);
+  font-size: 36px;
+  font-weight: 500;
+}
+
+/**
+ * ===== NAVEGAÇÃO DE CATEGORIAS =====
+ */
+.categories-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.category-btn {
+  display: flex;
+  width: 100%;
+  min-height: 181px;
+  align-items: center;
+  padding: 0 26px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: 3px solid var(--unip-accent);
+  box-shadow: 0px 4px 15px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.category-btn span {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 400;
+  color: #000000;
+  font-size: 30px;
+  text-align: left;
+  width: 100%;
+}
+
+.category-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 20px 4px rgba(0, 0, 0, 0.4);
+}
+
+.category-btn:active {
+  transform: translateY(0);
+  box-shadow: 0px 4px 15px 3px rgba(0, 0, 0, 0.4);
+}
+
+.category-btn.active {
+  background-color: #F0F7FF;
+  border-color: var(--unip-primary);
+}
+
+.category-btn.active span {
+  font-weight: 600;
+  color: var(--unip-primary);
+}
+
+/**
+ * ===== CONTEÚDO DE DÚVIDAS =====
+ */
+.duvidas-content {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.duvidas-category {
+  display: none;
+}
+
+.duvidas-category.active {
+  display: block;
+}
+
+.duvidas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.duvida-item {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 26px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(21, 131, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.duvida-item:hover {
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.duvida-titulo {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600;
+  color: var(--unip-primary);
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.duvida-conteudo {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 400;
+  color: var(--unip-text-primary);
+  font-size: 18px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.duvida-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(21, 131, 255, 0.1);
+  color: var(--unip-accent);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--unip-text-secondary);
+}
+
+.empty-state p {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+/**
+ * ===== RESPONSIVIDADE =====
+ */
+@media (max-width: 768px) {
+  .header-main {
+    padding: 32px 24px 12px 24px;
+  }
+
+  .site-title {
+    font-size: 28px;
+  }
+
+  .logo {
+    width: 180px;
+  }
+
+  .user-name,
+  .user-email {
+    font-size: 14px;
+  }
+
+  .btn-logout {
+    font-size: 16px;
+    padding: 6px 10px;
+  }
+
+  .header-sub {
+    padding: 6px 24px;
+  }
+
+  .main-container {
+    padding: 15px 16px;
+  }
+
+  .content-card {
+    padding: 24px 20px;
+  }
+
+  .page-title {
+    font-size: 32px;
+  }
+
+  .header-icon {
+    width: 70px;
+    height: 64px;
+  }
+
+  .course-code {
+    font-size: 28px;
+  }
+
+  .course-name {
+    font-size: 30px;
+  }
+
+  .category-btn {
+    min-height: 120px;
+    padding: 20px;
+  }
+
+  .category-btn span {
+    font-size: 24px;
+  }
+
+  .duvida-item {
+    padding: 20px;
+  }
+
+  .duvida-titulo {
+    font-size: 20px;
+  }
+
+  .duvida-conteudo {
+    font-size: 16px;
+  }
+}
+

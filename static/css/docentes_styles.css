@@ -161,6 +161,8 @@ header {
 .header-sub {
     background: var(--unip-secondary);
     padding: 4px 30px;
+    position: relative;
+    overflow: visible;
 }
 
 .menu-toggle {
@@ -168,11 +170,64 @@ header {
     align-items: center;
     gap: 15px;
     color: #fff;
+    position: relative;
+    cursor: pointer;
 }
 
 .menu-icon {
     width: 23px;
     height: 17px;
+}
+
+/* Dropdown menu - Menu de navegação */
+.menu-toggle .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #FFF;
+    min-width: 250px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 10000;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+.menu-toggle:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 12px 20px;
+    color: #023D71;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.dropdown-item:hover {
+    background: #F0F7FF;
+    color: #075EBD;
+}
+
+.dropdown-button {
+    font-family: inherit;
 }
 
 .menu-text {
@@ -317,7 +372,9 @@ header {
     height: 6.75px;
 }
 
-.dropdown-menu {
+/* Dropdown menu - Seletor de docentes */
+.selector-container .dropdown-menu,
+#dropdown-menu {
     display: none;
     position: absolute;
     top: 100%;
@@ -333,7 +390,7 @@ header {
     overflow-y: auto;
 }
 
-.dropdown-menu.active {
+#dropdown-menu.active {
     display: block;
 }
 

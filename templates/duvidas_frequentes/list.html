@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dúvidas Frequentes - Painel Administrativo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/duvidas_frequentes_styles.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-main">
+      <div class="header-content">
+        <div class="brand-section">
+          <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
+            <img src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP Logo" class="logo" />
+          </a>
+          <h1 class="site-title">Painel Administrativo</h1>
+        </div>
+        <div class="user-section">
+          <div class="user-info">
+            <div class="user-name">{{ user.nome|title if user else 'Usuário' }}</div>
+            <div class="user-email">{{ user.email if user else '' }}</div>
+          </div>
+          <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
+        </div>
+      </div>
+    </div>
+    <div class="header-sub">
+      <div class="menu-toggle">
+        <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="menu-text">Menu</span>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('dashboard') }}" class="dropdown-item">Home</a>
+          <a href="{{ url_for('calendario_list') }}" class="dropdown-item">Calendário</a>
+          <a href="{{ url_for('conteudo_list') }}" class="dropdown-item">Conteúdo</a>
+          <a href="{{ url_for('docentes_list') }}" class="dropdown-item">Informações Docentes</a>
+          <a href="{{ url_for('infos_curso_list') }}" class="dropdown-item">Informações Curso</a>
+          <a href="{{ url_for('avisos_list') }}" class="dropdown-item">Avisos</a>
+          <a href="{{ url_for('duvidas_frequentes_list') }}" class="dropdown-item">Dúvidas Frequentes</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section class="content-card">
+      <div class="card-header">
+        <svg class="header-icon" viewBox="0 0 175 131" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M59.2072 65.3962C59.2072 77.707 49.3226 87.6868 37.1294 87.6868C24.9362 87.6868 15.0516 77.707 15.0516 65.3962C15.0516 53.0855 24.9362 43.1057 37.1294 43.1057C49.3226 43.1057 59.2072 53.0855 59.2072 65.3962Z" fill="#023D71"/>
+          <path d="M0.333267 120.539C0.333267 106.088 12.0481 94.3737 26.499 94.3737H47.7601C62.2111 94.3737 73.9258 106.088 73.9258 120.539V121.988C73.9258 126.434 70.3213 130.039 65.8748 130.039H8.38426C3.93782 130.039 0.333267 126.434 0.333267 121.988V120.539Z" fill="#023D71"/>
+          <path d="M30.6363 7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978H167.891C171.782 0.375978 174.936 3.52997 174.936 7.4206V15.4329C174.936 19.3235 171.782 22.4775 167.891 22.4775H37.681C33.7903 22.4775 30.6363 19.3235 30.6363 15.4329V7.4206Z" fill="#023D71"/>
+          <path d="M160.336 130.038C156.445 130.038 153.291 126.884 153.291 122.994V7.42061C153.291 3.52997 156.445 0.375977 160.336 0.375977L167.891 0.375978C171.782 0.375978 174.936 3.52997 174.936 7.4206L174.936 122.994C174.936 126.884 171.782 130.038 167.891 130.038H160.336Z" fill="#023D71"/>
+          <path d="M78.2551 108.842C78.2551 108.342 78.6602 107.937 79.1598 107.937H167.891C171.782 107.937 174.936 111.091 174.936 114.982V126.081C174.936 128.267 173.164 130.038 170.978 130.038H99.4519C87.7452 130.038 78.2551 120.548 78.2551 108.842Z" fill="#023D71"/>
+          <path d="M31.5224 37.212C31.033 37.212 30.6363 36.8153 30.6363 36.326V7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978L50.7734 0.376073C51.6062 0.376073 52.2813 1.05118 52.2813 1.88398V16.4531C52.2813 27.9179 42.9872 37.212 31.5224 37.212Z" fill="#023D71"/>
+          <path d="M102.786 96.1495H141.747V118.251H102.786V96.1495Z" fill="#023D71"/>
+        </svg>
+        <h2 class="page-title">Dúvidas Frequentes</h2>
+      </div>
+      <div class="separator"></div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="alert-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="course-info">
+        <span class="course-code">{{ curso_codigo or '13701' }} -</span>
+        <span class="course-name">{{ curso_nome or 'Ciência da Computação' }}</span>
+      </div>
+
+      <div class="categories-nav">
+        <button class="category-btn active" data-category="materia" type="button">
+          <span>Dúvidas de Matéria</span>
+        </button>
+        <button class="category-btn" data-category="institucional" type="button">
+          <span>Dúvidas de Informações Institucionais</span>
+        </button>
+      </div>
+
+      <div class="duvidas-content">
+        <div id="duvidas-materia" class="duvidas-category active">
+          {% if duvidas_materia and duvidas_materia|length > 0 %}
+            <div class="duvidas-list">
+              {% for duvida in duvidas_materia %}
+                <div class="duvida-item">
+                  {% if duvida is mapping %}
+                    <h3 class="duvida-titulo">{{ duvida.get('nome_arquivo_origem', duvida.get('categoria', 'Dúvida')) }}</h3>
+                    <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:200] }}{% if duvida.get('conteudo_processado', '')|length > 200 %}...{% endif %}</p>
+                    {% if duvida.get('palavra_chave') %}
+                      <div class="duvida-tags">
+                        {% for tag in (duvida.get('palavra_chave', []) if duvida.get('palavra_chave') is iterable and duvida.get('palavra_chave') is not string else [duvida.get('palavra_chave')]) %}
+                          <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <p class="duvida-conteudo">{{ duvida }}</p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <p>Nenhuma dúvida de matéria encontrada.</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <div id="duvidas-institucional" class="duvidas-category">
+          {% if duvidas_institucionais and duvidas_institucionais|length > 0 %}
+            <div class="duvidas-list">
+              {% for duvida in duvidas_institucionais %}
+                <div class="duvida-item">
+                  {% if duvida is mapping %}
+                    <h3 class="duvida-titulo">{{ duvida.get('nome_arquivo_origem', duvida.get('categoria', 'Dúvida')) }}</h3>
+                    <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:200] }}{% if duvida.get('conteudo_processado', '')|length > 200 %}...{% endif %}</p>
+                    {% if duvida.get('palavra_chave') %}
+                      <div class="duvida-tags">
+                        {% for tag in (duvida.get('palavra_chave', []) if duvida.get('palavra_chave') is iterable and duvida.get('palavra_chave') is not string else [duvida.get('palavra_chave')]) %}
+                          <span class="tag">{{ tag }}</span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <p class="duvida-conteudo">{{ duvida }}</p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <p>Nenhuma dúvida institucional encontrada.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Toggle entre categorias
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const category = this.dataset.category;
+        
+        // Remove active de todos os botões
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        // Adiciona active no botão clicado
+        this.classList.add('active');
+        
+        // Esconde todas as categorias
+        document.querySelectorAll('.duvidas-category').forEach(cat => cat.classList.remove('active'));
+        // Mostra a categoria selecionada
+        const targetCategory = category === 'materia' ? 'duvidas-materia' : 'duvidas-institucional';
+        document.getElementById(targetCategory).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
+

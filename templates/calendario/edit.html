@@ -14,7 +14,9 @@
   <header class="page-header">
     <div class="header-top">
       <div class="header-brand">
-        <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
+          <img class="header-logo" src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP">
+        </a>
         <h1 class="header-title">Painel Administrativo</h1>
       </div>
       <div class="header-user">
@@ -31,6 +33,15 @@
           <path d="M23.9919 6.66468H1M23.9919 1H1M23.9919 12.3294H1M23.9919 17.994H1" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="submenu-text">Menu</span>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('dashboard') }}" class="dropdown-item">Home</a>
+          <a href="{{ url_for('calendario_list') }}" class="dropdown-item">Calendário</a>
+          <a href="{{ url_for('conteudo_list') }}" class="dropdown-item">Conteúdo</a>
+          <a href="{{ url_for('docentes_list') }}" class="dropdown-item">Informações Docentes</a>
+          <a href="{{ url_for('infos_curso_list') }}" class="dropdown-item">Informações Curso</a>
+          <a href="{{ url_for('avisos_list') }}" class="dropdown-item">Avisos</a>
+          <a href="{{ url_for('duvidas_frequentes_list') }}" class="dropdown-item">Dúvidas Frequentes</a>
+        </div>
       </div>
     </div>
   </header>

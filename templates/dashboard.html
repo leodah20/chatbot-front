@@ -20,7 +20,9 @@
     <div class="header-top">
       <!-- Logo e título da UNIP -->
       <div class="brand">
-        <img class="logo" src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP">
+        <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
+          <img class="logo" src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP">
+        </a>
         <h1 class="title">Painel Administrativo</h1>
       </div>
       
@@ -39,7 +41,16 @@
           <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="menu-text">Menu</span>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('dashboard') }}" class="dropdown-item">Home</a>
+          <a href="{{ url_for('calendario_list') }}" class="dropdown-item">Calendário</a>
+          <a href="{{ url_for('conteudo_list') }}" class="dropdown-item">Conteúdo</a>
+          <a href="{{ url_for('docentes_list') }}" class="dropdown-item">Informações Docentes</a>
+          <a href="{{ url_for('infos_curso_list') }}" class="dropdown-item">Informações Curso</a>
+          <a href="{{ url_for('avisos_list') }}" class="dropdown-item">Avisos</a>
+          <a href="{{ url_for('duvidas_frequentes_list') }}" class="dropdown-item">Dúvidas Frequentes</a>
         </div>
+      </div>
     </div>
   </header>
 
@@ -93,7 +104,7 @@
                 </a>
 
 
-        <button class="card" type="button">
+        <a href="{{ url_for('duvidas_frequentes_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
             <svg viewBox="0 0 175 131" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M59.2072 65.3962C59.2072 77.707 49.3226 87.6868 37.1294 87.6868C24.9362 87.6868 15.0516 77.707 15.0516 65.3962C15.0516 53.0855 24.9362 43.1057 37.1294 43.1057C49.3226 43.1057 59.2072 53.0855 59.2072 65.3962Z" fill="#3292F9"/>
@@ -106,7 +117,7 @@
             </svg>
           </div>
           <div class="card-title">Dúvidas<br>Frequentes</div>
-        </button>
+        </a>
 
         <a href="{{ url_for('infos_curso_list') }}" class="card" style="text-decoration: none;">
           <div class="card-icon">
@@ -131,3 +142,4 @@
   </main>
 </body>
 </html>
+

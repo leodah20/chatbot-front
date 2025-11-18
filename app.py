@@ -359,8 +359,26 @@ def dashboard():
                 print(f"[DEBUG] {len(data)} avisos encontrados")
             else:
                 print(f"[DEBUG] Formato inesperado de avisos: {data}")
+        elif response.status_code == 403:
+            print(f"[WARN] Avisos - Status 403 - Acesso negado")
+            try:
+                error_detail = response.json()
+                print(f"[WARN] Detalhes do erro: {error_detail}")
+                user_role = session.get('user', {}).get('tipo', 'unknown')
+                print(f"[WARN] User role: {user_role}")
+            except:
+                print(f"[WARN] Resposta: {response.text[:200]}")
+            # Continua sem avisos, mas não bloqueia o dashboard
+        elif response.status_code == 401:
+            print(f"[ERROR] Avisos - Status 401 - Token inválido ou expirado")
+            flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
+            return redirect(url_for('index'))
         else:
-            print(f"[DEBUG] Avisos retornou status {response.status_code}")
+            print(f"[WARN] Avisos retornou status {response.status_code}")
+            try:
+                print(f"[WARN] Resposta: {response.text[:200]}")
+            except:
+                pass
             
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] Erro ao buscar avisos: {e}")
@@ -391,6 +409,12 @@ def test_api():
         headers = get_auth_headers()
         response_avisos = requests.get(f"{API_BASE_URL}/aviso/get_lista_aviso/", headers=headers, timeout=5)
         print(f"[DEBUG] Avisos - Status: {response_avisos.status_code}")
+        if response_avisos.status_code == 403:
+            try:
+                error_detail = response_avisos.json()
+                print(f"[WARN] Erro 403 ao buscar avisos: {error_detail}")
+            except:
+                print(f"[WARN] Resposta: {response_avisos.text[:200]}")
         
         # Teste do endpoint de professores (GET não existe)
         try:
@@ -529,11 +553,19 @@ def docentes_add():
             print(f"[DEBUG] Response Text: {response.text}")
             
             if response.status_code == 201:
-                # Adiciona o novo docente à lista da sessão
-                add_docente_to_list(docente_data)
-                
-                flash("Docente cadastrado com sucesso!", "success")
-                return redirect(url_for('docentes_list'))
+                try:
+                    response_data = response.json()
+                    print(f"[DEBUG] Resposta da API: {response_data}")
+                    # Adiciona o novo docente à lista da sessão com dados da API
+                    add_docente_to_list(docente_data, response_data)
+                    flash("Docente cadastrado com sucesso!", "success")
+                    return redirect(url_for('docentes_list'))
+                except Exception as e:
+                    print(f"[ERROR] Erro ao processar resposta da API: {e}")
+                    # Tenta adicionar mesmo sem a resposta completa
+                    add_docente_to_list(docente_data)
+                    flash("Docente cadastrado com sucesso!", "success")
+                    return redirect(url_for('docentes_list'))
             elif response.status_code == 400:
                 try:
                     error_detail = response.json()
@@ -763,20 +795,35 @@ def get_docentes_list():
         ]
     return session['docentes_list']
 
-def add_docente_to_list(docente_data):
+def add_docente_to_list(docente_data, response_data=None):
     """ Adiciona um novo docente à lista da sessão """
     if 'docentes_list' not in session:
         session['docentes_list'] = []
     
-    # Gera um novo ID único para o docente
-    max_id = max([d.get('id', 0) for d in session['docentes_list']], default=0)
+    # Usa o ID da resposta da API se disponível, senão gera um UUID
+    if response_data and response_data.get('id'):
+        novo_id = response_data.get('id')
+    else:
+        import uuid
+        novo_id = str(uuid.uuid4())
+    
     novo_docente = {
-        'id': max_id + 1,
+        'id': novo_id,
         'nome_professor': docente_data['nome_professor'],
         'sobrenome_professor': docente_data['sobrenome_professor'],
         'email_institucional': docente_data['email_institucional'],
         'id_funcional': docente_data['id_funcional']
     }
+    
+    # Atualiza com dados da resposta da API se disponível
+    if response_data:
+        novo_docente.update({
+            'id': response_data.get('id', novo_id),
+            'disciplina_nomes': response_data.get('disciplina_nomes', []),
+            'dias_atendimento': response_data.get('dias_atendimento', []),
+            'atendimento_hora_inicio': response_data.get('atendimento_hora_inicio'),
+            'atendimento_hora_fim': response_data.get('atendimento_hora_fim')
+        })
     
     session['docentes_list'].append(novo_docente)
     session.modified = True
@@ -800,73 +847,378 @@ def _join_url(base, path):
     return f"{base}{path if path.startswith('/') else '/' + path}"
 
 def resolve_content_endpoint():
+    """
+    Tenta detectar qual endpoint de conteúdo está disponível na API.
+    Retorna o primeiro endpoint que responder (mesmo com erro 400 ou 405, pois indica que existe).
+    Se nenhum for encontrado, retorna '/conteudo' como padrão.
+    """
+    print(f"[DEBUG] Tentando detectar endpoint de conteúdo em {API_BASE_URL}")
     for cand in CONTENT_ENDPOINT_CANDIDATES:
         try:
             url = _join_url(API_BASE_URL, f"{cand}/")
-            resp = requests.get(url, timeout=5)
-            if resp.status_code in (200, 204, 400, 405):
+            # Usa headers de autenticação para verificar o endpoint
+            headers = get_auth_headers()
+            resp = requests.get(url, headers=headers, timeout=5)
+            # 200, 204 = sucesso
+            # 400, 401, 403 = endpoint existe mas com erro de validação/auth
+            # 405 = método não permitido, mas endpoint existe
+            # 404 = endpoint não existe
+            if resp.status_code in (200, 204, 400, 401, 403, 405):
+                print(f"[INFO] Endpoint de conteúdo detectado: {cand} (Status: {resp.status_code})")
                 return cand
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            print(f"[DEBUG] Endpoint {cand} não acessível: {e}")
             continue
+    print(f"[WARN] Nenhum endpoint de conteúdo encontrado. Usando padrão: /conteudo")
+    print(f"[WARN] ATENÇÃO: O endpoint /conteudo pode não existir na API em {API_BASE_URL}")
     return "/conteudo"
 
 def get_conteudos_api():
-    endpoint = resolve_content_endpoint()
+    """Busca conteúdo da base de conhecimento da API"""
     try:
         headers = get_auth_headers()
-        resp = requests.get(_join_url(API_BASE_URL, f"{endpoint}/"), headers=headers, timeout=8)
-        if resp.status_code == 200 and isinstance(resp.json(), list):
-            return resp.json()
+        # Tenta buscar via GET /baseconhecimento/ (pode não existir)
+        # Se não existir, retorna lista vazia e usa dados da sessão
+        try:
+            resp = requests.get(f"{API_BASE_URL}/baseconhecimento/", headers=headers, timeout=8)
+            if resp.status_code == 200:
+                items = resp.json()
+                if isinstance(items, list):
+                    # Busca todas as disciplinas de uma vez para mapear IDs para nomes
+                    disciplinas_map = {}
+                    try:
+                        disc_response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+                        if disc_response.status_code == 200:
+                            disciplinas = disc_response.json()
+                            for disc in disciplinas:
+                                disciplinas_map[disc.get('id_disciplina')] = disc.get('nome_disciplina', 'Sem Disciplina')
+                    except:
+                        pass
+                    
+                    # Transforma dados da base de conhecimento para o formato do frontend
+                    conteudos = []
+                    for item in items:
+                        # Busca nome da disciplina se tiver id_disciplina
+                        disciplina_nome = 'Sem Disciplina'
+                        if item.get('id_disciplina'):
+                            disciplina_nome = disciplinas_map.get(item.get('id_disciplina'), item.get('id_disciplina'))
+                        
+                        # Extrai link do conteúdo processado
+                        link = ''
+                        conteudo_texto = item.get('conteudo_processado', '')
+                        if 'Link:' in conteudo_texto:
+                            link = conteudo_texto.replace('Link: ', '').split('\n')[0].strip()
+                        
+                        conteudo = {
+                            'id': str(item.get('id_conhecimento', '')),
+                            'titulo': item.get('nome_arquivo_origem', 'Sem título'),
+                            'disciplina': disciplina_nome,
+                            'tipo': item.get('categoria', 'Material de Aula'),
+                            'link': link,
+                            'url_arquivo': item.get('nome_arquivo_origem', ''),
+                        }
+                        conteudos.append(conteudo)
+                    print(f"[INFO] {len(conteudos)} conteúdos encontrados na base de conhecimento")
+                    return conteudos
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                print(f"[INFO] Endpoint GET /baseconhecimento/ não encontrado - usando dados da sessão")
+            else:
+                print(f"[WARN] Erro ao buscar base de conhecimento: {e.response.status_code}")
+        except Exception as e:
+            print(f"[WARN] Endpoint GET /baseconhecimento/ não disponível: {e}")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] Conteúdo GET falhou: {e}")
     return []
 
-def create_conteudo_api(data, file_storage=None):
-    endpoint = resolve_content_endpoint()
-    url = _join_url(API_BASE_URL, f"{endpoint}/")
+def get_disciplina_id_by_name(disciplina_nome):
+    """Busca o ID da disciplina pelo nome usando a API"""
     try:
         headers = get_auth_headers()
-        if file_storage and file_storage.filename:
-            # Remove Content-Type para multipart/form-data
-            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
-            files = {"arquivo": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-            resp = requests.post(url, data=data, files=files, headers=headers_multipart, timeout=15)
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            disciplinas = response.json()
+            # Busca disciplina por nome (case-insensitive)
+            for disc in disciplinas:
+                if disc.get('nome_disciplina', '').lower() == disciplina_nome.lower():
+                    disciplina_id = disc.get('id_disciplina')
+                    print(f"[INFO] Disciplina '{disciplina_nome}' encontrada - ID: {disciplina_id}")
+                    return disciplina_id
+            print(f"[WARN] Disciplina '{disciplina_nome}' não encontrada na API")
         else:
-            resp = requests.post(url, json=data, headers=headers, timeout=10)
-        if resp.status_code in (200, 201):
+            print(f"[WARN] Erro ao buscar disciplinas: Status {response.status_code}")
             try:
-                return True, resp.json()
-            except Exception:
-                return True, None
-        return False, resp.text
-    except requests.exceptions.RequestException as e:
-        return False, str(e)
+                print(f"[DEBUG] Resposta: {response.text[:200]}")
+            except:
+                pass
+    except Exception as e:
+        print(f"[ERROR] Erro ao buscar disciplina: {e}")
+        import traceback
+        traceback.print_exc()
+    return None
+
+def create_conteudo_api(data, file_storage=None):
+    """
+    Cria conteúdo usando os endpoints existentes:
+    - /documentos/upload para arquivos
+    - /baseconhecimento/ para metadados
+    """
+    user_email = session.get('user', {}).get('email', 'unknown')
+    print(f"[INFO] Criando conteúdo - Usuário: {user_email}")
+    print(f"[DEBUG] Dados recebidos: {data}")
+    print(f"[DEBUG] Arquivo: {file_storage.filename if file_storage and file_storage.filename else 'Nenhum'}")
+    
+    try:
+        headers = get_auth_headers()
+        titulo = data.get('titulo', '')
+        disciplina_nome = data.get('disciplina', '')
+        tipo = data.get('tipo', 'aula')  # aula ou complementar
+        link = data.get('link', '')
+        
+        # 1. Upload do arquivo se houver
+        nome_arquivo_final = titulo
+        conteudo_para_base = f"Material: {titulo}"
+        
+        if file_storage and file_storage.filename:
+            print(f"[INFO] Fazendo upload do arquivo: {file_storage.filename}")
+            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
+            
+            # Reset stream position e prepara arquivo para upload
+            file_storage.stream.seek(0)
+            files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+            
+            upload_response = requests.post(
+                f"{API_BASE_URL}/documentos/upload",
+                files=files,
+                headers=headers_multipart,
+                timeout=15
+            )
+            
+            if upload_response.status_code == 201:
+                upload_data = upload_response.json()
+                nome_arquivo_final = upload_data.get('filename', file_storage.filename)
+                print(f"[INFO] ✅ Arquivo enviado com sucesso para a pasta monitorada pela API")
+                print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
+                conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+            else:
+                error_msg = f"Erro ao fazer upload do arquivo: {upload_response.status_code}"
+                print(f"[ERROR] {error_msg}")
+                try:
+                    error_detail = upload_response.json()
+                    error_msg = error_detail.get('detail', error_msg)
+                except:
+                    error_msg = upload_response.text or error_msg
+                return False, error_msg
+        elif link:
+            # Se tiver apenas link, não precisa de upload
+            conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
+            nome_arquivo_final = titulo
+        
+        # 2. Buscar ID da disciplina
+        id_disciplina = None
+        if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+            id_disciplina = get_disciplina_id_by_name(disciplina_nome)
+            if not id_disciplina:
+                print(f"[WARN] Disciplina '{disciplina_nome}' não encontrada, criando sem disciplina")
+        
+        # 3. Mapear tipo para categoria
+        categoria_map = {
+            'aula': 'Material de Aula',
+            'complementar': 'Material Complementar'
+        }
+        categoria = categoria_map.get(tipo, 'Material de Aula')
+        
+        # 4. Preparar dados para base de conhecimento
+        # Garante que todos os campos obrigatórios estão presentes
+        base_conhecimento_data = {
+            "nome_arquivo_origem": nome_arquivo_final,
+            "conteudo_processado": conteudo_para_base,
+            "palavra_chave": [titulo.lower()] if titulo else [],  # Usa o título como palavra-chave
+            "categoria": categoria,
+            "status": "ativo",  # Status ativo para que o RASA possa consultar
+        }
+        
+        # Adiciona id_disciplina apenas se encontrado (opcional)
+        if id_disciplina:
+            # Garante que o UUID está no formato correto (string)
+            base_conhecimento_data["id_disciplina"] = str(id_disciplina)
+            print(f"[INFO] Associando conteúdo à disciplina ID: {id_disciplina}")
+        
+        print(f"[INFO] Salvando na base de conhecimento: {base_conhecimento_data}")
+        
+        # 5. Salvar na base de conhecimento
+        base_response = requests.post(
+            f"{API_BASE_URL}/baseconhecimento/",
+            json=base_conhecimento_data,
+            headers=headers,
+            timeout=10
+        )
+        
+        print(f"[INFO] POST /baseconhecimento/ - Status: {base_response.status_code}")
+        
+        if base_response.status_code == 201:
+            response_data = base_response.json()
+            id_conhecimento = response_data.get('id_conhecimento', '')
+            print(f"[INFO] ✅ Conteúdo salvo com sucesso na base de conhecimento (Supabase)")
+            print(f"[INFO] ID do conhecimento criado: {id_conhecimento}")
+            print(f"[INFO] Dados salvos no Supabase: {response_data}")
+            
+            # Retorna dados no formato esperado pelo frontend
+            return True, {
+                'id': str(id_conhecimento),
+                'titulo': titulo,
+                'disciplina': disciplina_nome,
+                'tipo': tipo,
+                'link': link,
+                'url_arquivo': nome_arquivo_final if file_storage else '',
+                'message': 'Conteúdo salvo com sucesso na API e armazenado no Supabase'
+            }
+        
+        # Tratamento de erros
+        if base_response.status_code == 401:
+            error_msg = "Sua sessão expirou. Por favor, faça login novamente."
+            print(f"[ERROR] POST /baseconhecimento/ - Status: 401 - Não autorizado")
+            return False, error_msg
+        elif base_response.status_code == 403:
+            error_msg = "Acesso negado. Você não tem permissão para criar conteúdo."
+            print(f"[ERROR] POST /baseconhecimento/ - Status: 403 - Acesso negado")
+            return False, error_msg
+        elif base_response.status_code == 422:
+            try:
+                error_detail = base_response.json()
+                error_msg = f"Dados inválidos: {error_detail}"
+            except:
+                error_msg = f"Dados inválidos: {base_response.text[:200]}"
+            print(f"[ERROR] POST /baseconhecimento/ - Status: 422 - {error_msg}")
+            return False, error_msg
+        elif base_response.status_code == 500:
+            error_msg = "Erro interno do servidor. Tente novamente mais tarde."
+            print(f"[ERROR] POST /baseconhecimento/ - Status: 500 - Erro do servidor")
+            try:
+                error_detail = base_response.json()
+                print(f"[DEBUG] Detalhes do erro: {error_detail}")
+            except:
+                print(f"[DEBUG] Resposta: {base_response.text[:200]}")
+            return False, error_msg
+        else:
+            try:
+                error_detail = base_response.json()
+                error_msg = error_detail.get('detail', base_response.text) if isinstance(error_detail, dict) else str(error_detail)
+            except:
+                error_msg = base_response.text or f"Erro HTTP {base_response.status_code}"
+            print(f"[ERROR] POST /baseconhecimento/ - Status: {base_response.status_code} - {error_msg}")
+            return False, error_msg
+            
+    except requests.exceptions.ConnectionError as e:
+        error_msg = f"Não foi possível conectar à API em {API_BASE_URL}. Verifique se a API está rodando e acessível."
+        print(f"[ERROR] Erro de conexão: {e}")
+        return False, error_msg
+    except requests.exceptions.Timeout as e:
+        error_msg = f"Timeout ao conectar com a API em {API_BASE_URL}. O servidor pode estar sobrecarregado."
+        print(f"[ERROR] Timeout: {e}")
+        return False, error_msg
+    except Exception as e:
+        error_msg = f"Erro inesperado ao criar conteúdo: {str(e)}"
+        print(f"[ERROR] Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, error_msg
 
 def update_conteudo_api(conteudo_id, data, file_storage=None):
-    endpoint = resolve_content_endpoint()
-    url = _join_url(API_BASE_URL, f"{endpoint}/{conteudo_id}")
+    """Atualiza conteúdo usando /baseconhecimento/update/{item_id}"""
     try:
         headers = get_auth_headers()
+        titulo = data.get('titulo', '')
+        disciplina_nome = data.get('disciplina', '')
+        tipo = data.get('tipo', 'aula')
+        link = data.get('link', '')
+        
+        # 1. Upload do novo arquivo se houver
+        nome_arquivo_final = titulo
+        conteudo_para_base = f"Material: {titulo}"
+        
         if file_storage and file_storage.filename:
-            # Remove Content-Type para multipart/form-data
+            print(f"[INFO] Fazendo upload do novo arquivo: {file_storage.filename}")
             headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
-            files = {"arquivo": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-            resp = requests.put(url, data=data, files=files, headers=headers_multipart, timeout=15)
-        else:
-            resp = requests.put(url, json=data, headers=headers, timeout=10)
+            file_storage.stream.seek(0)
+            files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+            
+            upload_response = requests.post(
+                f"{API_BASE_URL}/documentos/upload",
+                files=files,
+                headers=headers_multipart,
+                timeout=15
+            )
+            
+            if upload_response.status_code == 201:
+                upload_data = upload_response.json()
+                nome_arquivo_final = upload_data.get('filename', file_storage.filename)
+                conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+            else:
+                print(f"[WARN] Erro ao fazer upload do novo arquivo: {upload_response.status_code}")
+        elif link:
+            conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
+        
+        # 2. Buscar ID da disciplina
+        id_disciplina = None
+        if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+            id_disciplina = get_disciplina_id_by_name(disciplina_nome)
+        
+        # 3. Mapear tipo para categoria
+        categoria_map = {
+            'aula': 'Material de Aula',
+            'complementar': 'Material Complementar'
+        }
+        categoria = categoria_map.get(tipo, 'Material de Aula')
+        
+        # 4. Preparar dados para atualização
+        update_data = {
+            "nome_arquivo_origem": nome_arquivo_final,
+            "conteudo_processado": conteudo_para_base,
+            "categoria": categoria,
+        }
+        
+        if id_disciplina:
+            update_data["id_disciplina"] = str(id_disciplina)
+        
+        # 5. Atualizar na base de conhecimento (Supabase)
+        resp = requests.put(
+            f"{API_BASE_URL}/baseconhecimento/update/{conteudo_id}",
+            json=update_data,
+            headers=headers,
+            timeout=10
+        )
+        
+        print(f"[INFO] PUT /baseconhecimento/update/{conteudo_id} - Status: {resp.status_code}")
+        if resp.status_code in (200, 204):
+            print(f"[INFO] ✅ Conteúdo atualizado com sucesso no Supabase")
+            if resp.status_code == 200:
+                try:
+                    response_data = resp.json()
+                    print(f"[INFO] Dados atualizados no Supabase: {response_data}")
+                except:
+                    pass
         return resp.status_code in (200, 204)
+        
     except requests.exceptions.RequestException as e:
-        print(f"[DEBUG] Conteúdo PUT falhou: {e}")
+        print(f"[ERROR] Conteúdo PUT falhou: {e}")
         return False
 
 def delete_conteudo_api(conteudo_id):
-    endpoint = resolve_content_endpoint()
-    url = _join_url(API_BASE_URL, f"{endpoint}/{conteudo_id}")
+    """Deleta conteúdo usando /baseconhecimento/delete/{item_id}"""
     try:
         headers = get_auth_headers()
-        resp = requests.delete(url, headers=headers, timeout=8)
+        resp = requests.delete(
+            f"{API_BASE_URL}/baseconhecimento/delete/{conteudo_id}",
+            headers=headers,
+            timeout=8
+        )
+        print(f"[INFO] DELETE /baseconhecimento/delete/{conteudo_id} - Status: {resp.status_code}")
+        if resp.status_code in (200, 204):
+            print(f"[INFO] ✅ Conteúdo deletado com sucesso do Supabase")
         return resp.status_code in (200, 204)
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Conteúdo DELETE falhou: {e}")
         return False
 
 # ===== Sessão (fallback local) =====
@@ -941,31 +1293,49 @@ def conteudo_list():
 @app.route('/conteudo/add', methods=['GET', 'POST'])
 @login_required
 def conteudo_add():
+    print(f"[DEBUG] Rota /conteudo/add acessada - Método: {request.method}")
+    
     if request.method == 'POST':
+        print(f"[DEBUG] Processando POST /conteudo/add")
         tipo = request.form.get('tipo', 'aula')
         titulo = request.form.get('titulo', '').strip()
         disciplina = request.form.get('disciplina', '').strip() or 'Sem Disciplina'
         link = request.form.get('link', '').strip()
         arquivo = request.files.get('arquivo')
+        
+        print(f"[DEBUG] Dados do formulário - tipo: {tipo}, titulo: {titulo}, disciplina: {disciplina}, link: {link}")
+        print(f"[DEBUG] Arquivo recebido: {arquivo.filename if arquivo and arquivo.filename else 'Nenhum'}")
 
         if not titulo:
+            print(f"[WARN] POST /conteudo/add - Título não fornecido")
             flash('Título é obrigatório.', 'error')
             return render_template('conteudo/add.html')
 
         if not link and (not arquivo or not arquivo.filename):
+            print(f"[WARN] POST /conteudo/add - Nem arquivo nem link fornecido")
             flash('Envie um arquivo ou informe um link.', 'error')
             return render_template('conteudo/add.html')
 
         payload = { 'tipo': tipo, 'titulo': titulo, 'disciplina': disciplina, 'link': link }
+        print(f"[DEBUG] Chamando create_conteudo_api com payload: {payload}")
         ok, resp = create_conteudo_api(payload, arquivo)
+        print(f"[DEBUG] Resposta de create_conteudo_api - ok: {ok}, resp: {resp}")
         if ok:
-            # Atualiza cache local
-            added = { **payload, 'url_arquivo': '', 'id': (resp.get('id') if isinstance(resp, dict) else None) }
+            # Conteúdo já foi salvo na API (base de conhecimento + documentos)
+            # Adiciona à sessão para exibição imediata
+            added = { 
+                **payload, 
+                'url_arquivo': resp.get('url_arquivo', '') if isinstance(resp, dict) else '',
+                'id': (resp.get('id') if isinstance(resp, dict) else None)
+            }
             add_conteudo_session(added)
-            flash('Conteúdo cadastrado com sucesso!', 'success')
+            
+            flash('✅ Conteúdo cadastrado com sucesso na API! O chatbot RASA já pode consultar este material.', 'success')
             return redirect(url_for('conteudo_list', disciplina=disciplina))
         else:
-            flash(f'Erro ao cadastrar conteúdo: {resp}', 'error')
+            # Melhora a mensagem de erro para o usuário
+            error_message = resp if isinstance(resp, str) else str(resp)
+            flash(f'Erro ao cadastrar conteúdo: {error_message}', 'error')
 
     return render_template('conteudo/add.html')
 
@@ -2069,6 +2439,92 @@ def base_conhecimento_delete(item_id):
     except requests.exceptions.RequestException as e:
         return jsonify({"error": str(e)}), 500
 
+# ===== ROTAS DE DÚVIDAS FREQUENTES =====
+@app.route('/duvidas-frequentes')
+@login_required
+def duvidas_frequentes_list():
+    """ Lista dúvidas frequentes da base de conhecimento """
+    try:
+        headers = get_auth_headers()
+        user = session.get('user', {})
+        curso_codigo = user.get('curso_codigo', '')
+        curso_nome = user.get('curso_nome', '')
+        
+        # Como a API não tem endpoint para listar todos, vamos fazer buscas por termos comuns
+        # e consolidar os resultados
+        termos_busca = ['duvida', 'frequente', 'pergunta', 'como', 'quando', 'onde', 'o que']
+        todas_duvidas_dict = {}  # Usar dict para evitar duplicatas
+        
+        for termo in termos_busca:
+            try:
+                response = requests.get(
+                    f"{API_BASE_URL}/baseconhecimento/get_buscar?q={termo}",
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    resultados = response.json()
+                    if isinstance(resultados, dict) and 'contextos' in resultados:
+                        contextos = resultados.get('contextos', [])
+                        for contexto in contextos:
+                            # Usar o contexto como chave para evitar duplicatas
+                            if isinstance(contexto, str):
+                                todas_duvidas_dict[contexto] = {
+                                    'conteudo_processado': contexto,
+                                    'categoria': 'institucional'
+                                }
+            except Exception as e:
+                print(f"[DEBUG] Erro ao buscar termo '{termo}': {e}")
+                continue
+        
+        # Converter dict para lista
+        todas_duvidas = list(todas_duvidas_dict.values())
+        
+        # Categorias de dúvidas
+        duvidas_materia = []
+        duvidas_institucionais = []
+        
+        # Separar por categoria
+        for duvida in todas_duvidas:
+            if isinstance(duvida, dict):
+                categoria = duvida.get('categoria', '').lower()
+                conteudo = duvida.get('conteudo_processado', '').lower()
+                
+                # Classificar baseado em palavras-chave no conteúdo
+                if any(palavra in conteudo for palavra in ['materia', 'disciplina', 'curso', 'aula', 'professor', 'docente']):
+                    duvidas_materia.append(duvida)
+                else:
+                    duvidas_institucionais.append(duvida)
+            else:
+                # Se for apenas string, adiciona em institucionais
+                duvidas_institucionais.append({'conteudo_processado': str(duvida)})
+        
+        # Se não encontrou nada, pelo menos mostra a estrutura vazia
+        if not todas_duvidas:
+            flash("Nenhuma dúvida frequente encontrada na base de conhecimento.", "info")
+        
+        return render_template(
+            'duvidas_frequentes/list.html',
+            user=user,
+            curso_codigo=curso_codigo,
+            curso_nome=curso_nome,
+            duvidas_materia=duvidas_materia,
+            duvidas_institucionais=duvidas_institucionais,
+            todas_duvidas=todas_duvidas
+        )
+    except requests.exceptions.RequestException as e:
+        flash(f"Erro ao carregar dúvidas frequentes: {str(e)}", "error")
+        return render_template(
+            'duvidas_frequentes/list.html',
+            user=session.get('user', {}),
+            curso_codigo=session.get('user', {}).get('curso_codigo', ''),
+            curso_nome=session.get('user', {}).get('curso_nome', ''),
+            duvidas_materia=[],
+            duvidas_institucionais=[],
+            todas_duvidas=[]
+        )
+
 # ===== ROTAS DE MENSAGENS DE ALUNO =====
 @app.route('/mensagens_aluno', methods=['GET', 'POST'])
 @login_required
@@ -2183,7 +2639,7 @@ def handle_404(e):
         }), 404
     else:
         # Para outras rotas, redireciona para a página inicial
-        flash("Página não encontrada.", "error")
+        # Não exibe mensagem de erro para evitar duplicação, pois o flash já foi usado antes
         return redirect(url_for('index'))
 
 # Execução da aplicação

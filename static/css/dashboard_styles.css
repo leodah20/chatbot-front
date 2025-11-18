@@ -166,11 +166,14 @@ body {
 /**
  * Container do conteúdo do submenu
  * Alinha ícone e texto do menu
+ * Posição relativa para o dropdown
  */
 .submenu-content {
     display: flex;        /* Layout flexbox horizontal */
     align-items: center;  /* Centraliza verticalmente */
     gap: 14.995px;       /* Espaçamento entre ícone e texto */
+    position: relative;  /* Posição relativa para o dropdown */
+    cursor: pointer;     /* Cursor de ponteiro */
 }
 
 /**
@@ -191,6 +194,73 @@ body {
     font-size: 18px;    /* Tamanho legível */
     font-weight: 500;   /* Peso médio */
     line-height: normal; /* Altura de linha padrão */
+}
+
+/**
+ * Dropdown menu
+ * Menu suspenso que aparece ao passar o mouse
+ */
+.dropdown-menu {
+    position: absolute;        /* Posição absoluta em relação ao submenu-content */
+    top: 100%;                 /* Abaixo do botão menu */
+    left: 0;                   /* Alinhado à esquerda */
+    background: #FFF;         /* Fundo branco */
+    min-width: 250px;         /* Largura mínima */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra para destaque */
+    border-radius: 8px;        /* Bordas arredondadas */
+    padding: 8px 0;           /* Padding interno */
+    margin-top: 8px;          /* Espaçamento do botão */
+    opacity: 0;               /* Inicialmente invisível */
+    visibility: hidden;       /* Escondido */
+    transform: translateY(-10px); /* Levemente deslocado para cima */
+    transition: all 0.3s ease; /* Transição suave */
+    z-index: 1000;            /* Sobre outros elementos */
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Borda sutil */
+}
+
+/**
+ * Mostra o dropdown ao passar o mouse sobre o submenu-content
+ */
+.submenu-content:hover .dropdown-menu {
+    opacity: 1;                /* Visível */
+    visibility: visible;       /* Mostrado */
+    transform: translateY(0);  /* Posição normal */
+}
+
+/**
+ * Itens do dropdown
+ * Links e botões dentro do menu suspenso
+ */
+.dropdown-item {
+    display: block;            /* Bloco para ocupar toda a largura */
+    padding: 12px 20px;       /* Padding interno */
+    color: #023D71;           /* Cor azul primária UNIP */
+    text-decoration: none;     /* Remove sublinhado */
+    font-size: 16px;          /* Tamanho legível */
+    font-weight: 500;         /* Peso médio */
+    transition: all 0.2s ease; /* Transição suave */
+    border: none;             /* Remove borda padrão */
+    background: none;         /* Remove fundo padrão */
+    width: 100%;              /* Largura total */
+    text-align: left;         /* Alinhamento à esquerda */
+    cursor: pointer;          /* Cursor de ponteiro */
+}
+
+/**
+ * Efeito hover nos itens do dropdown
+ * Destaque ao passar o mouse
+ */
+.dropdown-item:hover {
+    background: #F0F7FF;      /* Fundo azul claro */
+    color: #075EBD;           /* Azul secundário mais escuro */
+}
+
+/**
+ * Botão dentro do dropdown
+ * Estilo específico para botões (como Dúvidas Frequentes)
+ */
+.dropdown-button {
+    font-family: inherit;     /* Herda a fonte do body */
 }
 
 /**
@@ -358,6 +428,17 @@ body {
 
     .submenu {
         padding: 6px 24px; /* Padding maior em mobile */
+    }
+
+    /* Dropdown responsivo em mobile */
+    .dropdown-menu {
+        min-width: 200px; /* Largura menor em mobile */
+        left: -10px;       /* Ajuste de posição */
+    }
+
+    .dropdown-item {
+        padding: 14px 16px; /* Padding maior em mobile */
+        font-size: 18px;    /* Fonte maior para melhor usabilidade */
     }
 
     /* Cards responsivos */

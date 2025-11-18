@@ -20,7 +20,9 @@
         <div class="top">
             <!-- Logo e título da UNIP -->
             <div class="brand">
-                <img src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP Logo">
+                <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
+                  <img src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP Logo">
+                </a>
                 <h1>Painel Administrativo</h1>
             </div>
             
@@ -36,13 +38,21 @@
         
         <!-- Navegação -->
         <div class="bottom">
-            <!-- Link para voltar à lista de avisos -->
-            <a href="{{ url_for('avisos_list') }}" style="color: white; text-decoration: none; display: flex; align-items: center; gap: 12px;">
-                <svg class="icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.8333 10H4.16667M10 4.16667L4.16667 10L10 15.8333" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div class="menu-toggle" style="position: relative; display: flex; align-items: center; gap: 14px;">
+                <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 25px; height: 19px;">
+                    <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span>Voltar aos Avisos</span>
-            </a>
+                <span class="menu-text" style="color: white; font-size: 18px; font-weight: 500;">Menu</span>
+                <div class="dropdown-menu">
+                  <a href="{{ url_for('dashboard') }}" class="dropdown-item">Home</a>
+                  <a href="{{ url_for('calendario_list') }}" class="dropdown-item">Calendário</a>
+                  <a href="{{ url_for('conteudo_list') }}" class="dropdown-item">Conteúdo</a>
+                  <a href="{{ url_for('docentes_list') }}" class="dropdown-item">Informações Docentes</a>
+                  <a href="{{ url_for('infos_curso_list') }}" class="dropdown-item">Informações Curso</a>
+                  <a href="{{ url_for('avisos_list') }}" class="dropdown-item">Avisos</a>
+                  <a href="{{ url_for('duvidas_frequentes_list') }}" class="dropdown-item">Dúvidas Frequentes</a>
+                </div>
+            </div>
         </div>
     </header>
 

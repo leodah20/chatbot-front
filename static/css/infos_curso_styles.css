@@ -54,11 +54,22 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .header-submenu{background:#075EBD;padding:4px 30px}
 
-.submenu-wrapper{display:flex;align-items:center;gap:15px}
+.submenu-wrapper{display:flex;align-items:center;gap:15px;position:relative;cursor:pointer}
 
 .icon-menu{width:23px;height:17px;flex-shrink:0}
 
 .submenu-text{font-size:clamp(14px,1.5vw,18px);font-weight:400}
+
+/* Dropdown menu */
+.dropdown-menu{position:absolute;top:100%;left:0;background:#FFF;min-width:250px;box-shadow:0 4px 12px rgba(0,0,0,.15);border-radius:8px;padding:8px 0;margin-top:8px;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all .3s ease;z-index:1000;border:1px solid rgba(0,0,0,.1)}
+
+.submenu-wrapper:hover .dropdown-menu{opacity:1;visibility:visible;transform:translateY(0)}
+
+.dropdown-item{display:block;padding:12px 20px;color:#023D71;text-decoration:none;font-size:16px;font-weight:500;transition:all .2s ease;border:none;background:none;width:100%;text-align:left;cursor:pointer;font-family:inherit}
+
+.dropdown-item:hover{background:#F0F7FF;color:#075EBD}
+
+.dropdown-button{font-family:inherit}
 
 /**
  * ===== ÁREA PRINCIPAL =====
