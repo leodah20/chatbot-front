@@ -21,8 +21,8 @@
       </div>
       <div class="header-user">
         <div class="user-info-panel">
-          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
-          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+          <div class="user-name-text">{{ user.nome|title if user and user.nome else '' }}</div>
+          <div class="user-email-text">{{ user.email if user and user.email else '' }}</div>
         </div>
         <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
       </div>
@@ -78,9 +78,14 @@
             <label class="field-label">Professor Responsável</label>
             <select class="field-select" name="professor" required>
               <option value="">Selecione</option>
-              <option value="José Zesinho" {% if wizard.professor == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
-              <option value="Maria Silva" {% if wizard.professor == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
-              <option value="Myriam da Silva" {% if wizard.professor == 'Myriam da Silva' %}selected{% endif %}>Myriam da Silva</option>
+              {% if professores %}
+                {% for prof in professores %}
+                  {% set nome_completo = prof.get('nome_completo') or (prof.get('nome_professor', '') + ' ' + prof.get('sobrenome_professor', '')).strip() %}
+                  {% if nome_completo %}
+                    <option value="{{ nome_completo }}" {% if wizard.professor == nome_completo %}selected{% endif %}>{{ nome_completo }}</option>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
             </select>
           </div>
 
@@ -191,11 +196,11 @@
           <div class="form-row-group">
             <div class="form-field-group">
               <label class="field-label">Horário Início:</label>
-              <input class="field-input" name="hora_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.hora_inicio or '' }}">
+              <input class="field-input" name="hora_inicio" type="time" value="{{ wizard.hora_inicio or '' }}">
             </div>
             <div class="form-field-group">
               <label class="field-label">Horário Fim:</label>
-              <input class="field-input" name="hora_fim" type="text" placeholder="Ex: 22h40" value="{{ wizard.hora_fim or '' }}">
+              <input class="field-input" name="hora_fim" type="time" value="{{ wizard.hora_fim or '' }}">
             </div>
           </div>
 
@@ -244,11 +249,11 @@
             <div class="form-row-group">
               <div class="form-field-group">
                 <label class="field-label">Horário Início:</label>
-                <input class="field-input" name="np1_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.np1.inicio if wizard.provas and wizard.provas.np1 else '' }}">
+                <input class="field-input" name="np1_inicio" type="time" value="{{ wizard.provas.np1.inicio if wizard.provas and wizard.provas.np1 else '' }}">
               </div>
               <div class="form-field-group">
                 <label class="field-label">Horário Fim:</label>
-                <input class="field-input" name="np1_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.np1.fim if wizard.provas and wizard.provas.np1 else '' }}">
+                <input class="field-input" name="np1_fim" type="time" value="{{ wizard.provas.np1.fim if wizard.provas and wizard.provas.np1 else '' }}">
               </div>
             </div>
             <div class="form-field-group">
@@ -263,8 +268,14 @@
               <label class="field-label">Aplicador(a):</label>
               <select class="field-select" name="np1_aplicador">
                 <option value="">Selecione</option>
-                <option value="José Zesinho" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
-                <option value="Maria Silva" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+                {% if professores %}
+                  {% for prof in professores %}
+                    {% set nome_completo = prof.get('nome_completo') or (prof.get('nome_professor', '') + ' ' + prof.get('sobrenome_professor', '')).strip() %}
+                    {% if nome_completo %}
+                      <option value="{{ nome_completo }}" {% if wizard.provas and wizard.provas.np1 and wizard.provas.np1.aplicador == nome_completo %}selected{% endif %}>{{ nome_completo }}</option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
             <div class="form-field-group">
@@ -285,11 +296,11 @@
             <div class="form-row-group">
               <div class="form-field-group">
                 <label class="field-label">Horário Início:</label>
-                <input class="field-input" name="np2_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.np2.inicio if wizard.provas and wizard.provas.np2 else '' }}">
+                <input class="field-input" name="np2_inicio" type="time" value="{{ wizard.provas.np2.inicio if wizard.provas and wizard.provas.np2 else '' }}">
               </div>
               <div class="form-field-group">
                 <label class="field-label">Horário Fim:</label>
-                <input class="field-input" name="np2_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.np2.fim if wizard.provas and wizard.provas.np2 else '' }}">
+                <input class="field-input" name="np2_fim" type="time" value="{{ wizard.provas.np2.fim if wizard.provas and wizard.provas.np2 else '' }}">
               </div>
             </div>
             <div class="form-field-group">
@@ -304,8 +315,14 @@
               <label class="field-label">Aplicador(a):</label>
               <select class="field-select" name="np2_aplicador">
                 <option value="">Selecione</option>
-                <option value="José Zesinho" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
-                <option value="Maria Silva" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+                {% if professores %}
+                  {% for prof in professores %}
+                    {% set nome_completo = prof.get('nome_completo') or (prof.get('nome_professor', '') + ' ' + prof.get('sobrenome_professor', '')).strip() %}
+                    {% if nome_completo %}
+                      <option value="{{ nome_completo }}" {% if wizard.provas and wizard.provas.np2 and wizard.provas.np2.aplicador == nome_completo %}selected{% endif %}>{{ nome_completo }}</option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
             <div class="form-field-group">
@@ -326,11 +343,11 @@
             <div class="form-row-group">
               <div class="form-field-group">
                 <label class="field-label">Horário Início:</label>
-                <input class="field-input" name="exame_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.exame.inicio if wizard.provas and wizard.provas.exame else '' }}">
+                <input class="field-input" name="exame_inicio" type="time" value="{{ wizard.provas.exame.inicio if wizard.provas and wizard.provas.exame else '' }}">
               </div>
               <div class="form-field-group">
                 <label class="field-label">Horário Fim:</label>
-                <input class="field-input" name="exame_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.exame.fim if wizard.provas and wizard.provas.exame else '' }}">
+                <input class="field-input" name="exame_fim" type="time" value="{{ wizard.provas.exame.fim if wizard.provas and wizard.provas.exame else '' }}">
               </div>
             </div>
             <div class="form-field-group">
@@ -345,8 +362,14 @@
               <label class="field-label">Aplicador(a):</label>
               <select class="field-select" name="exame_aplicador">
                 <option value="">Selecione</option>
-                <option value="José Zesinho" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
-                <option value="Maria Silva" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+                {% if professores %}
+                  {% for prof in professores %}
+                    {% set nome_completo = prof.get('nome_completo') or (prof.get('nome_professor', '') + ' ' + prof.get('sobrenome_professor', '')).strip() %}
+                    {% if nome_completo %}
+                      <option value="{{ nome_completo }}" {% if wizard.provas and wizard.provas.exame and wizard.provas.exame.aplicador == nome_completo %}selected{% endif %}>{{ nome_completo }}</option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
             <div class="form-field-group">
@@ -367,11 +390,11 @@
             <div class="form-row-group">
               <div class="form-field-group">
                 <label class="field-label">Horário Início:</label>
-                <input class="field-input" name="sub_inicio" type="text" placeholder="Ex: 19h10" value="{{ wizard.provas.sub.inicio if wizard.provas and wizard.provas.sub else '' }}">
+                <input class="field-input" name="sub_inicio" type="time" value="{{ wizard.provas.sub.inicio if wizard.provas and wizard.provas.sub else '' }}">
               </div>
               <div class="form-field-group">
                 <label class="field-label">Horário Fim:</label>
-                <input class="field-input" name="sub_fim" type="text" placeholder="Ex: 20h45" value="{{ wizard.provas.sub.fim if wizard.provas and wizard.provas.sub else '' }}">
+                <input class="field-input" name="sub_fim" type="time" value="{{ wizard.provas.sub.fim if wizard.provas and wizard.provas.sub else '' }}">
               </div>
             </div>
             <div class="form-field-group">
@@ -386,8 +409,14 @@
               <label class="field-label">Aplicador(a):</label>
               <select class="field-select" name="sub_aplicador">
                 <option value="">Selecione</option>
-                <option value="José Zesinho" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.aplicador == 'José Zesinho' %}selected{% endif %}>José Zesinho</option>
-                <option value="Maria Silva" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.aplicador == 'Maria Silva' %}selected{% endif %}>Maria Silva</option>
+                {% if professores %}
+                  {% for prof in professores %}
+                    {% set nome_completo = prof.get('nome_completo') or (prof.get('nome_professor', '') + ' ' + prof.get('sobrenome_professor', '')).strip() %}
+                    {% if nome_completo %}
+                      <option value="{{ nome_completo }}" {% if wizard.provas and wizard.provas.sub and wizard.provas.sub.aplicador == nome_completo %}selected{% endif %}>{{ nome_completo }}</option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               </select>
             </div>
             <div class="form-field-group">

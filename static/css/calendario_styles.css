@@ -7,11 +7,128 @@
  * do painel administrativo da UNIP. Inclui estilos para listagem, visualização,
  * adição e edição de eventos e matérias.
  * 
+ * Baseado no design do Figma extraído pelo Anima
+ * 
  * @author Sistema UNIP
- * @version 1.0.0
+ * @version 2.0.0
  * @since 2024
  * ============================================================================
  */
+
+/* ===== VARIÁVEIS CSS DO FIGMA ===== */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap");
+
+:root {
+  --titulo-pagina-font-family: "Rubik", Helvetica;
+  --titulo-pagina-font-weight: 700;
+  --titulo-pagina-font-size: 40px;
+  --titulo-pagina-letter-spacing: 0px;
+  --titulo-pagina-line-height: normal;
+  --titulo-pagina-font-style: normal;
+  --escrita-curso-font-family: "Rubik", Helvetica;
+  --escrita-curso-font-weight: 500;
+  --escrita-curso-font-size: 32px;
+  --escrita-curso-letter-spacing: 0px;
+  --escrita-curso-line-height: normal;
+  --escrita-curso-font-style: normal;
+  --botao-ADD-font-family: "Rubik", Helvetica;
+  --botao-ADD-font-weight: 500;
+  --botao-ADD-font-size: 25px;
+  --botao-ADD-letter-spacing: 0px;
+  --botao-ADD-line-height: normal;
+  --botao-ADD-font-style: normal;
+  --ex-texto-font-family: "Rubik", Helvetica;
+  --ex-texto-font-weight: 400;
+  --ex-texto-font-size: 22px;
+  --ex-texto-letter-spacing: 0px;
+  --ex-texto-line-height: normal;
+  --ex-texto-font-style: normal;
+  --texto-normal-font-family: "Rubik", Helvetica;
+  --texto-normal-font-weight: 400;
+  --texto-normal-font-size: 25px;
+  --texto-normal-letter-spacing: 0px;
+  --texto-normal-line-height: normal;
+  --texto-normal-font-style: normal;
+  --t-tulobotoes-font-family: "Rubik", Helvetica;
+  --t-tulobotoes-font-weight: 400;
+  --t-tulobotoes-font-size: 30px;
+  --t-tulobotoes-letter-spacing: 0px;
+  --t-tulobotoes-line-height: normal;
+  --t-tulobotoes-font-style: normal;
+  --subtitulo-add-editar-font-family: "Rubik", Helvetica;
+  --subtitulo-add-editar-font-weight: 500;
+  --subtitulo-add-editar-font-size: 38px;
+  --subtitulo-add-editar-letter-spacing: 0px;
+  --subtitulo-add-editar-line-height: normal;
+  --subtitulo-add-editar-font-style: normal;
+  --infos-texto-font-family: "Rubik", Helvetica;
+  --infos-texto-font-weight: 500;
+  --infos-texto-font-size: 29px;
+  --infos-texto-letter-spacing: 0px;
+  --infos-texto-line-height: normal;
+  --infos-texto-font-style: normal;
+  --titulo-forms-font-family: "Rubik", Helvetica;
+  --titulo-forms-font-weight: 600;
+  --titulo-forms-font-size: 30px;
+  --titulo-forms-letter-spacing: 0px;
+  --titulo-forms-line-height: normal;
+  --titulo-forms-font-style: normal;
+  --caracteres-font-family: "Rubik", Helvetica;
+  --caracteres-font-weight: 400;
+  --caracteres-font-size: 20px;
+  --caracteres-letter-spacing: 0px;
+  --caracteres-line-height: normal;
+  --caracteres-font-style: normal;
+  --caixadevisu-titulo-font-family: "Rubik", Helvetica;
+  --caixadevisu-titulo-font-weight: 500;
+  --caixadevisu-titulo-font-size: 25px;
+  --caixadevisu-titulo-letter-spacing: 0px;
+  --caixadevisu-titulo-line-height: normal;
+  --caixadevisu-titulo-font-style: normal;
+  --caixadevisu-info-font-family: "Rubik", Helvetica;
+  --caixadevisu-info-font-weight: 500;
+  --caixadevisu-info-font-size: 25px;
+  --caixadevisu-info-letter-spacing: 0px;
+  --caixadevisu-info-line-height: normal;
+  --caixadevisu-info-font-style: normal;
+  --sub-titulo-forms-font-family: "Rubik", Helvetica;
+  --sub-titulo-forms-font-weight: 400;
+  --sub-titulo-forms-font-size: 30px;
+  --sub-titulo-forms-letter-spacing: 0px;
+  --sub-titulo-forms-line-height: normal;
+  --sub-titulo-forms-font-style: normal;
+  --sub-sub-titulo-font-family: "Rubik", Helvetica;
+  --sub-sub-titulo-font-weight: 500;
+  --sub-sub-titulo-font-size: 24px;
+  --sub-sub-titulo-letter-spacing: 0px;
+  --sub-sub-titulo-line-height: normal;
+  --sub-sub-titulo-font-style: normal;
+  --subtitulocaixa-text-font-family: "Rubik", Helvetica;
+  --subtitulocaixa-text-font-weight: 400;
+  --subtitulocaixa-text-font-size: 24px;
+  --subtitulocaixa-text-letter-spacing: 0px;
+  --subtitulocaixa-text-line-height: normal;
+  --subtitulocaixa-text-font-style: normal;
+  --doc-pdf-font-family: "Rubik", Helvetica;
+  --doc-pdf-font-weight: 400;
+  --doc-pdf-font-size: 22px;
+  --doc-pdf-letter-spacing: 0px;
+  --doc-pdf-line-height: normal;
+  --doc-pdf-font-style: italic;
+  --selecao-titulo-font-family: "Rubik", Helvetica;
+  --selecao-titulo-font-weight: 500;
+  --selecao-titulo-font-size: 30px;
+  --selecao-titulo-letter-spacing: 0px;
+  --selecao-titulo-line-height: normal;
+  --selecao-titulo-font-style: normal;
+  --add-caixa-texto-font-family: "Rubik", Helvetica;
+  --add-caixa-texto-font-weight: 500;
+  --add-caixa-texto-font-size: 26px;
+  --add-caixa-texto-letter-spacing: 0px;
+  --add-caixa-texto-line-height: normal;
+  --add-caixa-texto-font-style: normal;
+  --collection-1-color: rgba(255, 255, 255, 1);
+}
 
 /* ===== RESET E CONFIGURAÇÕES BÁSICAS ===== */
 /**
@@ -22,7 +139,7 @@
 /**
  * Configuração base do body com otimizações de renderização
  */
-body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{font-family:var(--texto-normal-font-family);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 
 /**
  * Container principal da página com layout flexbox vertical
@@ -83,14 +200,14 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
  */
 .calendar-header{display:flex;justify-content:center;align-items:center;padding:clamp(16px,2vw,20px) 0}
 
-.calendar-title{color:#023D71;font-size:clamp(28px,3.5vw,40px);font-weight:700;margin:0;text-align:center}
+.calendar-title{color:#023D71;font-family:var(--titulo-pagina-font-family);font-size:clamp(28px,3.5vw,var(--titulo-pagina-font-size));font-weight:var(--titulo-pagina-font-weight);font-style:var(--titulo-pagina-font-style);margin:0;text-align:center;letter-spacing:var(--titulo-pagina-letter-spacing);line-height:var(--titulo-pagina-line-height)}
 
 /* Add Section */
 .add-section{display:flex;align-items:center;gap:clamp(20px,2.8vw,36px);padding:clamp(12px,1.5vw,16px) 0}
 
 .icon-add{width:clamp(40px,4.5vw,50px);height:clamp(40px,4.5vw,50px);flex-shrink:0}
 
-.add-link,.add-text{color:#023D71;font-size:clamp(26px,3.2vw,38px);font-weight:500;text-decoration:none;transition:color .2s}
+.add-link,.add-text{color:#023D71;font-family:var(--botao-ADD-font-family);font-size:clamp(22px,2.5vw,var(--botao-ADD-font-size));font-weight:var(--botao-ADD-font-weight);font-style:var(--botao-ADD-font-style);text-decoration:none;transition:color .2s;letter-spacing:var(--botao-ADD-letter-spacing);line-height:var(--botao-ADD-line-height)}
 
 .add-link:hover{color:#1583FF}
 
@@ -115,7 +232,7 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .materia-main{display:flex;flex-direction:column;gap:6px;flex:1 1 200px}
 
-.materia-title-text{color:#023D71;font-size:clamp(18px,2vw,22px);font-weight:600;line-height:1.3}
+.materia-title-text{color:#023D71;font-family:var(--escrita-curso-font-family);font-size:clamp(18px,2vw,var(--escrita-curso-font-size));font-weight:var(--escrita-curso-font-weight);font-style:var(--escrita-curso-font-style);line-height:var(--escrita-curso-line-height);letter-spacing:var(--escrita-curso-letter-spacing)}
 
 .materia-professor-text{color:#4A4A4A;font-size:clamp(14px,1.4vw,16px);line-height:1.3}
 
@@ -139,7 +256,7 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 /* Wizard Container */
 .wizard-container{display:flex;flex-direction:column;gap:clamp(24px,3vw,36px);padding:clamp(20px,2.5vw,30px) clamp(20px,2.8vw,36px);background:#FFF;border:3px solid #1583FF;border-radius:10px;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25)}
 
-.wizard-step-label{color:#023D71;font-size:clamp(24px,2.8vw,30px);font-weight:600;text-align:center}
+.wizard-step-label{color:#023D71;font-family:var(--subtitulo-add-editar-font-family);font-size:clamp(24px,2.8vw,var(--subtitulo-add-editar-font-size));font-weight:var(--subtitulo-add-editar-font-weight);font-style:var(--subtitulo-add-editar-font-style);text-align:center;letter-spacing:var(--subtitulo-add-editar-letter-spacing);line-height:var(--subtitulo-add-editar-line-height);margin:0}
 
 /* Form */
 .wizard-form{display:flex;flex-direction:column;gap:clamp(28px,3.5vw,44px)}
@@ -148,9 +265,9 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .form-row-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(20px,2.8vw,35px)}
 
-.field-label{color:#043057;font-size:clamp(20px,2.2vw,29px);font-weight:500}
+.field-label{color:#043057;font-family:var(--infos-texto-font-family);font-size:clamp(20px,2.2vw,var(--infos-texto-font-size));font-weight:var(--infos-texto-font-weight);font-style:var(--infos-texto-font-style);letter-spacing:var(--infos-texto-letter-spacing);line-height:var(--infos-texto-line-height)}
 
-.field-input,.field-select,.field-textarea{width:100%;padding:clamp(16px,1.8vw,19px) clamp(18px,2vw,23px);background:#FBFBFB;border:none;border-radius:35px;box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);color:#4A4A4A;font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;font-size:clamp(18px,1.8vw,22px);transition:box-shadow .2s}
+.field-input,.field-select,.field-textarea{width:100%;padding:clamp(16px,1.8vw,19px) clamp(18px,2vw,23px);background:#FBFBFB;border:none;border-radius:35px;box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);color:#4A4A4A;font-family:var(--texto-normal-font-family);font-size:clamp(18px,1.8vw,var(--texto-normal-font-size));font-weight:var(--texto-normal-font-weight);font-style:var(--texto-normal-font-style);transition:box-shadow .2s;letter-spacing:var(--texto-normal-letter-spacing);line-height:var(--texto-normal-line-height)}
 
 .field-input:focus,.field-select:focus,.field-textarea:focus{outline:none;box-shadow:0 4px 8px 2px rgba(50,146,249,0.4)}
 
@@ -170,23 +287,23 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .textarea-wrapper{position:relative;display:flex;flex-direction:column}
 
-.char-counter{align-self:flex-end;color:#023D71;font-size:clamp(16px,1.6vw,20px);margin-top:8px}
+.char-counter{align-self:flex-end;color:#023D71;font-family:var(--caracteres-font-family);font-size:clamp(16px,1.6vw,var(--caracteres-font-size));font-weight:var(--caracteres-font-weight);font-style:var(--caracteres-font-style);margin-top:8px;letter-spacing:var(--caracteres-letter-spacing);line-height:var(--caracteres-line-height)}
 
 /* File Upload */
 .file-upload-area{display:flex;flex-wrap:wrap;align-items:center;gap:clamp(12px,1.5vw,16px);padding:clamp(16px,2vw,24px);background:#FBFBFB;border-radius:35px;box-shadow:0 4px 4px 1px rgba(50,146,249,0.28)}
 
 .file-input-hidden{display:none}
 
-.btn-file-select{display:inline-flex;align-items:center;justify-content:center;padding:12px clamp(24px,3vw,33px);background:#329959;color:#fff;border-radius:4px;font-size:clamp(18px,2vw,25px);font-weight:500;cursor:pointer;transition:background .2s}
+.btn-file-select{display:inline-flex;align-items:center;justify-content:center;padding:12px clamp(24px,3vw,33px);background:#329959;color:#fff;border-radius:4px;font-family:var(--texto-normal-font-family);font-size:clamp(18px,2vw,var(--texto-normal-font-size));font-weight:500;font-style:var(--texto-normal-font-style);cursor:pointer;transition:background .2s;letter-spacing:var(--texto-normal-letter-spacing);line-height:var(--texto-normal-line-height)}
 
 .btn-file-select:hover{background:#2a7a47}
 
-.file-hint{color:#4A4A4A;font-size:clamp(16px,1.6vw,20px);font-style:italic}
+.file-hint{color:#4A4A4A;font-family:var(--ex-texto-font-family);font-size:clamp(16px,1.6vw,var(--ex-texto-font-size));font-weight:var(--ex-texto-font-weight);font-style:var(--ex-texto-font-style);letter-spacing:var(--ex-texto-letter-spacing);line-height:var(--ex-texto-line-height)}
 
 /* Form Actions */
 .form-actions{display:flex;justify-content:flex-end;align-items:center;gap:clamp(12px,1.4vw,14px);flex-wrap:wrap;padding-top:clamp(16px,2vw,24px)}
 
-.btn-action{display:inline-flex;align-items:center;justify-content:center;gap:clamp(8px,1vw,10px);padding:clamp(10px,1.2vw,12px) clamp(28px,3.5vw,39px);border:none;border-radius:8px;font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;font-size:clamp(18px,2vw,25px);font-weight:400;cursor:pointer;text-decoration:none;transition:background .2s,transform .1s}
+.btn-action{display:inline-flex;align-items:center;justify-content:center;gap:clamp(8px,1vw,10px);padding:clamp(10px,1.2vw,12px) clamp(28px,3.5vw,39px);border:none;border-radius:8px;font-family:var(--t-tulobotoes-font-family);font-size:clamp(18px,2vw,var(--t-tulobotoes-font-size));font-weight:var(--t-tulobotoes-font-weight);font-style:var(--t-tulobotoes-font-style);cursor:pointer;text-decoration:none;transition:background .2s,transform .1s;letter-spacing:var(--t-tulobotoes-letter-spacing);line-height:var(--t-tulobotoes-line-height)}
 
 .btn-action:hover{transform:translateY(-1px)}
 
@@ -209,16 +326,16 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .exam-section:last-of-type{border-bottom:none}
 
-.exam-title{color:#043057;font-size:clamp(22px,2.5vw,29px);font-weight:500;margin:0}
+.exam-title{color:#043057;font-family:var(--sub-sub-titulo-font-family);font-size:clamp(22px,2.5vw,var(--sub-sub-titulo-font-size));font-weight:var(--sub-sub-titulo-font-weight);font-style:var(--sub-sub-titulo-font-style);margin:0;letter-spacing:var(--sub-sub-titulo-letter-spacing);line-height:var(--sub-sub-titulo-line-height)}
 
 /* Materia View Card */
 .materia-view-card{width:100%;max-width:1189px;padding:clamp(60px,7vw,99px) clamp(24px,2.5vw,27px) clamp(80px,10vw,147px);background:#FFFEFE;border-radius:18px;box-shadow:0 4px 6.8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(40px,5vw,66px)}
 
 .materia-menu-header{display:flex;flex-wrap:wrap;align-items:flex-start;align-content:flex-start;gap:clamp(24px,3vw,43px);padding:0 clamp(12px,1.2vw,14px);position:relative}
 
-.materia-view-title{color:#023D71;font-size:clamp(32px,3.5vw,40px);font-weight:700;line-height:normal;margin:0;flex:1 1 auto}
+.materia-view-title{color:#023D71;font-family:var(--titulo-pagina-font-family);font-size:clamp(32px,3.5vw,var(--titulo-pagina-font-size));font-weight:var(--titulo-pagina-font-weight);font-style:var(--titulo-pagina-font-style);line-height:var(--titulo-pagina-line-height);margin:0;flex:1 1 auto;letter-spacing:var(--titulo-pagina-letter-spacing)}
 
-.btn-edit-info{display:flex;align-items:center;justify-content:center;gap:clamp(16px,1.8vw,22px);padding:clamp(8px,0.8vw,9px) clamp(12px,1.2vw,13px) clamp(8px,0.8vw,9px) clamp(14px,1.5vw,17px);border-radius:15px;border:1px solid rgba(50,146,249,0.66);background:rgba(167,208,255,0.08);box-shadow:0 4px 4px 0 rgba(0,0,0,0.17);color:#023D71;text-decoration:none;font-size:clamp(20px,2.2vw,25px);font-weight:500;transition:background .2s}
+.btn-edit-info{display:flex;align-items:center;justify-content:center;gap:clamp(16px,1.8vw,22px);padding:clamp(8px,0.8vw,9px) clamp(12px,1.2vw,13px) clamp(8px,0.8vw,9px) clamp(14px,1.5vw,17px);border-radius:15px;border:1px solid rgba(50,146,249,0.66);background:rgba(167,208,255,0.08);box-shadow:0 4px 4px 0 rgba(0,0,0,0.17);color:#023D71;text-decoration:none;font-family:var(--caixadevisu-titulo-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-titulo-font-size));font-weight:var(--caixadevisu-titulo-font-weight);font-style:var(--caixadevisu-titulo-font-style);transition:background .2s;letter-spacing:var(--caixadevisu-titulo-letter-spacing);line-height:var(--caixadevisu-titulo-line-height)}
 
 .btn-edit-info:hover{background:rgba(167,208,255,0.2)}
 
@@ -230,15 +347,15 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .info-item{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(16px,1.8vw,20px);padding:0 clamp(4px,0.4vw,5px);min-width:clamp(160px,15vw,212px)}
 
-.info-item-label{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;text-align:center}
+.info-item-label{color:#023D71;font-family:var(--titulo-forms-font-family);font-size:clamp(24px,2.6vw,var(--titulo-forms-font-size));font-weight:var(--titulo-forms-font-weight);font-style:var(--titulo-forms-font-style);line-height:var(--titulo-forms-line-height);text-align:center;letter-spacing:var(--titulo-forms-letter-spacing)}
 
-.info-item-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;text-align:center}
+.info-item-value{color:#4A4A4A;font-family:var(--caixadevisu-info-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-info-font-size));font-weight:var(--caixadevisu-info-font-weight);font-style:var(--caixadevisu-info-font-style);line-height:var(--caixadevisu-info-line-height);text-align:center;letter-spacing:var(--caixadevisu-info-letter-spacing)}
 
 .sections-container{display:flex;flex-direction:column;gap:clamp(32px,3.8vw,43px);width:100%;max-width:999px;align-self:center}
 
 .section-details{border-radius:10px;border:3px solid #1583FF;background:#FFF;box-shadow:0 4px 15px 3px rgba(0,0,0,0.25)}
 
-.section-summary{color:#023D71;text-align:center;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;padding:clamp(32px,3.6vw,41px);cursor:pointer;list-style:none;transition:background .2s}
+.section-summary{color:#023D71;text-align:center;font-family:var(--titulo-forms-font-family);font-size:clamp(24px,2.6vw,var(--titulo-forms-font-size));font-weight:var(--titulo-forms-font-weight);font-style:var(--titulo-forms-font-style);line-height:var(--titulo-forms-line-height);padding:clamp(32px,3.6vw,41px);cursor:pointer;list-style:none;transition:background .2s;letter-spacing:var(--titulo-forms-letter-spacing)}
 
 .section-summary:hover{background:rgba(21,131,255,0.05)}
 
@@ -252,19 +369,19 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .ementa-text-wrapper{display:flex;flex-direction:column;gap:clamp(16px,1.8vw,20px);padding:clamp(12px,1.4vw,16px) 0}
 
-.ementa-subtitle{color:#023D71;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;margin:0}
+.ementa-subtitle{color:#023D71;font-family:var(--subtitulocaixa-text-font-family);font-size:clamp(20px,2.2vw,var(--subtitulocaixa-text-font-size));font-weight:var(--subtitulocaixa-text-font-weight);font-style:var(--subtitulocaixa-text-font-style);line-height:var(--subtitulocaixa-text-line-height);margin:0;letter-spacing:var(--subtitulocaixa-text-letter-spacing)}
 
-.ementa-description{color:#000;font-size:clamp(18px,1.9vw,22px);font-weight:400;line-height:normal;margin:0;word-wrap:break-word}
+.ementa-description{color:#000;font-family:var(--ex-texto-font-family);font-size:clamp(18px,1.9vw,var(--ex-texto-font-size));font-weight:var(--ex-texto-font-weight);font-style:var(--ex-texto-font-style);line-height:var(--ex-texto-line-height);margin:0;word-wrap:break-word;letter-spacing:var(--ex-texto-letter-spacing)}
 
 .ementa-document-access{display:flex;flex-direction:column;gap:clamp(18px,1.9vw,22px)}
 
-.document-label{color:#023D71;font-size:clamp(20px,2.1vw,24px);font-weight:500;line-height:normal}
+.document-label{color:#023D71;font-family:var(--subtitulocaixa-text-font-family);font-size:clamp(20px,2.1vw,var(--subtitulocaixa-text-font-size));font-weight:var(--subtitulocaixa-text-font-weight);font-style:var(--subtitulocaixa-text-font-style);line-height:var(--subtitulocaixa-text-line-height);letter-spacing:var(--subtitulocaixa-text-letter-spacing)}
 
 .document-link-wrapper{display:flex;align-items:center;gap:clamp(12px,1.4vw,16px)}
 
 .icon-document{width:clamp(15px,1.6vw,17px);height:clamp(20px,2vw,23px);flex-shrink:0}
 
-.document-link-text{color:#023D71;font-size:clamp(18px,1.9vw,22px);font-style:italic;font-weight:400;line-height:normal;text-decoration:underline}
+.document-link-text{color:#023D71;font-family:var(--doc-pdf-font-family);font-size:clamp(18px,1.9vw,var(--doc-pdf-font-size));font-style:var(--doc-pdf-font-style);font-weight:var(--doc-pdf-font-weight);line-height:var(--doc-pdf-line-height);text-decoration:underline;letter-spacing:var(--doc-pdf-letter-spacing)}
 
 .calendario-content{display:flex;flex-direction:column;gap:clamp(20px,2.3vw,26px)}
 
@@ -272,29 +389,29 @@ body{font-family:'Rubik',-apple-system,Roboto,Helvetica,sans-serif;-webkit-font-
 
 .calendario-field{display:flex;align-items:center;gap:clamp(16px,1.8vw,20px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);flex:1 1 clamp(320px,40%,432px);min-height:clamp(56px,5.8vw,67px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
 
-.calendario-field-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+.calendario-field-label{color:#000;font-family:var(--caixadevisu-titulo-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-titulo-font-size));font-weight:var(--caixadevisu-titulo-font-weight);font-style:var(--caixadevisu-titulo-font-style);line-height:var(--caixadevisu-titulo-line-height);letter-spacing:var(--caixadevisu-titulo-letter-spacing)}
 
-.calendario-field-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+.calendario-field-value{color:#4A4A4A;font-family:var(--caixadevisu-info-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-info-font-size));font-weight:var(--caixadevisu-info-font-weight);font-style:var(--caixadevisu-info-font-style);line-height:var(--caixadevisu-info-line-height);letter-spacing:var(--caixadevisu-info-letter-spacing)}
 
 .avaliacoes-content{display:flex;flex-direction:column;gap:clamp(28px,3.2vw,35px)}
 
 .avaliacao-block{display:flex;flex-direction:column;gap:clamp(20px,2.3vw,26px)}
 
-.avaliacao-title{color:#023D71;font-size:clamp(24px,2.6vw,30px);font-weight:600;line-height:normal;margin:0}
+.avaliacao-title{color:#023D71;font-family:var(--sub-titulo-forms-font-family);font-size:clamp(24px,2.6vw,var(--sub-titulo-forms-font-size));font-weight:var(--sub-titulo-forms-font-weight);font-style:var(--sub-titulo-forms-font-style);line-height:var(--sub-titulo-forms-line-height);margin:0;letter-spacing:var(--sub-titulo-forms-letter-spacing)}
 
 .avaliacao-info-row{display:flex;align-items:center;gap:clamp(28px,3.2vw,37px);flex-wrap:wrap}
 
 .avaliacao-field{display:flex;align-items:center;gap:clamp(16px,1.8vw,20px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);flex:1 1 clamp(320px,40%,432px);min-height:clamp(56px,5.8vw,67px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
 
-.avaliacao-field-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+.avaliacao-field-label{color:#000;font-family:var(--caixadevisu-titulo-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-titulo-font-size));font-weight:var(--caixadevisu-titulo-font-weight);font-style:var(--caixadevisu-titulo-font-style);line-height:var(--caixadevisu-titulo-line-height);letter-spacing:var(--caixadevisu-titulo-letter-spacing)}
 
-.avaliacao-field-value{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+.avaliacao-field-value{color:#4A4A4A;font-family:var(--caixadevisu-info-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-info-font-size));font-weight:var(--caixadevisu-info-font-weight);font-style:var(--caixadevisu-info-font-style);line-height:var(--caixadevisu-info-line-height);letter-spacing:var(--caixadevisu-info-letter-spacing)}
 
 .avaliacao-description{display:flex;flex-direction:column;gap:clamp(10px,1vw,11px);padding:clamp(14px,1.5vw,17px) clamp(20px,2vw,23px);border-radius:35px;background:#FBFBFB;box-shadow:0 4px 4.1px 1px rgba(50,146,249,0.28)}
 
-.avaliacao-description-label{color:#000;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal}
+.avaliacao-description-label{color:#000;font-family:var(--caixadevisu-titulo-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-titulo-font-size));font-weight:var(--caixadevisu-titulo-font-weight);font-style:var(--caixadevisu-titulo-font-style);line-height:var(--caixadevisu-titulo-line-height);letter-spacing:var(--caixadevisu-titulo-letter-spacing)}
 
-.avaliacao-description-text{color:#4A4A4A;font-size:clamp(20px,2.2vw,25px);font-weight:500;line-height:normal;margin:0;word-wrap:break-word}
+.avaliacao-description-text{color:#4A4A4A;font-family:var(--caixadevisu-info-font-family);font-size:clamp(20px,2.2vw,var(--caixadevisu-info-font-size));font-weight:var(--caixadevisu-info-font-weight);font-style:var(--caixadevisu-info-font-style);line-height:var(--caixadevisu-info-line-height);margin:0;word-wrap:break-word;letter-spacing:var(--caixadevisu-info-letter-spacing)}
 
 .empty-message{color:#4A4A4A;font-size:clamp(18px,1.9vw,22px);text-align:center;padding:clamp(24px,2.8vw,32px)}
 

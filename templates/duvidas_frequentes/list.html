@@ -73,10 +73,12 @@
         {% endif %}
       {% endwith %}
 
+      {% if curso_codigo and curso_nome %}
       <div class="course-info">
-        <span class="course-code">{{ curso_codigo or '13701' }} -</span>
-        <span class="course-name">{{ curso_nome or 'Ciência da Computação' }}</span>
+        <span class="course-code">{{ curso_codigo }} -</span>
+        <span class="course-name">{{ curso_nome }}</span>
       </div>
+      {% endif %}
 
       <div class="categories-nav">
         <button class="category-btn active" data-category="materia" type="button">
@@ -94,17 +96,27 @@
               {% for duvida in duvidas_materia %}
                 <div class="duvida-item">
                   {% if duvida is mapping %}
-                    <h3 class="duvida-titulo">{{ duvida.get('nome_arquivo_origem', duvida.get('categoria', 'Dúvida')) }}</h3>
-                    <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:200] }}{% if duvida.get('conteudo_processado', '')|length > 200 %}...{% endif %}</p>
+                    {% set titulo = duvida.get('nome_arquivo_origem') or duvida.get('categoria') or '' %}
+                    {% if titulo %}
+                      <h3 class="duvida-titulo">{{ titulo }}</h3>
+                    {% endif %}
+                    {% if duvida.get('conteudo_processado') %}
+                      <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:300] }}{% if duvida.get('conteudo_processado', '')|length > 300 %}...{% endif %}</p>
+                    {% endif %}
                     {% if duvida.get('palavra_chave') %}
                       <div class="duvida-tags">
-                        {% for tag in (duvida.get('palavra_chave', []) if duvida.get('palavra_chave') is iterable and duvida.get('palavra_chave') is not string else [duvida.get('palavra_chave')]) %}
-                          <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+                        {% set palavras = duvida.get('palavra_chave', []) %}
+                        {% if palavras is iterable and palavras is not string %}
+                          {% for tag in palavras %}
+                            {% if tag %}
+                              <span class="tag">{{ tag }}</span>
+                            {% endif %}
+                          {% endfor %}
+                        {% elif palavras %}
+                          <span class="tag">{{ palavras }}</span>
+                        {% endif %}
                       </div>
                     {% endif %}
-                  {% else %}
-                    <p class="duvida-conteudo">{{ duvida }}</p>
                   {% endif %}
                 </div>
               {% endfor %}
@@ -122,17 +134,27 @@
               {% for duvida in duvidas_institucionais %}
                 <div class="duvida-item">
                   {% if duvida is mapping %}
-                    <h3 class="duvida-titulo">{{ duvida.get('nome_arquivo_origem', duvida.get('categoria', 'Dúvida')) }}</h3>
-                    <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:200] }}{% if duvida.get('conteudo_processado', '')|length > 200 %}...{% endif %}</p>
+                    {% set titulo = duvida.get('nome_arquivo_origem') or duvida.get('categoria') or '' %}
+                    {% if titulo %}
+                      <h3 class="duvida-titulo">{{ titulo }}</h3>
+                    {% endif %}
+                    {% if duvida.get('conteudo_processado') %}
+                      <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:300] }}{% if duvida.get('conteudo_processado', '')|length > 300 %}...{% endif %}</p>
+                    {% endif %}
                     {% if duvida.get('palavra_chave') %}
                       <div class="duvida-tags">
-                        {% for tag in (duvida.get('palavra_chave', []) if duvida.get('palavra_chave') is iterable and duvida.get('palavra_chave') is not string else [duvida.get('palavra_chave')]) %}
-                          <span class="tag">{{ tag }}</span>
-                        {% endfor %}
+                        {% set palavras = duvida.get('palavra_chave', []) %}
+                        {% if palavras is iterable and palavras is not string %}
+                          {% for tag in palavras %}
+                            {% if tag %}
+                              <span class="tag">{{ tag }}</span>
+                            {% endif %}
+                          {% endfor %}
+                        {% elif palavras %}
+                          <span class="tag">{{ palavras }}</span>
+                        {% endif %}
                       </div>
                     {% endif %}
-                  {% else %}
-                    <p class="duvida-conteudo">{{ duvida }}</p>
                   {% endif %}
                 </div>
               {% endfor %}

@@ -21,8 +21,8 @@
       </div>
       <div class="header-user">
         <div class="user-info-panel">
-          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
-          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+          <div class="user-name-text">{{ user.nome|title if user and user.nome else '' }}</div>
+          <div class="user-email-text">{{ user.email if user and user.email else '' }}</div>
         </div>
         <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
       </div>

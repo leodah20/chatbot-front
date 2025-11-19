@@ -110,9 +110,15 @@
                     <div class="select-wrapper">
                         <select name="disciplinas" class="text-input">
                             <option value="">Selecione</option>
-                            <option value="ciencia_computacao">Ciência da Computação</option>
-                            <option value="ads">Análise e Desenvolvimento de Sistemas</option>
-                            <option value="sistemas_info">Sistemas de Informação</option>
+                            {% if disciplinas %}
+                              {% for disciplina in disciplinas %}
+                                {% set nome_disciplina = disciplina.get('nome_disciplina') or disciplina.get('nome', '') %}
+                                {% set id_disciplina = disciplina.get('id_disciplina') or disciplina.get('id', '') %}
+                                {% if nome_disciplina %}
+                                  <option value="{{ id_disciplina }}">{{ nome_disciplina }}</option>
+                                {% endif %}
+                              {% endfor %}
+                            {% endif %}
                         </select>
                         <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -143,31 +149,11 @@
                     <div class="time-inputs">
                         <div class="form-field">
                             <label class="schedule-label">Horário de Início</label>
-                            <div class="select-wrapper">
-                                <select name="horario_inicio" class="text-input">
-                                    <option value="">Selecione</option>
-                                    <option value="08:00">08:00</option>
-                                    <option value="14:00">14:00</option>
-                                    <option value="18:00">18:00</option>
-                                </select>
-                                <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
+                            <input type="time" name="horario_inicio" class="text-input">
                         </div>
                         <div class="form-field">
                             <label class="schedule-label">Horário Fim</label>
-                            <div class="select-wrapper">
-                                <select name="horario_fim" class="text-input">
-                                    <option value="">Selecione</option>
-                                    <option value="12:00">12:00</option>
-                                    <option value="18:00">18:00</option>
-                                    <option value="22:00">22:00</option>
-                                </select>
-                                <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
+                            <input type="time" name="horario_fim" class="text-input">
                         </div>
                     </div>
                 </div>

@@ -20,8 +20,8 @@
       </div>
       <div class="header-user">
         <div class="user-info-panel">
-          <div class="user-name-text">{{ user.nome|title if user else 'José Zesinho' }}</div>
-          <div class="user-email-text">{{ user.email if user else 'jose.zesinho37@docente.unip.br' }}</div>
+          <div class="user-name-text">{{ user.nome|title if user and user.nome else '' }}</div>
+          <div class="user-email-text">{{ user.email if user and user.email else '' }}</div>
         </div>
         <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
       </div>
@@ -57,8 +57,10 @@
       <div class="divider-line"></div>
 
       <div class="course-code-wrapper">
-        <span class="course-code">13701 -</span>
-        <span class="course-name">Ciência da Computação</span>
+        {% if user and user.curso_codigo and user.curso_nome %}
+        <span class="course-code">{{ user.curso_codigo }} -</span>
+        <span class="course-name">{{ user.curso_nome }}</span>
+        {% endif %}
       </div>
 
       <a href="{{ url_for('infos_curso_add') }}" class="btn-add-info">

@@ -88,9 +88,15 @@
             <label class="input-label">Disciplinas</label>
             <div class="select-wrapper">
               <select name="disciplina" class="text-input">
-                <option value="Ciência da Computação">Ciência da Computação</option>
-                <option value="Análise e Desenvolvimento de Sistemas">Análise e Desenvolvimento de Sistemas</option>
-                <option value="Sistemas de Informação">Sistemas de Informação</option>
+                <option value="">Selecione uma disciplina</option>
+                {% if disciplinas %}
+                  {% for disciplina in disciplinas %}
+                    {% set nome_disciplina = disciplina.get('nome_disciplina') or disciplina.get('nome', '') %}
+                    {% if nome_disciplina %}
+                      <option value="{{ nome_disciplina }}">{{ nome_disciplina }}</option>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
               </select>
               <svg class="select-arrow" width="14" height="7" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>

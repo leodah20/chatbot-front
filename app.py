@@ -490,11 +490,12 @@ def docentes_list():
             session['docentes_list'] = docentes
         else:
             print(f"[DEBUG] Professores retornou status {response.status_code}")
-            docentes = get_docentes_list()  # Fallback para mock
+            docentes = []  # Retorna lista vazia se não houver dados da API
+            flash("Nenhum professor encontrado.", "info")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] Erro ao buscar professores: {e}")
-        flash("Erro ao carregar professores. Usando dados locais.", "warning")
-        docentes = get_docentes_list()  # Fallback para mock
+        flash("Erro ao carregar professores da API.", "error")
+        docentes = []  # Retorna lista vazia em caso de erro
     
     return render_template('docentes/list.html', docentes=docentes)
 
@@ -502,6 +503,17 @@ def docentes_list():
 @login_required
 def docentes_add():
     """ Adiciona novo docente via API """
+    # Buscar disciplinas da API para popular select
+    disciplinas = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            disciplinas = response.json()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar disciplinas: {e}")
+        disciplinas = []
+    
     if request.method == 'POST':
         try:
             # Coleta e valida dados do formulário
@@ -522,18 +534,18 @@ def docentes_add():
             # Validação obrigatória
             if not docente_data['id_funcional'] or not docente_data['nome_professor'] or not docente_data['email_institucional']:
                 flash("Todos os campos obrigatórios devem ser preenchidos.", "error")
-                return render_template('docentes/add.html')
+                return render_template('docentes/add.html', disciplinas=disciplinas)
             
             # Validação do ID funcional (máximo 7 caracteres)
             if len(docente_data['id_funcional']) > 7:
                 flash("ID Funcional deve ter no máximo 7 caracteres.", "error")
-                return render_template('docentes/add.html')
+                return render_template('docentes/add.html', disciplinas=disciplinas)
             
             # Validação de formato de email
             email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
             if not re.match(email_pattern, docente_data['email_institucional']):
                 flash("Formato de email inválido.", "error")
-                return render_template('docentes/add.html')
+                return render_template('docentes/add.html', disciplinas=disciplinas)
             
             # Coleta dados extras (não enviados para API ainda)
             dados_extras = {
@@ -592,7 +604,7 @@ def docentes_add():
             print(f"[DEBUG] Exception: {e}")
             flash("Erro inesperado ao cadastrar docente.", "error")
     
-    return render_template('docentes/add.html')
+    return render_template('docentes/add.html', disciplinas=disciplinas)
 
 @app.route('/docentes/view/<int:id>')
 @login_required
@@ -630,6 +642,17 @@ def docentes_view(id):
 @login_required
 def docentes_edit(id):
     """ Edita docente - GET usa mock, POST envia para API """
+    # Buscar disciplinas da API para popular select
+    disciplinas = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            disciplinas = response.json()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar disciplinas: {e}")
+        disciplinas = []
+    
     if request.method == 'POST':
         try:
             # Coleta dados do formulário e mapeia para a API
@@ -733,7 +756,7 @@ def docentes_edit(id):
     
     print(f"[DEBUG] Docente encontrado para edição: {docente}")
     
-    return render_template('docentes/edit.html', docente=docente)
+    return render_template('docentes/edit.html', docente=docente, disciplinas=disciplinas)
 
 @app.route('/docentes/delete/<int:id>', methods=['POST'])
 @login_required
@@ -768,32 +791,8 @@ def docentes_delete(id):
 # ===== FUNÇÕES AUXILIARES PARA DOCENTES =====
 
 def get_docentes_list():
-    """ Retorna a lista de docentes da sessão, inicializando se necessário """
-    if 'docentes_list' not in session:
-        session['docentes_list'] = [
-            {
-                'id': 1,
-                'nome_professor': 'João',
-                'sobrenome_professor': 'Silva',
-                'email_institucional': 'joao.silva@docente.unip.br',
-                'id_funcional': 'F123456'
-            },
-            {
-                'id': 2,
-                'nome_professor': 'Maria',
-                'sobrenome_professor': 'Santos',
-                'email_institucional': 'maria.santos@docente.unip.br',
-                'id_funcional': 'F789012'
-            },
-            {
-                'id': 3,
-                'nome_professor': 'Carlos',
-                'sobrenome_professor': 'Oliveira',
-                'email_institucional': 'carlos.oliveira@docente.unip.br',
-                'id_funcional': 'F345678'
-            }
-        ]
-    return session['docentes_list']
+    """ Retorna a lista de docentes da sessão (vem da API) ou lista vazia """
+    return session.get('docentes_list', [])
 
 def add_docente_to_list(docente_data, response_data=None):
     """ Adiciona um novo docente à lista da sessão """
@@ -1224,13 +1223,8 @@ def delete_conteudo_api(conteudo_id):
 # ===== Sessão (fallback local) =====
 
 def get_conteudo_list_session():
-    if 'conteudos_list' not in session:
-        session['conteudos_list'] = [
-            { 'id': 1, 'titulo': 'Slide - Aula 01', 'disciplina': 'Ciência da Computação', 'tipo': 'aula', 'url_arquivo': '', 'link': 'https://exemplo.com/aula-01' },
-            { 'id': 2, 'titulo': 'Artigo Complementar', 'disciplina': 'Ciência da Computação', 'tipo': 'complementar', 'url_arquivo': '', 'link': 'https://exemplo.com/artigo' },
-            { 'id': 3, 'titulo': 'Lista de Exercícios', 'disciplina': 'Análise e Desenvolvimento de Sistemas', 'tipo': 'aula', 'url_arquivo': '', 'link': '' },
-        ]
-    return session['conteudos_list']
+    """ Retorna lista de conteúdos da sessão ou lista vazia se não houver dados """
+    return session.get('conteudos_list', [])
 
 def set_conteudo_list_session(items):
     session['conteudos_list'] = items
@@ -1295,6 +1289,17 @@ def conteudo_list():
 def conteudo_add():
     print(f"[DEBUG] Rota /conteudo/add acessada - Método: {request.method}")
     
+    # Buscar disciplinas da API para popular select
+    disciplinas = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            disciplinas = response.json()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar disciplinas: {e}")
+        disciplinas = []
+    
     if request.method == 'POST':
         print(f"[DEBUG] Processando POST /conteudo/add")
         tipo = request.form.get('tipo', 'aula')
@@ -1309,12 +1314,12 @@ def conteudo_add():
         if not titulo:
             print(f"[WARN] POST /conteudo/add - Título não fornecido")
             flash('Título é obrigatório.', 'error')
-            return render_template('conteudo/add.html')
+            return render_template('conteudo/add.html', disciplinas=disciplinas)
 
         if not link and (not arquivo or not arquivo.filename):
             print(f"[WARN] POST /conteudo/add - Nem arquivo nem link fornecido")
             flash('Envie um arquivo ou informe um link.', 'error')
-            return render_template('conteudo/add.html')
+            return render_template('conteudo/add.html', disciplinas=disciplinas)
 
         payload = { 'tipo': tipo, 'titulo': titulo, 'disciplina': disciplina, 'link': link }
         print(f"[DEBUG] Chamando create_conteudo_api com payload: {payload}")
@@ -1337,7 +1342,7 @@ def conteudo_add():
             error_message = resp if isinstance(resp, str) else str(resp)
             flash(f'Erro ao cadastrar conteúdo: {error_message}', 'error')
 
-    return render_template('conteudo/add.html')
+    return render_template('conteudo/add.html', disciplinas=disciplinas)
 
 @app.route('/conteudo/edit/<conteudo_id>', methods=['GET', 'POST'])
 @login_required
@@ -1346,6 +1351,17 @@ def conteudo_edit(conteudo_id):
     if not item:
         flash('Conteúdo não encontrado.', 'error')
         return redirect(url_for('conteudo_list'))
+    
+    # Buscar disciplinas da API para popular select
+    disciplinas = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            disciplinas = response.json()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar disciplinas: {e}")
+        disciplinas = []
 
     if request.method == 'POST':
         tipo = request.form.get('tipo', item.get('tipo'))
@@ -1363,7 +1379,7 @@ def conteudo_edit(conteudo_id):
         else:
             flash('Erro ao atualizar conteúdo.', 'error')
 
-    return render_template('conteudo/edit.html', conteudo=item)
+    return render_template('conteudo/edit.html', conteudo=item, disciplinas=disciplinas)
 
 # ===== ROTAS DE AVISOS =====
 
@@ -1818,6 +1834,22 @@ def calendario_list():
 def calendario_add():
     step = int(request.args.get('step') or request.form.get('step') or 1)
     wizard = get_wizard_state()
+    
+    # Buscar professores da API para popular selects
+    professores = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            professores = response.json()
+            # Formatar nome completo para exibição
+            for prof in professores:
+                nome = prof.get('nome_professor', '')
+                sobrenome = prof.get('sobrenome_professor', '')
+                prof['nome_completo'] = f"{nome} {sobrenome}".strip()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar professores: {e}")
+        professores = []
 
     if request.method == 'POST':
         if step == 1:
@@ -1888,7 +1920,7 @@ def calendario_add():
             flash('Matéria cadastrada com sucesso!', 'success')
             return redirect(url_for('calendario_view', materia_id=novo.get('id')))
 
-    return render_template('calendario/add.html', step=step, wizard=wizard, user=session.get('user', {}))
+    return render_template('calendario/add.html', step=step, wizard=wizard, user=session.get('user', {}), professores=professores)
 
 @app.route('/calendario/view/<int:materia_id>')
 @login_required
@@ -1908,6 +1940,22 @@ def calendario_edit(materia_id):
     if not materia:
         flash('Matéria não encontrada.', 'error')
         return redirect(url_for('calendario_list'))
+
+    # Buscar professores da API para popular selects
+    professores = []
+    try:
+        headers = get_auth_headers()
+        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        if response.status_code == 200:
+            professores = response.json()
+            # Formatar nome completo para exibição
+            for prof in professores:
+                nome = prof.get('nome_professor', '')
+                sobrenome = prof.get('sobrenome_professor', '')
+                prof['nome_completo'] = f"{nome} {sobrenome}".strip()
+    except Exception as e:
+        print(f"[DEBUG] Erro ao buscar professores: {e}")
+        professores = []
 
     step = int(request.args.get('step') or request.form.get('step') or 1)
     wizard = session.setdefault('edit_wizard', materia.copy())
@@ -1986,7 +2034,7 @@ def calendario_edit(materia_id):
             flash('Matéria atualizada com sucesso!', 'success')
             return redirect(url_for('calendario_view', materia_id=materia_id))
 
-    return render_template('calendario/edit.html', step=step, wizard=wizard, materia_id=materia_id, user=session.get('user', {}))
+    return render_template('calendario/edit.html', step=step, wizard=wizard, materia_id=materia_id, user=session.get('user', {}), professores=professores)
 
 # ===== ROTAS DE INFORMAÇÕES DO CURSO =====
 
@@ -2447,60 +2495,44 @@ def duvidas_frequentes_list():
     try:
         headers = get_auth_headers()
         user = session.get('user', {})
-        curso_codigo = user.get('curso_codigo', '')
-        curso_nome = user.get('curso_nome', '')
         
-        # Como a API não tem endpoint para listar todos, vamos fazer buscas por termos comuns
-        # e consolidar os resultados
-        termos_busca = ['duvida', 'frequente', 'pergunta', 'como', 'quando', 'onde', 'o que']
-        todas_duvidas_dict = {}  # Usar dict para evitar duplicatas
+        # Buscar todos os itens da base de conhecimento diretamente da API
+        response = requests.get(
+            f"{API_BASE_URL}/baseconhecimento/",
+            headers=headers,
+            timeout=10
+        )
         
-        for termo in termos_busca:
-            try:
-                response = requests.get(
-                    f"{API_BASE_URL}/baseconhecimento/get_buscar?q={termo}",
-                    headers=headers,
-                    timeout=10
-                )
-                
-                if response.status_code == 200:
-                    resultados = response.json()
-                    if isinstance(resultados, dict) and 'contextos' in resultados:
-                        contextos = resultados.get('contextos', [])
-                        for contexto in contextos:
-                            # Usar o contexto como chave para evitar duplicatas
-                            if isinstance(contexto, str):
-                                todas_duvidas_dict[contexto] = {
-                                    'conteudo_processado': contexto,
-                                    'categoria': 'institucional'
-                                }
-            except Exception as e:
-                print(f"[DEBUG] Erro ao buscar termo '{termo}': {e}")
-                continue
+        todas_duvidas = []
+        if response.status_code == 200:
+            todas_duvidas = response.json()
+        elif response.status_code == 404:
+            # Se não houver itens, retorna lista vazia
+            todas_duvidas = []
+        else:
+            flash(f"Erro ao carregar dúvidas frequentes: {response.status_code}", "error")
+            todas_duvidas = []
         
-        # Converter dict para lista
-        todas_duvidas = list(todas_duvidas_dict.values())
-        
-        # Categorias de dúvidas
+        # Separar por categoria usando a categoria real do banco de dados
         duvidas_materia = []
         duvidas_institucionais = []
         
-        # Separar por categoria
         for duvida in todas_duvidas:
             if isinstance(duvida, dict):
-                categoria = duvida.get('categoria', '').lower()
-                conteudo = duvida.get('conteudo_processado', '').lower()
+                categoria = duvida.get('categoria', '').lower() if duvida.get('categoria') else ''
                 
-                # Classificar baseado em palavras-chave no conteúdo
-                if any(palavra in conteudo for palavra in ['materia', 'disciplina', 'curso', 'aula', 'professor', 'docente']):
+                # Classificar baseado na categoria real do banco
+                if categoria and ('materia' in categoria or 'disciplina' in categoria or 'curso' in categoria):
                     duvidas_materia.append(duvida)
                 else:
+                    # Se não tiver categoria definida ou for institucional
                     duvidas_institucionais.append(duvida)
-            else:
-                # Se for apenas string, adiciona em institucionais
-                duvidas_institucionais.append({'conteudo_processado': str(duvida)})
         
-        # Se não encontrou nada, pelo menos mostra a estrutura vazia
+        # Obter informações do curso do usuário (se disponíveis)
+        curso_codigo = user.get('curso_codigo', '') if user else ''
+        curso_nome = user.get('curso_nome', '') if user else ''
+        
+        # Se não encontrou nada, mostra mensagem informativa
         if not todas_duvidas:
             flash("Nenhuma dúvida frequente encontrada na base de conhecimento.", "info")
         
@@ -2518,8 +2550,8 @@ def duvidas_frequentes_list():
         return render_template(
             'duvidas_frequentes/list.html',
             user=session.get('user', {}),
-            curso_codigo=session.get('user', {}).get('curso_codigo', ''),
-            curso_nome=session.get('user', {}).get('curso_nome', ''),
+            curso_codigo=session.get('user', {}).get('curso_codigo', '') if session.get('user') else '',
+            curso_nome=session.get('user', {}).get('curso_nome', '') if session.get('user') else '',
             duvidas_materia=[],
             duvidas_institucionais=[],
             todas_duvidas=[]
