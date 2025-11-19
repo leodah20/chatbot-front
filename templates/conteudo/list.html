@@ -109,6 +109,9 @@
                     <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
                   {% endif %}
                   <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
+                  <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
+                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; text-decoration: underline; padding: 0;">Apagar</button>
+                  </form>
                 </li>
               {% endfor %}
             </ul>
@@ -127,6 +130,9 @@
                     <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
                   {% endif %}
                   <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
+                  <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
+                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; text-decoration: underline; padding: 0;">Apagar</button>
+                  </form>
                 </li>
               {% endfor %}
             </ul>

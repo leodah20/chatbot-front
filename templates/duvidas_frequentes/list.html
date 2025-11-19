@@ -93,27 +93,41 @@
         <div id="duvidas-materia" class="duvidas-category active">
           {% if duvidas_materia and duvidas_materia|length > 0 %}
             <div class="duvidas-list">
-              {% for duvida in duvidas_materia %}
+              {% for mensagem in duvidas_materia %}
                 <div class="duvida-item">
-                  {% if duvida is mapping %}
-                    {% set titulo = duvida.get('nome_arquivo_origem') or duvida.get('categoria') or '' %}
-                    {% if titulo %}
-                      <h3 class="duvida-titulo">{{ titulo }}</h3>
-                    {% endif %}
-                    {% if duvida.get('conteudo_processado') %}
-                      <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:300] }}{% if duvida.get('conteudo_processado', '')|length > 300 %}...{% endif %}</p>
-                    {% endif %}
-                    {% if duvida.get('palavra_chave') %}
-                      <div class="duvida-tags">
-                        {% set palavras = duvida.get('palavra_chave', []) %}
-                        {% if palavras is iterable and palavras is not string %}
-                          {% for tag in palavras %}
-                            {% if tag %}
-                              <span class="tag">{{ tag }}</span>
-                            {% endif %}
-                          {% endfor %}
-                        {% elif palavras %}
-                          <span class="tag">{{ palavras }}</span>
+                  {% if mensagem is mapping %}
+                    {% set pergunta = mensagem.get('primeira_pergunta', '') %}
+                    {% set item_id = mensagem.get('id_mensagem') or mensagem.get('id') %}
+                    {% set topico = mensagem.get('topico', []) %}
+                    {% set feedback = mensagem.get('feedback', '') %}
+                    
+                    {% if pergunta %}
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                          <h3 class="duvida-titulo">{{ pergunta }}</h3>
+                          {% if topico %}
+                            <div class="duvida-tags" style="margin-top: 8px;">
+                              {% if topico is iterable and topico is not string %}
+                                {% for tag in topico %}
+                                  {% if tag %}
+                                    <span class="tag">{{ tag }}</span>
+                                  {% endif %}
+                                {% endfor %}
+                              {% elif topico %}
+                                <span class="tag">{{ topico }}</span>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                          {% if feedback %}
+                            <p class="duvida-conteudo" style="margin-top: 8px; font-style: italic; color: #666;">
+                              Feedback: {{ feedback }}
+                            </p>
+                          {% endif %}
+                        </div>
+                        {% if item_id %}
+                        <form method="POST" action="{{ url_for('duvidas_frequentes_delete', item_id=item_id) }}" style="display: inline; margin-left: 15px;" onsubmit="return confirm('Tem certeza que deseja remover esta dúvida frequente?')">
+                          <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px 10px; text-decoration: underline;">Apagar</button>
+                        </form>
                         {% endif %}
                       </div>
                     {% endif %}
@@ -131,27 +145,41 @@
         <div id="duvidas-institucional" class="duvidas-category">
           {% if duvidas_institucionais and duvidas_institucionais|length > 0 %}
             <div class="duvidas-list">
-              {% for duvida in duvidas_institucionais %}
+              {% for mensagem in duvidas_institucionais %}
                 <div class="duvida-item">
-                  {% if duvida is mapping %}
-                    {% set titulo = duvida.get('nome_arquivo_origem') or duvida.get('categoria') or '' %}
-                    {% if titulo %}
-                      <h3 class="duvida-titulo">{{ titulo }}</h3>
-                    {% endif %}
-                    {% if duvida.get('conteudo_processado') %}
-                      <p class="duvida-conteudo">{{ duvida.get('conteudo_processado', '')[:300] }}{% if duvida.get('conteudo_processado', '')|length > 300 %}...{% endif %}</p>
-                    {% endif %}
-                    {% if duvida.get('palavra_chave') %}
-                      <div class="duvida-tags">
-                        {% set palavras = duvida.get('palavra_chave', []) %}
-                        {% if palavras is iterable and palavras is not string %}
-                          {% for tag in palavras %}
-                            {% if tag %}
-                              <span class="tag">{{ tag }}</span>
-                            {% endif %}
-                          {% endfor %}
-                        {% elif palavras %}
-                          <span class="tag">{{ palavras }}</span>
+                  {% if mensagem is mapping %}
+                    {% set pergunta = mensagem.get('primeira_pergunta', '') %}
+                    {% set item_id = mensagem.get('id_mensagem') or mensagem.get('id') %}
+                    {% set topico = mensagem.get('topico', []) %}
+                    {% set feedback = mensagem.get('feedback', '') %}
+                    
+                    {% if pergunta %}
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                          <h3 class="duvida-titulo">{{ pergunta }}</h3>
+                          {% if topico %}
+                            <div class="duvida-tags" style="margin-top: 8px;">
+                              {% if topico is iterable and topico is not string %}
+                                {% for tag in topico %}
+                                  {% if tag %}
+                                    <span class="tag">{{ tag }}</span>
+                                  {% endif %}
+                                {% endfor %}
+                              {% elif topico %}
+                                <span class="tag">{{ topico }}</span>
+                              {% endif %}
+                            </div>
+                          {% endif %}
+                          {% if feedback %}
+                            <p class="duvida-conteudo" style="margin-top: 8px; font-style: italic; color: #666;">
+                              Feedback: {{ feedback }}
+                            </p>
+                          {% endif %}
+                        </div>
+                        {% if item_id %}
+                        <form method="POST" action="{{ url_for('duvidas_frequentes_delete', item_id=item_id) }}" style="display: inline; margin-left: 15px;" onsubmit="return confirm('Tem certeza que deseja remover esta dúvida frequente?')">
+                          <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px 10px; text-decoration: underline;">Apagar</button>
+                        </form>
                         {% endif %}
                       </div>
                     {% endif %}

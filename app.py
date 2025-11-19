@@ -1381,6 +1381,32 @@ def conteudo_edit(conteudo_id):
 
     return render_template('conteudo/edit.html', conteudo=item, disciplinas=disciplinas)
 
+@app.route('/conteudo/delete/<conteudo_id>', methods=['POST'])
+@login_required
+def conteudo_delete(conteudo_id):
+    """ Remove conteúdo via API (Supabase) """
+    try:
+        print(f"[DEBUG] Removendo conteúdo {conteudo_id}")
+        
+        # Deletar na API (Supabase)
+        api_ok = delete_conteudo_api(conteudo_id)
+        
+        if api_ok:
+            # Remove da sessão local
+            items = get_conteudo_list_session()
+            items[:] = [item for item in items if str(item.get('id')) != str(conteudo_id)]
+            set_conteudo_list_session(items)
+            
+            flash('Conteúdo removido com sucesso do Supabase!', 'success')
+        else:
+            flash('Erro ao remover conteúdo da API.', 'error')
+            
+    except Exception as e:
+        print(f"[DEBUG] Erro ao remover conteúdo: {e}")
+        flash('Erro inesperado ao remover conteúdo.', 'error')
+    
+    return redirect(url_for('conteudo_list'))
+
 # ===== ROTAS DE AVISOS =====
 
 @app.route('/avisos')
@@ -2036,6 +2062,29 @@ def calendario_edit(materia_id):
 
     return render_template('calendario/edit.html', step=step, wizard=wizard, materia_id=materia_id, user=session.get('user', {}), professores=professores)
 
+@app.route('/calendario/delete/<int:materia_id>', methods=['POST'])
+@login_required
+def calendario_delete(materia_id):
+    """ Remove matéria da sessão """
+    try:
+        materias = get_materias_list()
+        materia = next((m for m in materias if m.get('id') == materia_id), None)
+        
+        if not materia:
+            flash('Matéria não encontrada.', 'error')
+            return redirect(url_for('calendario_list'))
+        
+        # Remove da lista de matérias na sessão
+        materias[:] = [m for m in materias if m.get('id') != materia_id]
+        session.modified = True
+        
+        flash('Matéria removida com sucesso!', 'success')
+    except Exception as e:
+        print(f"[DEBUG] Erro ao remover matéria: {e}")
+        flash('Erro ao remover matéria.', 'error')
+    
+    return redirect(url_for('calendario_list'))
+
 # ===== ROTAS DE INFORMAÇÕES DO CURSO =====
 
 @app.route('/infos-curso')
@@ -2491,50 +2540,59 @@ def base_conhecimento_delete(item_id):
 @app.route('/duvidas-frequentes')
 @login_required
 def duvidas_frequentes_list():
-    """ Lista dúvidas frequentes da base de conhecimento """
+    """ Lista dúvidas frequentes dos alunos (mensagens do chatbot) """
     try:
         headers = get_auth_headers()
         user = session.get('user', {})
         
-        # Buscar todos os itens da base de conhecimento diretamente da API
+        # Buscar mensagens dos alunos da API
         response = requests.get(
-            f"{API_BASE_URL}/baseconhecimento/",
+            f"{API_BASE_URL}/mensagens_aluno/get_lista_msg/",
             headers=headers,
             timeout=10
         )
         
-        todas_duvidas = []
+        todas_mensagens = []
         if response.status_code == 200:
-            todas_duvidas = response.json()
+            mensagens_data = response.json()
+            todas_mensagens = mensagens_data if isinstance(mensagens_data, list) else [mensagens_data]
         elif response.status_code == 404:
-            # Se não houver itens, retorna lista vazia
-            todas_duvidas = []
+            todas_mensagens = []
         else:
             flash(f"Erro ao carregar dúvidas frequentes: {response.status_code}", "error")
-            todas_duvidas = []
+            todas_mensagens = []
         
-        # Separar por categoria usando a categoria real do banco de dados
-        duvidas_materia = []
-        duvidas_institucionais = []
+        # Separar por tópico/categoria
+        duvidas_materia = []  # Disciplina, Conteúdo, etc.
+        duvidas_institucionais = []  # Geral, TCC, etc.
         
-        for duvida in todas_duvidas:
-            if isinstance(duvida, dict):
-                categoria = duvida.get('categoria', '').lower() if duvida.get('categoria') else ''
+        for mensagem in todas_mensagens:
+            if isinstance(mensagem, dict):
+                topico = mensagem.get('topico', [])
                 
-                # Classificar baseado na categoria real do banco
-                if categoria and ('materia' in categoria or 'disciplina' in categoria or 'curso' in categoria):
-                    duvidas_materia.append(duvida)
+                # Se topico é uma lista, pega o primeiro item
+                if isinstance(topico, list) and len(topico) > 0:
+                    topico_str = topico[0] if isinstance(topico[0], str) else str(topico[0])
+                elif isinstance(topico, str):
+                    topico_str = topico
                 else:
-                    # Se não tiver categoria definida ou for institucional
-                    duvidas_institucionais.append(duvida)
+                    topico_str = 'Geral'
+                
+                topico_lower = topico_str.lower()
+                
+                # Classificar baseado no tópico
+                if any(palavra in topico_lower for palavra in ['disciplina', 'conteúdo', 'materia', 'aula', 'prova', 'avaliacao']):
+                    duvidas_materia.append(mensagem)
+                else:
+                    duvidas_institucionais.append(mensagem)
         
         # Obter informações do curso do usuário (se disponíveis)
         curso_codigo = user.get('curso_codigo', '') if user else ''
         curso_nome = user.get('curso_nome', '') if user else ''
         
         # Se não encontrou nada, mostra mensagem informativa
-        if not todas_duvidas:
-            flash("Nenhuma dúvida frequente encontrada na base de conhecimento.", "info")
+        if not todas_mensagens:
+            flash("Nenhuma dúvida frequente encontrada.", "info")
         
         return render_template(
             'duvidas_frequentes/list.html',
@@ -2543,7 +2601,7 @@ def duvidas_frequentes_list():
             curso_nome=curso_nome,
             duvidas_materia=duvidas_materia,
             duvidas_institucionais=duvidas_institucionais,
-            todas_duvidas=todas_duvidas
+            todas_duvidas=todas_mensagens
         )
     except requests.exceptions.RequestException as e:
         flash(f"Erro ao carregar dúvidas frequentes: {str(e)}", "error")
@@ -2556,6 +2614,41 @@ def duvidas_frequentes_list():
             duvidas_institucionais=[],
             todas_duvidas=[]
         )
+
+@app.route('/duvidas-frequentes/delete/<item_id>', methods=['POST'])
+@login_required
+def duvidas_frequentes_delete(item_id):
+    """ Remove mensagem de aluno (dúvida frequente) via API """
+    try:
+        print(f"[DEBUG] Removendo mensagem de aluno {item_id}")
+        headers = get_auth_headers()
+        
+        response = requests.delete(
+            f"{API_BASE_URL}/mensagens_aluno/delete/{item_id}",
+            headers=headers,
+            timeout=10
+        )
+        
+        print(f"[DEBUG] Status Code: {response.status_code}")
+        
+        if response.status_code in (200, 204):
+            flash('Dúvida frequente removida com sucesso!', 'success')
+        elif response.status_code == 404:
+            flash('Dúvida frequente não encontrada.', 'error')
+        else:
+            response.raise_for_status()
+            
+    except requests.exceptions.HTTPError as e:
+        print(f"[DEBUG] HTTPError: {e}")
+        flash(f'Erro ao remover dúvida frequente (HTTP {e.response.status_code}).', 'error')
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] RequestException: {e}")
+        flash('Erro de comunicação com o servidor.', 'error')
+    except Exception as e:
+        print(f"[DEBUG] Exception: {e}")
+        flash('Erro inesperado ao remover dúvida frequente.', 'error')
+    
+    return redirect(url_for('duvidas_frequentes_list'))
 
 # ===== ROTAS DE MENSAGENS DE ALUNO =====
 @app.route('/mensagens_aluno', methods=['GET', 'POST'])

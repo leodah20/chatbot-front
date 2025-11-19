@@ -244,7 +244,7 @@
             <h3 class="exam-title">NP1</h3>
             <div class="form-field-group">
               <label class="field-label">Data:</label>
-              <input class="field-input field-small" name="np1_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.np1.data if wizard.provas and wizard.provas.np1 else '' }}">
+              <input class="field-input field-small" name="np1_data" type="date" value="{{ wizard.provas.np1.data if wizard.provas and wizard.provas.np1 else '' }}" data-original-value="{{ wizard.provas.np1.data if wizard.provas and wizard.provas.np1 else '' }}">
             </div>
             <div class="form-row-group">
               <div class="form-field-group">
@@ -291,7 +291,7 @@
             <h3 class="exam-title">NP2</h3>
             <div class="form-field-group">
               <label class="field-label">Data:</label>
-              <input class="field-input field-small" name="np2_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.np2.data if wizard.provas and wizard.provas.np2 else '' }}">
+              <input class="field-input field-small" name="np2_data" type="date" value="{{ wizard.provas.np2.data if wizard.provas and wizard.provas.np2 else '' }}" data-original-value="{{ wizard.provas.np2.data if wizard.provas and wizard.provas.np2 else '' }}">
             </div>
             <div class="form-row-group">
               <div class="form-field-group">
@@ -338,7 +338,7 @@
             <h3 class="exam-title">Exame</h3>
             <div class="form-field-group">
               <label class="field-label">Data:</label>
-              <input class="field-input field-small" name="exame_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.exame.data if wizard.provas and wizard.provas.exame else '' }}">
+              <input class="field-input field-small" name="exame_data" type="date" value="{{ wizard.provas.exame.data if wizard.provas and wizard.provas.exame else '' }}" data-original-value="{{ wizard.provas.exame.data if wizard.provas and wizard.provas.exame else '' }}">
             </div>
             <div class="form-row-group">
               <div class="form-field-group">
@@ -385,7 +385,7 @@
             <h3 class="exam-title">Sub</h3>
             <div class="form-field-group">
               <label class="field-label">Data:</label>
-              <input class="field-input field-small" name="sub_data" type="text" placeholder="DD/MM/AAAA" value="{{ wizard.provas.sub.data if wizard.provas and wizard.provas.sub else '' }}">
+              <input class="field-input field-small" name="sub_data" type="date" value="{{ wizard.provas.sub.data if wizard.provas and wizard.provas.sub else '' }}" data-original-value="{{ wizard.provas.sub.data if wizard.provas and wizard.provas.sub else '' }}">
             </div>
             <div class="form-row-group">
               <div class="form-field-group">
@@ -454,6 +454,57 @@
       </div>
     </div>
   </main>
+
+  <script>
+    // Converter datas de DD/MM/AAAA para YYYY-MM-DD (formato do input type="date")
+    function convertDateFormat(dateStr) {
+      if (!dateStr || dateStr.trim() === '') return '';
+      
+      // Tenta converter DD/MM/AAAA para YYYY-MM-DD
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Se já estiver no formato YYYY-MM-DD, retorna como está
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateStr;
+      }
+      
+      return '';
+    }
+
+    // Aplicar conversão em todos os campos de data ao carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateInputs = document.querySelectorAll('input[type="date"][data-original-value]');
+      dateInputs.forEach(input => {
+        const originalValue = input.getAttribute('data-original-value');
+        if (originalValue) {
+          const convertedValue = convertDateFormat(originalValue);
+          if (convertedValue) {
+            input.value = convertedValue;
+          }
+        }
+      });
+
+      // Contador de caracteres para textareas
+      const textareas = document.querySelectorAll('textarea[name*="conteudo"]');
+      textareas.forEach(textarea => {
+        const counter = textarea.closest('.textarea-wrapper')?.querySelector('.char-counter');
+        if (counter) {
+          textarea.addEventListener('input', function(e) {
+            const length = e.target.value.length;
+            counter.textContent = `${length} / 250 caracteres`;
+          });
+          // Atualizar contador inicial
+          if (textarea.value) {
+            counter.textContent = `${textarea.value.length} / 250 caracteres`;
+          }
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

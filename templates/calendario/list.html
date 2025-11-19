@@ -84,6 +84,9 @@
                 <span class="badge-item">{{ m.carga_horaria }}</span>
                 <span class="badge-item">{{ m.modalidade }}</span>
                 <a class="view-link" href="{{ url_for('calendario_view', materia_id=m.id) }}">Ver</a>
+                <form method="POST" action="{{ url_for('calendario_delete', materia_id=m.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover esta matéria?')">
+                  <button type="submit" class="delete-link" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 0; margin-left: 10px;">Apagar</button>
+                </form>
               </div>
             </li>
           {% endfor %}
