@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/conteudo_styles.css') }}">
 </head>
 <body>
     <header>
@@ -51,81 +52,73 @@
     <main class="main-container">
         <section class="content-card">
             <div class="card-header">
-                <svg class="header-icon" width="52" height="63" viewBox="0 0 52 63" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg class="header-icon" width="42" height="50" viewBox="0 0 52 63" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M41.4 16.1539C41.4 25.0754 34.4492 32.3077 25.875 32.3077C17.3008 32.3077 10.35 25.0754 10.35 16.1539C10.35 7.23233 17.3008 0 25.875 0C34.4492 0 41.4 7.23233 41.4 16.1539Z" fill="#023D71"/>
                     <path d="M0 56.4244C0 45.7816 7.437 37.1538 16.611 37.1538H35.139C44.313 37.1538 51.75 45.7816 51.75 56.4244V57.0706C51.75 60.3453 49.4617 63 46.6389 63H5.11108C2.28831 63 0 60.3453 0 57.0706V56.4244Z" fill="#023D71"/>
                 </svg>
                 <h2 class="page-title">Informações Docentes</h2>
             </div>
-            <div class="separator"></div>
+            <div class="separator" style="margin: 0 auto 4px;"></div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="alert-container">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }}">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
+            {% include '_toasts.html' %}
 
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px;">
+                {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
                 <a href="{{ url_for('docentes_add') }}" class="btn-add-inline">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span>Adicionar Docente</span>
                 </a>
-            </div>
-
-            <div class="selector-container">
-                <label class="selector-label">Selecione o Docente:</label>
-                <div class="custom-select" onclick="toggleDropdown(event)">
-                    <span class="selected-value">Selecione</span>
-                    <svg class="dropdown-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                {% if docentes %}
-                    <div id="dropdown-menu" class="dropdown-menu">
-                        {% for docente in docentes %}
-                            <div class="dropdown-option" onclick="selectDocente({{ docente.id }}, '{{ docente.nome_professor }} {{ docente.sobrenome_professor }}')">
-                                {{ docente.nome_professor }} {{ docente.sobrenome_professor }}
-                            </div>
-                        {% endfor %}
-                    </div>
                 {% endif %}
             </div>
+
+            <!-- Lista de docentes -->
+            {% if docentes and docentes|length > 0 %}
+                <ul class="items">
+                    {% for docente in docentes %}
+                        <li class="item" style="cursor: pointer;" onclick="window.location.href='{{ url_for('docentes_view', id=docente.id) if docente.id else '#' }}'">
+                            <span class="item-title">{{ docente.nome_professor }} {{ docente.sobrenome_professor }}{% if docente.email_institucional or docente.id_funcional %}<br><small style="font-size: 12px; color: #666; font-weight: 400;">{% if docente.email_institucional %}{{ docente.email_institucional }}{% endif %}{% if docente.email_institucional and docente.id_funcional %} • {% endif %}{% if docente.id_funcional %}ID: {{ docente.id_funcional }}{% endif %}</small>{% endif %}</span>
+                            {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+                            <div style="display: flex; gap: 10px; align-items: center;" onclick="event.stopPropagation();">
+                                <a href="{{ url_for('docentes_edit', id=docente.id) }}" class="btn-edit-info">
+                                    <svg class="icon-edit" width="16" height="16" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M23.375 4.00008C23.7361 3.64989 24.1649 3.3721 24.6367 3.18258C25.1086 2.99305 25.6143 2.89551 26.125 2.89551C26.6357 2.89551 27.1414 2.99305 27.6133 3.18258C28.0851 3.3721 28.5139 3.64989 28.875 4.00008C29.2361 4.35027 29.5226 4.76601 29.7181 5.22355C29.9135 5.6811 30.0141 6.1715 30.0141 6.66674C30.0141 7.16199 29.9135 7.65239 29.7181 8.10993C29.5226 8.56748 29.2361 8.98322 28.875 9.33341L10.3125 27.3334L2.75 29.3334L4.8125 22.0001L23.375 4.00008Z" stroke="#2C8DFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>Editar</span>
+                                </a>
+                                <form method="POST" action="{{ url_for('docentes_delete', id=docente.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este docente? Esta ação não pode ser desfeita.')">
+                                    <button type="submit" class="btn-edit-info" style="background-color: #dc3545; color: white; border: none; cursor: pointer;">
+                                        <svg class="icon-edit" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M10 11V17M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        <span>Apagar</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <!-- Estado vazio -->
+                <div class="empty-state" style="text-align: center; padding: 60px 20px;">
+                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 20px;">
+                        <path d="M41.4 20.5C41.4 31.8 34.4492 40.9 25.875 40.9C17.3008 40.9 10.35 31.8 10.35 20.5C10.35 9.2 17.3008 0.1 25.875 0.1C34.4492 0.1 41.4 9.2 41.4 20.5Z" fill="#E5E7EB"/>
+                        <path d="M0 71.4C0 58 7.437 47.1 16.611 47.1H35.139C44.313 47.1 51.75 58 51.75 71.4V72.2C51.75 76.4 49.4617 79.8 46.6389 79.8H5.11108C2.28831 79.8 0 76.4 0 72.2V71.4Z" fill="#E5E7EB"/>
+                    </svg>
+                    <h3 style="color: #023D71; margin: 0 0 10px; font-size: 16px; font-weight: 600; font-family: 'Rubik', sans-serif;">Nenhum docente encontrado</h3>
+                    <p style="color: #666; margin: 0 0 20px; font-size: 14px; font-family: 'Rubik', sans-serif;">Comece adicionando seu primeiro docente para gerenciar as informações.</p>
+                    {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+                    <a href="{{ url_for('docentes_add') }}" class="btn-add-empty">
+                        Adicionar Primeiro Docente
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
         </section>
     </main>
 
-    <script>
-        function toggleDropdown(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.toggle('active');
-            }
-        }
-
-        function selectDocente(id, nome) {
-            document.querySelector('.selected-value').textContent = nome;
-            const dropdown = document.getElementById('dropdown-menu');
-            if (dropdown) {
-                dropdown.classList.remove('active');
-            }
-            window.location.href = `/docentes/view/${id}`;
-        }
-
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('dropdown-menu');
-            const customSelect = document.querySelector('.custom-select');
-            if (dropdown && customSelect && !customSelect.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    </script>
 </body>
 </html>

@@ -517,7 +517,8 @@ def docentes_list():
         flash("Erro ao carregar professores da API.", "error")
         docentes = []  # Retorna lista vazia em caso de erro
     
-    return render_template('docentes/list.html', docentes=docentes)
+    user = session.get('user', {})
+    return render_template('docentes/list.html', docentes=docentes, user=user)
 
 @app.route('/docentes/add', methods=['GET', 'POST'])
 @login_required
@@ -626,7 +627,7 @@ def docentes_add():
     
     return render_template('docentes/add.html', disciplinas=disciplinas)
 
-@app.route('/docentes/view/<int:id>')
+@app.route('/docentes/view/<id>')
 @login_required
 def docentes_view(id):
     """ Visualiza docente - busca da API ou sessão """
@@ -658,7 +659,7 @@ def docentes_view(id):
         flash("Erro ao carregar dados do docente.", "error")
         return redirect(url_for('docentes_list'))
 
-@app.route('/docentes/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/docentes/edit/<id>', methods=['GET', 'POST'])
 @login_required
 def docentes_edit(id):
     """ Edita docente - GET usa mock, POST envia para API """
@@ -778,7 +779,7 @@ def docentes_edit(id):
     
     return render_template('docentes/edit.html', docente=docente, disciplinas=disciplinas)
 
-@app.route('/docentes/delete/<int:id>', methods=['POST'])
+@app.route('/docentes/delete/<id>', methods=['POST'])
 @login_required
 def docentes_delete(id):
     """ Remove docente via API """
