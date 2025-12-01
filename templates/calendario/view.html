@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/calendario_styles.css') }}">
+  
+  <!-- Sistema de Toasts -->
+  {% include '_toasts.html' %}
 </head>
 <body class="page-body">
   
@@ -52,6 +55,7 @@
       <div class="materia-menu-header">
         <h2 class="materia-view-title">{{ materia.nome }}</h2>
         <div style="display: flex; gap: 10px;">
+          {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
           <a href="{{ url_for('calendario_edit', materia_id=materia.id) }}" class="btn-edit-info">
             <svg class="icon-edit" width="33" height="32" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M23.375 4.00008C23.7361 3.64989 24.1649 3.3721 24.6367 3.18258C25.1086 2.99305 25.6143 2.89551 26.125 2.89551C26.6357 2.89551 27.1414 2.99305 27.6133 3.18258C28.0851 3.3721 28.5139 3.64989 28.875 4.00008C29.2361 4.35027 29.5226 4.76601 29.7181 5.22355C29.9135 5.6811 30.0141 6.1715 30.0141 6.66674C30.0141 7.16199 29.9135 7.65239 29.7181 8.10993C29.5226 8.56748 29.2361 8.98322 28.875 9.33341L10.3125 27.3334L2.75 29.3334L4.8125 22.0001L23.375 4.00008Z" stroke="#2C8DFA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -66,6 +70,7 @@
               <span>Apagar</span>
             </button>
           </form>
+          {% endif %}
         </div>
         <div class="header-separator"></div>
       </div>
@@ -91,7 +96,7 @@
 
       <div class="sections-container">
         
-        <details class="section-details" open>
+        <details class="section-details">
           <summary class="section-summary">Ementa da Matéria</summary>
           <div class="section-content ementa-content">
             <div class="ementa-text-box">
@@ -114,7 +119,7 @@
           </div>
         </details>
 
-        <details class="section-details" open>
+        <details class="section-details">
           <summary class="section-summary">Calendário e Horários</summary>
           <div class="section-content calendario-content">
             <div class="calendario-info-row">
@@ -124,7 +129,7 @@
               </div>
               <div class="calendario-field">
                 <span class="calendario-field-label">Período:</span>
-                <span class="calendario-field-value">Noturno</span>
+                <span class="calendario-field-value">{{ materia.tipo_aula or 'N/A' }}</span>
               </div>
             </div>
             <div class="calendario-info-row">
@@ -144,13 +149,13 @@
               </div>
               <div class="calendario-field">
                 <span class="calendario-field-label">Bloco:</span>
-                <span class="calendario-field-value">B</span>
+                <span class="calendario-field-value">{{ materia.bloco or 'N/A' }}</span>
               </div>
             </div>
           </div>
         </details>
 
-        <details class="section-details" open>
+        <details class="section-details">
           <summary class="section-summary">Avaliações e Prazos</summary>
           <div class="section-content avaliacoes-content">
             

@@ -13,6 +13,9 @@
     
     <!-- CSS específico da página de login -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login_styles.css') }}" />
+    
+    <!-- Sistema de Toasts -->
+    {% include '_toasts.html' %}
 </head>
 <body>
     <main class="page">
@@ -30,12 +33,12 @@
         <h1 class="title">Área Administrativa</h1>
         <h2 class="subtitle">ChatBot</h2>
 
-        <!-- Sistema de mensagens flash (sucesso/erro) -->
+        <!-- Sistema de mensagens flash (processado pelo sistema de toasts) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages mb-4 w-full max-w-[650px]"> 
+                <div class="flash-messages" style="display: none;"> 
                     {% for category, message in messages %}
-                        <div class="p-3 rounded {{ 'bg-red-100 text-red-700 border border-red-200' if category == 'error' else 'bg-blue-100 text-blue-700 border border-blue-200' }}" role="alert">
+                        <div class="flash-message-item {{ 'bg-red-100 text-red-700' if category == 'error' else 'bg-blue-100 text-blue-700' if category == 'info' else 'bg-green-100 text-green-700' if category == 'success' else 'bg-yellow-100 text-yellow-700' }}" data-category="{{ category }}">
                             {{ message }}
                         </div>
                     {% endfor %}

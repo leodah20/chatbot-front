@@ -193,23 +193,76 @@ body{font-family:var(--texto-normal-font-family);-webkit-font-smoothing:antialia
  */
 .page-main{min-height:calc(100vh - 120px);max-height:calc(100vh - 120px);display:flex;justify-content:center;align-items:flex-start;padding:clamp(12px,1.5vw,20px) clamp(12px,1.5vw,25px);background:#FFF;overflow-y:auto}
 
-.container-card{width:100%;max-width:1189px;padding:clamp(16px,2vw,24px) clamp(20px,3vw,35px);background:#FFFEFE;border-radius:20px;box-shadow:0 4px 8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(16px,2vw,24px)}
+.container-card{width:100%;max-width:1189px;padding:clamp(16px,2vw,24px) clamp(20px,3vw,35px);background:#FFFEFE;border-radius:20px;box-shadow:0 4px 8px 1px rgba(0,0,0,0.19);display:flex;flex-direction:column;gap:clamp(16px,2vw,24px);position:relative}
 
 /**
  * ===== CABEÇALHO DO CALENDÁRIO =====
  */
 .calendar-header{display:flex;justify-content:center;align-items:center;padding:clamp(16px,2vw,20px) 0}
 
+.calendar-title-wrapper{display:flex;align-items:center;justify-content:center;gap:clamp(12px,1.5vw,16px)}
+
+.calendar-icon{width:clamp(40px,4.5vw,50px);height:clamp(44px,5vw,55px);flex-shrink:0}
+
 .calendar-title{color:#023D71;font-family:var(--titulo-pagina-font-family);font-size:clamp(28px,3.5vw,var(--titulo-pagina-font-size));font-weight:var(--titulo-pagina-font-weight);font-style:var(--titulo-pagina-font-style);margin:0;text-align:center;letter-spacing:var(--titulo-pagina-letter-spacing);line-height:var(--titulo-pagina-line-height)}
 
 /* Add Section */
-.add-section{display:flex;align-items:center;gap:clamp(20px,2.8vw,36px);padding:clamp(12px,1.5vw,16px) 0}
+.add-section{display:flex;align-items:center;gap:clamp(12px,1.5vw,16px);padding:clamp(12px,1.5vw,16px) 0}
 
-.icon-add{width:clamp(40px,4.5vw,50px);height:clamp(40px,4.5vw,50px);flex-shrink:0}
+.icon-add{width:clamp(28px,3vw,32px);height:clamp(28px,3vw,32px);flex-shrink:0}
 
-.add-link,.add-text{color:#023D71;font-family:var(--botao-ADD-font-family);font-size:clamp(22px,2.5vw,var(--botao-ADD-font-size));font-weight:var(--botao-ADD-font-weight);font-style:var(--botao-ADD-font-style);text-decoration:none;transition:color .2s;letter-spacing:var(--botao-ADD-letter-spacing);line-height:var(--botao-ADD-line-height)}
+.add-link,.add-text{color:#023D71;font-family:var(--titulo-pagina-font-family);font-size:clamp(28px,3.5vw,var(--titulo-pagina-font-size));font-weight:var(--titulo-pagina-font-weight);font-style:var(--titulo-pagina-font-style);text-decoration:none;transition:color .2s;letter-spacing:var(--titulo-pagina-letter-spacing);line-height:var(--titulo-pagina-line-height)}
 
 .add-link:hover{color:#1583FF}
+
+/* Container card com posição relativa para o FAB */
+.container-card{
+  position:relative;
+}
+
+/* Botão Flutuante (FAB) para Adicionar Matéria - dentro do card */
+.fab-add-materia{
+  position:absolute;
+  bottom:clamp(20px,2.5vw,24px);
+  right:clamp(20px,2.5vw,24px);
+  width:clamp(56px,6vw,64px);
+  height:clamp(56px,6vw,64px);
+  background:linear-gradient(135deg, #1583FF 0%, #023D71 100%);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 6px 20px rgba(21,131,255,0.4), 0 2px 8px rgba(2,61,113,0.3);
+  text-decoration:none;
+  z-index:10;
+  transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor:pointer;
+  border:none;
+  outline:none;
+}
+
+.fab-add-materia:hover{
+  transform:scale(1.1) translateY(-2px);
+  box-shadow:0 8px 25px rgba(21,131,255,0.5), 0 4px 12px rgba(2,61,113,0.4);
+  background:linear-gradient(135deg, #1a8fff 0%, #034a8a 100%);
+}
+
+.fab-add-materia:active{
+  transform:scale(0.95) translateY(0);
+  box-shadow:0 4px 12px rgba(21,131,255,0.3), 0 2px 6px rgba(2,61,113,0.2);
+}
+
+.fab-add-materia:focus{
+  outline:3px solid rgba(21,131,255,0.3);
+  outline-offset:4px;
+}
+
+.fab-add-materia svg{
+  width:clamp(24px,2.5vw,28px);
+  height:clamp(24px,2.5vw,28px);
+  flex-shrink:0;
+  pointer-events:none;
+}
 
 /* Separator */
 .separator-line{width:100%;height:1px;background:rgba(21,131,255,0.83)}
@@ -226,9 +279,15 @@ body{font-family:var(--texto-normal-font-family);-webkit-font-smoothing:antialia
 .message-info{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
 
 /* Matérias List */
-.materias-list{list-style:none;display:flex;flex-direction:column;gap:clamp(12px,1.5vw,16px)}
+.materias-list{list-style:none;display:flex;flex-direction:column;gap:clamp(12px,1.5vw,16px);padding-bottom:clamp(80px,10vw,100px);position:relative;z-index:1}
 
-.materia-card{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:clamp(12px,1.5vw,20px);background:#FBFBFB;border-radius:clamp(12px,1.5vw,16px);box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);flex-wrap:wrap}
+.materia-card{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0;background:#FBFBFB;border-radius:clamp(12px,1.5vw,16px);box-shadow:0 4px 4px 1px rgba(50,146,249,0.28);position:relative;z-index:2;overflow:hidden;transition:all 0.3s ease;cursor:pointer}
+
+.materia-card-link{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:clamp(12px,1.5vw,20px);width:100%;text-decoration:none;color:inherit;flex-wrap:wrap;cursor:pointer}
+
+.materia-card:hover{transform:translateY(-2px);box-shadow:0 6px 8px 2px rgba(50,146,249,0.35);background:#F5F9FF}
+
+.materia-card:active{transform:translateY(0);box-shadow:0 2px 4px 1px rgba(50,146,249,0.25)}
 
 .materia-main{display:flex;flex-direction:column;gap:6px;flex:1 1 200px}
 
@@ -239,10 +298,6 @@ body{font-family:var(--texto-normal-font-family);-webkit-font-smoothing:antialia
 .materia-badges{display:flex;align-items:center;gap:clamp(8px,1vw,12px);flex-wrap:wrap}
 
 .badge-item{padding:6px 12px;background:rgba(167,208,255,0.2);border-radius:16px;color:#023D71;font-size:clamp(12px,1.2vw,14px);font-weight:500;white-space:nowrap}
-
-.view-link{color:#1583FF;font-size:clamp(14px,1.4vw,16px);font-weight:500;text-decoration:none;transition:color .2s}
-
-.view-link:hover{color:#0d6efd}
 
 /* Empty State */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:clamp(32px,4vw,48px)}

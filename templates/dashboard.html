@@ -13,6 +13,9 @@
   
   <!-- CSS específico do dashboard -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_styles.css') }}">
+  
+  <!-- Sistema de Toasts -->
+  {% include '_toasts.html' %}
 </head>
 <body>
   <!-- Cabeçalho principal -->
@@ -55,6 +58,19 @@
   </header>
 
   <main class="main">
+    <!-- Sistema de mensagens flash (processado pelo sistema de toasts) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages" style="display: none;">
+                {% for category, message in messages %}
+                    <div class="flash-message-item {{ 'bg-red-100 text-red-700' if category == 'error' else 'bg-blue-100 text-blue-700' if category == 'info' else 'bg-green-100 text-green-700' if category == 'success' else 'bg-yellow-100 text-yellow-700' }}" data-category="{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
     <div class="container">
       <div class="grid">
         

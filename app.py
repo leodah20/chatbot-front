@@ -115,6 +115,37 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Decorator para verificar roles permitidos
+def role_required(allowed_roles):
+    """
+    Decorator que verifica se o usuário tem um dos roles permitidos.
+    
+    Args:
+        allowed_roles: Lista de roles permitidos (ex: ['admin', 'professor', 'coordenador'])
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Primeiro verifica se está logado
+            if 'user' not in session or not session['user'].get('id'):
+                session.pop('user', None)
+                flash("Por favor, faça login para aceder a esta página.", "error")
+                return redirect(url_for('index'))
+            
+            # Verifica o role do usuário
+            user_role = session['user'].get('tipo', '').lower()
+            
+            # Normaliza os roles permitidos para minúsculas para comparação
+            allowed_roles_lower = [role.lower() for role in allowed_roles]
+            
+            if user_role not in allowed_roles_lower:
+                flash("Acesso negado. Você não tem permissão para aceder a esta página.", "error")
+                return redirect(url_for('dashboard'))
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
 # ===== ROTAS DE AUTENTICAÇÃO =====
 
 @app.route('/')
@@ -147,107 +178,87 @@ def login():
             print(f"[DEBUG] Status Code: {response.status_code}")
             print(f"[DEBUG] Response: {response.text}")
             
-            response.raise_for_status()
+            # Verifica o status code antes de processar
+            if response.status_code != 200:
+                error_text = response.text
+                try:
+                    error_json = response.json()
+                    error_detail = error_json.get('detail', error_text)
+                except:
+                    error_detail = error_text
+                
+                print(f"[ERROR] Login falhou com status {response.status_code}: {error_detail}")
+                flash(f"Erro ao fazer login: {error_detail}", "error")
+                return redirect(url_for('index'))
+            
             api_response = response.json()
             print(f"[DEBUG] API Response JSON: {api_response}")
 
             # A API retorna os dados do usuário dentro de um objeto 'user'
             # Estrutura esperada: {"message": "...", "access_token": "...", "user": {"id": "...", "email": "...", "name": "...", "role": "..."}}
-            user_data = api_response.get('user', {}) if 'user' in api_response else api_response
+            user_data = api_response.get('user', {})
             
-            # Se ainda não encontrou, tenta usar o objeto raiz como fallback
-            if not user_data and api_response:
-                user_data = api_response
+            if not user_data:
+                print("[ERROR] Resposta da API não contém objeto 'user'")
+                print(f"[DEBUG] Estrutura recebida: {list(api_response.keys())}")
+                flash("Erro: Resposta da API em formato inesperado.", "error")
+                return redirect(url_for('index'))
 
             print(f"[DEBUG] User Data extraído: {user_data}")
 
-            # Extrai o ID do usuário de forma flexível
-            user_id = (
-                user_data.get('id') or 
-                api_response.get('id') or
-                user_data.get('id_aluno') or
-                user_data.get('id_professor') or 
-                user_data.get('id_coordenador') or 
-                user_data.get('user_id') or
-                user_data.get('userId')
-            )
+            # Extrai o ID do usuário - a API sempre retorna 'id' dentro de 'user'
+            user_id = user_data.get('id')
             
-            # Extrai o nome do usuário de forma flexível (com nome e sobrenome)
-            # Prioriza os campos específicos da API de alunos
-            nome = (
-                user_data.get('nome_aluno') or 
-                user_data.get('nome') or 
-                user_data.get('name') or 
-                ''
-            )
-            sobrenome = (
-                user_data.get('sobrenome_aluno') or 
-                user_data.get('sobrenome') or 
-                user_data.get('lastname') or 
-                user_data.get('last_name') or 
-                ''
-            )
+            if not user_id:
+                print("[ERROR] ID do usuário não encontrado na resposta")
+                print(f"[DEBUG] User data keys: {list(user_data.keys())}")
+                flash("Erro: ID do usuário não encontrado na resposta da API.", "error")
+                return redirect(url_for('index'))
             
-            # Monta o nome completo
-            if nome and sobrenome:
-                # Caso 1: Nome e sobrenome separados na API
-                user_nome = f"{nome} {sobrenome}"
-            elif nome:
-                # Caso 2: Nome completo em um único campo - usa apenas o nome
-                user_nome = nome
-            else:
-                # Fallback: usa parte do email
-                user_nome = email.split('@')[0]
+            # Extrai o nome do usuário
+            # A API retorna 'name' que pode ser um nome completo ou separado
+            nome_completo = user_data.get('name', '')
             
-            print(f"[DEBUG] Nome original: '{nome}', Sobrenome: '{sobrenome}', Nome final: '{user_nome}'")
+            # Se o nome estiver vazio, tenta outros campos ou usa email como fallback
+            if not nome_completo:
+                nome_completo = (
+                    user_data.get('nome_aluno') or 
+                    user_data.get('nome') or 
+                    email.split('@')[0]  # Fallback: parte do email
+                )
             
-            # Extrai o tipo de usuário (a API retorna 'role' dentro de 'user')
-            user_tipo = (
-                user_data.get('tipo') or 
-                user_data.get('type') or 
-                user_data.get('role') or
-                api_response.get('role') or
-                'usuario'
-            )
+            # Extrai o tipo/role do usuário
+            user_tipo = user_data.get('role', 'usuario')
+            
+            # Extrai o email
+            user_email = user_data.get('email', email)
 
-            # Extrai o email (prioriza email_institucional para alunos)
-            user_email = (
-                user_data.get('email_institucional') or
-                user_data.get('email') or
-                email
-            )
+            # Extrai o access_token
+            access_token = api_response.get('access_token', '')
+            
+            if not access_token:
+                print("[ERROR] Access token não encontrado na resposta")
+                flash("Erro: Token de acesso não encontrado na resposta da API.", "error")
+                return redirect(url_for('index'))
 
             # Guarda informações na sessão
-            access_token = api_response.get('access_token', '')
             session['user'] = {
                 'id': user_id,
-                'nome': user_nome,
+                'nome': nome_completo,
                 'email': user_email,
                 'tipo': user_tipo,
                 'matricula': user_data.get('matricula_ra', ''),
-                'access_token': access_token,  # Guarda o token de acesso
+                'access_token': access_token,
                 'raw_data': api_response  # Guarda dados brutos para debug
             }
             
             print(f"[INFO] ====== LOGIN REALIZADO COM SUCESSO ======")
-            print(f"[INFO] POST /auth/login - Status: 200 - Login bem-sucedido")
             print(f"[INFO] User ID: {user_id}")
             print(f"[INFO] User Email: {user_email}")
+            print(f"[INFO] User Name: {nome_completo}")
             print(f"[INFO] User Role: {user_tipo}")
-            print(f"[DEBUG] User role: {user_tipo}")
-            print(f"[DEBUG] Access Token: {access_token}")
-            print(f"[DEBUG] Token Length: {len(access_token)} caracteres")
-            print(f"[DEBUG] Token Preview: {access_token[:50]}...")
+            print(f"[INFO] Access Token: {access_token[:50]}...")
             print(f"[INFO] ===========================================")
-            
-            # Verifica se pelo menos um ID foi obtido
-            if not session['user']['id']:
-                print("[DEBUG] ERRO: Nenhum ID de usuário encontrado na resposta da API")
-                print(f"[DEBUG] Estrutura recebida da API: {list(api_response.keys())}")
-                print(f"[DEBUG] User data extraído: {list(user_data.keys()) if isinstance(user_data, dict) else user_data}")
-                flash("Erro ao processar dados do utilizador recebidos da API.", "error")
-                session.pop('user', None)
-                return redirect(url_for('index'))
 
             # Login bem-sucedido - configurar sessão
             session.permanent = True
@@ -256,22 +267,30 @@ def login():
 
         except requests.exceptions.HTTPError as e:
             print(f"[DEBUG] HTTPError: {e}")
-            print(f"[DEBUG] Response Text: {e.response.text if hasattr(e, 'response') else 'N/A'}")
+            error_detail = "Erro desconhecido"
             
-            if e.response.status_code == 401:
-                print(f"[ERROR] POST /auth/login - Status: 401 - Credenciais inválidas")
-                print(f"[ERROR] Token inválido ou não fornecido")
-                flash("Credenciais inválidas. Verifique seu email e senha.", "error")
-            elif e.response.status_code == 404:
-                flash("Endpoint de login não encontrado na API. Verifique a configuração.", "error")
-            elif e.response.status_code == 422:
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"[DEBUG] Response Text: {e.response.text}")
                 try:
-                    error_detail = e.response.json()
-                    flash(f"Dados inválidos: {error_detail}", "error")
+                    error_json = e.response.json()
+                    error_detail = error_json.get('detail', e.response.text)
                 except:
-                    flash("Dados de login inválidos. Verifique o formato.", "error")
+                    error_detail = e.response.text or str(e)
+                
+                status_code = e.response.status_code
+                
+                if status_code == 401:
+                    print(f"[ERROR] Status 401 - Credenciais inválidas")
+                    flash("Credenciais inválidas. Verifique seu email e senha.", "error")
+                elif status_code == 404:
+                    flash("Endpoint de login não encontrado na API. Verifique a configuração.", "error")
+                elif status_code == 422:
+                    flash(f"Dados inválidos: {error_detail}", "error")
+                else:
+                    flash(f"Erro no servidor de autenticação (HTTP {status_code}): {error_detail}", "error")
             else:
-                flash(f"Erro no servidor de autenticação (HTTP {e.response.status_code}). Tente novamente.", "error")
+                flash(f"Erro de comunicação: {str(e)}", "error")
+            
             return redirect(url_for('index'))
         except requests.exceptions.ConnectionError as e:
             print(f"[DEBUG] ConnectionError: Não foi possível conectar à API em {auth_url}")
@@ -980,34 +999,52 @@ def create_conteudo_api(data, file_storage=None):
         
         if file_storage and file_storage.filename:
             print(f"[INFO] Fazendo upload do arquivo: {file_storage.filename}")
-            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
             
-            # Reset stream position e prepara arquivo para upload
-            file_storage.stream.seek(0)
-            files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-            
-            upload_response = requests.post(
-                f"{API_BASE_URL}/documentos/upload",
-                files=files,
-                headers=headers_multipart,
-                timeout=15
-            )
-            
-            if upload_response.status_code == 201:
-                upload_data = upload_response.json()
-                nome_arquivo_final = upload_data.get('filename', file_storage.filename)
-                print(f"[INFO] ✅ Arquivo enviado com sucesso para a pasta monitorada pela API")
-                print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
-                conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+            # Se houver disciplina, usa upload_disciplina, senão usa endpoint genérico
+            if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+                success, result = upload_documento_por_categoria(
+                    file_storage,
+                    'disciplina',
+                    nome_disciplina=disciplina_nome
+                )
+                
+                if success:
+                    nome_arquivo_final = result.get('filename', file_storage.filename)
+                    print(f"[INFO] ✅ Arquivo enviado com sucesso (categoria: disciplina)")
+                    print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
+                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                else:
+                    error_msg = f"Erro ao fazer upload do arquivo: {result}"
+                    print(f"[ERROR] {error_msg}")
+                    return False, error_msg
             else:
-                error_msg = f"Erro ao fazer upload do arquivo: {upload_response.status_code}"
-                print(f"[ERROR] {error_msg}")
-                try:
-                    error_detail = upload_response.json()
-                    error_msg = error_detail.get('detail', error_msg)
-                except:
-                    error_msg = upload_response.text or error_msg
-                return False, error_msg
+                # Fallback para endpoint genérico se não houver disciplina
+                headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
+                file_storage.stream.seek(0)
+                files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+                
+                upload_response = requests.post(
+                    f"{API_BASE_URL}/documentos/upload",
+                    files=files,
+                    headers=headers_multipart,
+                    timeout=15
+                )
+                
+                if upload_response.status_code == 201:
+                    upload_data = upload_response.json()
+                    nome_arquivo_final = upload_data.get('filename', file_storage.filename)
+                    print(f"[INFO] ✅ Arquivo enviado com sucesso")
+                    print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
+                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                else:
+                    error_msg = f"Erro ao fazer upload do arquivo: {upload_response.status_code}"
+                    print(f"[ERROR] {error_msg}")
+                    try:
+                        error_detail = upload_response.json()
+                        error_msg = error_detail.get('detail', error_msg)
+                    except:
+                        error_msg = upload_response.text or error_msg
+                    return False, error_msg
         elif link:
             # Se tiver apenas link, não precisa de upload
             conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
@@ -1138,23 +1175,42 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
         
         if file_storage and file_storage.filename:
             print(f"[INFO] Fazendo upload do novo arquivo: {file_storage.filename}")
-            headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
-            file_storage.stream.seek(0)
-            files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
             
-            upload_response = requests.post(
-                f"{API_BASE_URL}/documentos/upload",
-                files=files,
-                headers=headers_multipart,
-                timeout=15
-            )
-            
-            if upload_response.status_code == 201:
-                upload_data = upload_response.json()
-                nome_arquivo_final = upload_data.get('filename', file_storage.filename)
-                conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+            # Se houver disciplina, usa upload_disciplina
+            if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+                success, result = upload_documento_por_categoria(
+                    file_storage,
+                    'disciplina',
+                    nome_disciplina=disciplina_nome
+                )
+                
+                if success:
+                    nome_arquivo_final = result.get('filename', file_storage.filename)
+                    print(f"[INFO] ✅ Novo arquivo enviado com sucesso (categoria: disciplina)")
+                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                else:
+                    print(f"[WARN] Erro ao fazer upload do novo arquivo: {result}")
+                    nome_arquivo_final = titulo
             else:
-                print(f"[WARN] Erro ao fazer upload do novo arquivo: {upload_response.status_code}")
+                # Fallback para endpoint genérico
+                headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
+                file_storage.stream.seek(0)
+                files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+                
+                upload_response = requests.post(
+                    f"{API_BASE_URL}/documentos/upload",
+                    files=files,
+                    headers=headers_multipart,
+                    timeout=15
+                )
+                
+                if upload_response.status_code == 201:
+                    upload_data = upload_response.json()
+                    nome_arquivo_final = upload_data.get('filename', file_storage.filename)
+                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                else:
+                    print(f"[WARN] Erro ao fazer upload do novo arquivo: {upload_response.status_code}")
+                    nome_arquivo_final = titulo
         elif link:
             conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
         
@@ -1830,9 +1886,61 @@ def avisos_delete(aviso_id):
 # ===== ROTAS DE CALENDÁRIO =====
 
 def get_materias_list():
-    if 'materias_list' not in session:
-        session['materias_list'] = []
-    return session['materias_list']
+    """Busca a lista de disciplinas (matérias) da API"""
+    try:
+        headers = get_auth_headers()
+        response = requests.get(
+            f"{API_BASE_URL}/disciplinas/lista_disciplina/",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            disciplinas = response.json()
+            # Transforma os dados da API para o formato esperado pelo template
+            materias = []
+            for disc in disciplinas:
+                # Garante que o ID seja uma string válida
+                id_disciplina = disc.get('id_disciplina')
+                if id_disciplina:
+                    # Se for UUID, converte para string
+                    id_str = str(id_disciplina)
+                else:
+                    print(f"[WARN] Disciplina sem ID: {disc.get('nome_disciplina', 'N/A')}")
+                    continue
+                
+                materia = {
+                    'id': id_str,  # ID como string para uso nas URLs
+                    'nome': disc.get('nome_disciplina', 'N/A'),
+                    'codigo': disc.get('codigo', 'N/A'),  # Campo correto do schema
+                    'carga_horaria': f"{disc.get('carga_horaria', 0)}h",
+                    'modalidade': disc.get('semestre', 'N/A'),  # Usa semestre como modalidade temporariamente
+                    'professor': 'N/A'  # Será preenchido se houver professores
+                }
+                
+                # Se houver professores associados, pega o primeiro
+                if disc.get('professores') and len(disc.get('professores', [])) > 0:
+                    prof = disc['professores'][0]
+                    nome_prof = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                    if nome_prof:
+                        materia['professor'] = nome_prof
+                
+                materias.append(materia)
+            
+            print(f"[DEBUG] {len(materias)} matérias carregadas da API")
+            return materias
+        else:
+            print(f"[ERROR] Erro ao buscar disciplinas: {response.status_code}")
+            print(f"[ERROR] Resposta: {response.text}")
+            return []
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Erro de conexão ao buscar disciplinas: {e}")
+        return []
+    except Exception as e:
+        print(f"[ERROR] Erro inesperado ao buscar disciplinas: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 def add_materia_session(item):
     items = get_materias_list()
@@ -1857,6 +1965,7 @@ def calendario_list():
 
 @app.route('/calendario/add', methods=['GET', 'POST'])
 @login_required
+@role_required(['admin', 'professor', 'coordenador'])
 def calendario_add():
     step = int(request.args.get('step') or request.form.get('step') or 1)
     wizard = get_wizard_state()
@@ -1941,27 +2050,523 @@ def calendario_add():
             }
             wizard['provas'] = provas
 
-            novo = add_materia_session(wizard.copy())
-            clear_wizard_state()
-            flash('Matéria cadastrada com sucesso!', 'success')
-            return redirect(url_for('calendario_view', materia_id=novo.get('id')))
+            # Salvar na API
+            try:
+                headers = get_auth_headers()
+                
+                # 1. Criar disciplina na API
+                # Mapear dia da semana de nome para número
+                dias_semana_map = {
+                    'segunda-feira': 1,
+                    'terça-feira': 2,
+                    'quarta-feira': 3,
+                    'quinta-feira': 4,
+                    'sexta-feira': 5,
+                    'sábado': 6,
+                    'domingo': 7
+                }
+                
+                # Preparar dados da disciplina
+                disciplina_data = {
+                    'nome_disciplina': wizard.get('nome', ''),
+                    'codigo': wizard.get('codigo', ''),
+                    'semestre': wizard.get('modalidade', ''),  # Usando modalidade como semestre temporariamente
+                    'ementa': wizard.get('ementa_resumo', ''),
+                    'carga_horaria': int(wizard.get('carga_horaria', '0').replace('h', '').replace('H', '').strip()) if wizard.get('carga_horaria') else 0
+                }
+                
+                print(f"[DEBUG] Criando disciplina: {disciplina_data}")
+                disciplina_response = requests.post(
+                    f"{API_BASE_URL}/disciplinas/",
+                    json=disciplina_data,
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if disciplina_response.status_code not in [200, 201]:
+                    error_detail = disciplina_response.json().get('detail', f'Erro {disciplina_response.status_code}') if disciplina_response.headers.get('content-type', '').startswith('application/json') else disciplina_response.text
+                    raise Exception(f"Erro ao criar disciplina: {error_detail}")
+                
+                disciplina_criada = disciplina_response.json()
+                disciplina_id = disciplina_criada.get('id_disciplina')
+                print(f"[DEBUG] Disciplina criada com ID: {disciplina_id}")
+                
+                # 2. Associar professor à disciplina (se houver)
+                if wizard.get('professor'):
+                    # Buscar ID do professor pelo nome
+                    professores_response = requests.get(
+                        f"{API_BASE_URL}/professores/lista_professores/",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if professores_response.status_code == 200:
+                        professores_list = professores_response.json()
+                        for prof in professores_list:
+                            nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                            if nome_completo == wizard.get('professor'):
+                                professor_id = prof.get('id_professor')
+                                # Associar professor à disciplina via atualização do professor
+                                # A API cria a associação automaticamente quando atualizamos disciplina_nomes
+                                try:
+                                    # Buscar disciplinas atuais do professor
+                                    prof_response = requests.get(
+                                        f"{API_BASE_URL}/professores/get_professor_id/{professor_id}",
+                                        headers=headers,
+                                        timeout=10
+                                    )
+                                    if prof_response.status_code == 200:
+                                        prof_data = prof_response.json()
+                                        disciplinas_atual = prof_data.get('disciplina_nomes', [])
+                                        if wizard.get('nome') not in disciplinas_atual:
+                                            disciplinas_atual.append(wizard.get('nome'))
+                                        
+                                        # Atualizar professor com nova disciplina (a API cria a associação)
+                                        update_response = requests.put(
+                                            f"{API_BASE_URL}/professores/update/{professor_id}",
+                                            json={'disciplina_nomes': disciplinas_atual},
+                                            headers=headers,
+                                            timeout=10
+                                        )
+                                        if update_response.status_code == 200:
+                                            print(f"[DEBUG] Professor associado à disciplina")
+                                        else:
+                                            print(f"[WARN] Erro ao atualizar professor: {update_response.text}")
+                                except Exception as e:
+                                    print(f"[WARN] Erro ao associar professor: {e}")
+                                break
+                
+                # 3. Criar cronograma na API (se houver dados)
+                if wizard.get('dia_semana') and wizard.get('hora_inicio') and wizard.get('hora_fim'):
+                    try:
+                        dia_num = dias_semana_map.get(wizard.get('dia_semana', '').lower())
+                        # Formatar hora para HH:MM:SS se necessário
+                        hora_inicio = wizard.get('hora_inicio', '')
+                        if hora_inicio and len(hora_inicio) == 5:  # HH:MM
+                            hora_inicio = f"{hora_inicio}:00"
+                        hora_fim = wizard.get('hora_fim', '')
+                        if hora_fim and len(hora_fim) == 5:  # HH:MM
+                            hora_fim = f"{hora_fim}:00"
+                        
+                        cronograma_data = {
+                            'nome_disciplina': wizard.get('nome', ''),
+                            'hora_inicio': hora_inicio,
+                            'hora_fim': hora_fim,
+                            'periodicidade': 'semanal',
+                            'id_disciplina': str(disciplina_id),
+                            'dia_semana': dia_num,
+                            'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                        }
+                        
+                        print(f"[DEBUG] Criando cronograma: {cronograma_data}")
+                        cronograma_response = requests.post(
+                            f"{API_BASE_URL}/cronograma/",
+                            json=cronograma_data,
+                            headers=headers,
+                            timeout=10
+                        )
+                        
+                        if cronograma_response.status_code not in [200, 201]:
+                            print(f"[WARN] Erro ao criar cronograma: {cronograma_response.text}")
+                        else:
+                            print(f"[DEBUG] Cronograma criado com sucesso")
+                    except Exception as e:
+                        print(f"[WARN] Erro ao criar cronograma: {e}")
+                
+                # 4. Criar avaliações na API
+                for tipo_prova, dados_prova in wizard.get('provas', {}).items():
+                    if dados_prova.get('data'):
+                        try:
+                            # Buscar ID do aplicador pelo nome
+                            id_aplicador = None
+                            if dados_prova.get('aplicador'):
+                                professores_response = requests.get(
+                                    f"{API_BASE_URL}/professores/lista_professores/",
+                                    headers=headers,
+                                    timeout=10
+                                )
+                                if professores_response.status_code == 200:
+                                    professores_list = professores_response.json()
+                                    for prof in professores_list:
+                                        nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                                        if nome_completo == dados_prova.get('aplicador'):
+                                            id_aplicador = prof.get('id_professor')
+                                            break
+                            
+                            # Formatar hora para HH:MM:SS se necessário
+                            hora_inicio_av = dados_prova.get('inicio', '')
+                            if hora_inicio_av and len(hora_inicio_av) == 5:  # HH:MM
+                                hora_inicio_av = f"{hora_inicio_av}:00"
+                            hora_fim_av = dados_prova.get('fim', '')
+                            if hora_fim_av and len(hora_fim_av) == 5:  # HH:MM
+                                hora_fim_av = f"{hora_fim_av}:00"
+                            
+                            avaliacao_data = {
+                                'tipo_avaliacao': tipo_prova.upper(),
+                                'data_prova': dados_prova.get('data', ''),
+                                'hora_inicio': hora_inicio_av if hora_inicio_av else None,
+                                'hora_fim': hora_fim_av if hora_fim_av else None,
+                                'sala': dados_prova.get('sala', '') if dados_prova.get('sala') else None,
+                                'conteudo': dados_prova.get('conteudo', '') if dados_prova.get('conteudo') else None,
+                                'id_disciplina': str(disciplina_id),
+                                'id_aplicador': str(id_aplicador) if id_aplicador else None
+                            }
+                            
+                            print(f"[DEBUG] Criando avaliação {tipo_prova}: {avaliacao_data}")
+                            avaliacao_response = requests.post(
+                                f"{API_BASE_URL}/avaliacao/",
+                                json=avaliacao_data,
+                                headers=headers,
+                                timeout=10
+                            )
+                            
+                            if avaliacao_response.status_code not in [200, 201]:
+                                print(f"[WARN] Erro ao criar avaliação {tipo_prova}: {avaliacao_response.text}")
+                            else:
+                                print(f"[DEBUG] Avaliação {tipo_prova} criada com sucesso")
+                        except Exception as e:
+                            print(f"[WARN] Erro ao criar avaliação {tipo_prova}: {e}")
+                
+                # 5. Upload do arquivo de ementa se houver
+                if request.files.get('ementa_arquivo'):
+                    arquivo = request.files.get('ementa_arquivo')
+                    if arquivo.filename:
+                        try:
+                            # Usar a função de upload por categoria
+                            sucesso, mensagem = upload_documento_por_categoria(
+                                arquivo,
+                                'disciplina',
+                                nome_disciplina=wizard.get('nome')
+                            )
+                            if sucesso:
+                                print(f"[DEBUG] Arquivo de ementa enviado com sucesso")
+                            else:
+                                print(f"[WARN] Erro ao enviar arquivo de ementa: {mensagem}")
+                        except Exception as e:
+                            print(f"[WARN] Erro ao enviar arquivo de ementa: {e}")
+                
+                clear_wizard_state()
+                flash('Matéria cadastrada com sucesso na API!', 'success')
+                return redirect(url_for('calendario_view', materia_id=str(disciplina_id)))
+                
+            except Exception as e:
+                print(f"[ERROR] Erro ao salvar na API: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Erro ao salvar matéria na API: {str(e)}', 'error')
+                # Mantém o wizard para o usuário poder tentar novamente
+                return redirect(url_for('calendario_add', step=4))
 
     return render_template('calendario/add.html', step=step, wizard=wizard, user=session.get('user', {}), professores=professores)
 
-@app.route('/calendario/view/<int:materia_id>')
+@app.route('/calendario/view/<materia_id>')
 @login_required
 def calendario_view(materia_id):
-    materia = next((m for m in get_materias_list() if m.get('id') == materia_id), None)
+    """Visualiza detalhes de uma disciplina específica"""
+    materia = None
+    try:
+        headers = get_auth_headers()
+        # A API tem um bug: a URL usa {disciplina} mas o parâmetro da função é disciplina_id
+        # Por isso precisamos passar também como query parameter
+        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}?disciplina_id={materia_id}"
+        print(f"[DEBUG] Buscando disciplina: {url}")
+        print(f"[DEBUG] Materia ID recebido: {materia_id} (tipo: {type(materia_id)})")
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        print(f"[DEBUG] Status Code: {response.status_code}")
+        print(f"[DEBUG] Response: {response.text[:200] if response.text else 'Sem resposta'}")
+        
+        if response.status_code == 200:
+            disc = response.json()
+            print(f"[DEBUG] Disciplina encontrada: {disc.get('nome_disciplina', 'N/A')}")
+            
+            # Busca o cronograma da disciplina
+            cronograma_data = None
+            try:
+                cronograma_response = requests.get(
+                    f"{API_BASE_URL}/cronograma/disciplina/{materia_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                if cronograma_response.status_code == 200:
+                    cronogramas = cronograma_response.json()
+                    # Pega o primeiro cronograma se houver
+                    if cronogramas and len(cronogramas) > 0:
+                        cronograma_data = cronogramas[0]
+                        print(f"[DEBUG] Cronograma encontrado: {cronograma_data.get('dia_semana', 'N/A')}")
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar cronograma: {e}")
+            
+            # Busca as avaliações da disciplina
+            avaliacoes_data = []
+            provas_dict = {}
+            try:
+                avaliacoes_response = requests.get(
+                    f"{API_BASE_URL}/avaliacao/disciplina/{materia_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                if avaliacoes_response.status_code == 200:
+                    avaliacoes_data = avaliacoes_response.json()
+                    print(f"[DEBUG] {len(avaliacoes_data)} avaliações encontradas")
+                    
+                    # Transforma as avaliações da API para o formato esperado pelo template
+                    for avaliacao in avaliacoes_data:
+                        tipo = avaliacao.get('tipo_avaliacao', '').lower()
+                        if tipo:
+                            # Formata data de "YYYY-MM-DD" para "DD/MM/YYYY"
+                            data_prova = avaliacao.get('data_prova', '')
+                            if data_prova:
+                                try:
+                                    from datetime import datetime
+                                    dt = datetime.strptime(data_prova, '%Y-%m-%d')
+                                    data_formatada = dt.strftime('%d/%m/%Y')
+                                except:
+                                    data_formatada = data_prova
+                            else:
+                                data_formatada = ''
+                            
+                            # Formata hora de "HH:MM:SS" para "HH:MM"
+                            hora_inicio = avaliacao.get('hora_inicio', '')
+                            hora_inicio_formatada = hora_inicio[:5] if hora_inicio and ':' in hora_inicio else hora_inicio
+                            
+                            # Busca o nome do aplicador se houver id_aplicador
+                            nome_aplicador = 'N/A'
+                            if avaliacao.get('id_aplicador'):
+                                try:
+                                    # Tenta buscar o nome do professor/aplicador
+                                    aplicador_id = avaliacao.get('id_aplicador')
+                                    aplicador_response = requests.get(
+                                        f"{API_BASE_URL}/professores/get_professor_id/{aplicador_id}",
+                                        headers=headers,
+                                        timeout=5
+                                    )
+                                    if aplicador_response.status_code == 200:
+                                        aplicador_data = aplicador_response.json()
+                                        nome_aplicador = f"{aplicador_data.get('nome_professor', '')} {aplicador_data.get('sobrenome_professor', '')}".strip()
+                                        if not nome_aplicador:
+                                            nome_aplicador = 'N/A'
+                                except Exception as e:
+                                    print(f"[WARN] Erro ao buscar nome do aplicador: {e}")
+                            
+                            provas_dict[tipo] = {
+                                'data': data_formatada,
+                                'inicio': hora_inicio_formatada,
+                                'fim': avaliacao.get('hora_fim', '')[:5] if avaliacao.get('hora_fim') else '',
+                                'sala': str(avaliacao.get('sala', '')) if avaliacao.get('sala') else '',
+                                'aplicador': nome_aplicador,
+                                'conteudo': avaliacao.get('conteudo', '')
+                            }
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar avaliações: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # Mapeia dia da semana de número para nome
+            dias_semana = {
+                1: 'Segunda-feira',
+                2: 'Terça-feira',
+                3: 'Quarta-feira',
+                4: 'Quinta-feira',
+                5: 'Sexta-feira',
+                6: 'Sábado',
+                7: 'Domingo'
+            }
+            
+            # Formata hora de "HH:MM:SS" para "HH:MM"
+            def formatar_hora(hora_str):
+                if not hora_str:
+                    return None
+                if isinstance(hora_str, str) and ':' in hora_str:
+                    return hora_str[:5]  # Pega apenas HH:MM
+                return hora_str
+            
+            # Transforma os dados da API para o formato esperado pelo template
+            ementa = disc.get('ementa', '') or ''
+            materia = {
+                'id': str(disc.get('id_disciplina', '')),
+                'nome': disc.get('nome_disciplina', 'N/A'),
+                'codigo': disc.get('codigo', 'N/A'),
+                'semestre': disc.get('semestre', 'N/A'),
+                'carga_horaria': disc.get('carga_horaria', 0),
+                'ementa': ementa,
+                'ementa_resumo': ementa,  # O resumo é a própria ementa da API
+                'professor': 'N/A',
+                'modalidade': disc.get('semestre', 'N/A'),  # Usa semestre como modalidade
+                'ementa_arquivo_nome': None,  # Não há arquivo de ementa na API atual
+                # Dados do cronograma
+                'dia_semana': dias_semana.get(cronograma_data.get('dia_semana')) if cronograma_data and cronograma_data.get('dia_semana') else None,
+                'hora_inicio': formatar_hora(cronograma_data.get('hora_inicio')) if cronograma_data else None,
+                'hora_fim': formatar_hora(cronograma_data.get('hora_fim')) if cronograma_data else None,
+                'sala': cronograma_data.get('sala') if cronograma_data else None,
+                'bloco': cronograma_data.get('bloco') if cronograma_data else None,
+                'tipo_aula': cronograma_data.get('tipo_aula') if cronograma_data else None,
+                'provas': provas_dict  # Avaliações da API
+            }
+            
+            # Se houver professores associados
+            if disc.get('professores') and len(disc.get('professores', [])) > 0:
+                prof = disc['professores'][0]
+                nome_prof = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                if nome_prof:
+                    materia['professor'] = nome_prof
+            
+            print(f"[DEBUG] Dados do cronograma mapeados: dia={materia['dia_semana']}, hora_inicio={materia['hora_inicio']}, sala={materia['sala']}")
+        elif response.status_code == 404:
+            error_detail = response.json().get('detail', 'Disciplina não encontrada') if response.headers.get('content-type', '').startswith('application/json') else response.text
+            print(f"[ERROR] Disciplina não encontrada: {error_detail}")
+            flash(f"Disciplina não encontrada: {error_detail}", "error")
+            return redirect(url_for('calendario_list'))
+        else:
+            error_detail = response.json().get('detail', f'Erro {response.status_code}') if response.headers.get('content-type', '').startswith('application/json') else response.text
+            print(f"[ERROR] Erro ao buscar disciplina: {response.status_code} - {error_detail}")
+            flash(f"Erro ao carregar disciplina: {error_detail}", "error")
+            return redirect(url_for('calendario_list'))
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Erro de conexão ao buscar disciplina: {e}")
+        flash("Erro de conexão ao carregar dados da disciplina.", "error")
+        return redirect(url_for('calendario_list'))
+    except Exception as e:
+        print(f"[ERROR] Erro inesperado: {e}")
+        import traceback
+        traceback.print_exc()
+        flash("Erro ao carregar dados da disciplina.", "error")
+        return redirect(url_for('calendario_list'))
+    
     if not materia:
         flash('Matéria não encontrada.', 'error')
         return redirect(url_for('calendario_list'))
+    
     return render_template('calendario/view.html', materia=materia, user=session.get('user', {}))
 
-@app.route('/calendario/edit/<int:materia_id>', methods=['GET', 'POST'])
+@app.route('/calendario/edit/<materia_id>', methods=['GET', 'POST'])
 @login_required
+@role_required(['admin', 'professor', 'coordenador'])
 def calendario_edit(materia_id):
-    materias = get_materias_list()
-    materia = next((m for m in materias if m.get('id') == materia_id), None)
+    # Buscar dados da API
+    headers = get_auth_headers()
+    materia = None
+    
+    try:
+        # Buscar disciplina da API
+        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}?disciplina_id={materia_id}"
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            disc = response.json()
+            
+            # Buscar cronograma
+            cronograma_data = None
+            try:
+                cronograma_response = requests.get(
+                    f"{API_BASE_URL}/cronograma/disciplina/{materia_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                if cronograma_response.status_code == 200:
+                    cronogramas = cronograma_response.json()
+                    if cronogramas and len(cronogramas) > 0:
+                        cronograma_data = cronogramas[0]
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar cronograma: {e}")
+            
+            # Buscar avaliações
+            provas_dict = {}
+            try:
+                avaliacoes_response = requests.get(
+                    f"{API_BASE_URL}/avaliacao/disciplina/{materia_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                if avaliacoes_response.status_code == 200:
+                    avaliacoes_data = avaliacoes_response.json()
+                    for avaliacao in avaliacoes_data:
+                        tipo = avaliacao.get('tipo_avaliacao', '').lower()
+                        if tipo:
+                            # Formata data de "YYYY-MM-DD" para formato do input date
+                            data_prova = avaliacao.get('data_prova', '')
+                            
+                            # Formata hora de "HH:MM:SS" para "HH:MM"
+                            hora_inicio = avaliacao.get('hora_inicio', '')
+                            hora_inicio_formatada = hora_inicio[:5] if hora_inicio and ':' in hora_inicio else hora_inicio
+                            hora_fim = avaliacao.get('hora_fim', '')
+                            hora_fim_formatada = hora_fim[:5] if hora_fim and ':' in hora_fim else hora_fim
+                            
+                            # Busca nome do aplicador
+                            nome_aplicador = 'N/A'
+                            if avaliacao.get('id_aplicador'):
+                                try:
+                                    aplicador_id = avaliacao.get('id_aplicador')
+                                    aplicador_response = requests.get(
+                                        f"{API_BASE_URL}/professores/get_professor_id/{aplicador_id}",
+                                        headers=headers,
+                                        timeout=5
+                                    )
+                                    if aplicador_response.status_code == 200:
+                                        aplicador_data = aplicador_response.json()
+                                        nome_aplicador = f"{aplicador_data.get('nome_professor', '')} {aplicador_data.get('sobrenome_professor', '')}".strip()
+                                except Exception as e:
+                                    print(f"[WARN] Erro ao buscar nome do aplicador: {e}")
+                            
+                            provas_dict[tipo] = {
+                                'data': data_prova,
+                                'inicio': hora_inicio_formatada,
+                                'fim': hora_fim_formatada,
+                                'sala': str(avaliacao.get('sala', '')) if avaliacao.get('sala') else '',
+                                'aplicador': nome_aplicador,
+                                'conteudo': avaliacao.get('conteudo', '')
+                            }
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar avaliações: {e}")
+            
+            # Mapear dia da semana de número para nome
+            dias_semana_reverse = {
+                1: 'segunda-feira',
+                2: 'terça-feira',
+                3: 'quarta-feira',
+                4: 'quinta-feira',
+                5: 'sexta-feira',
+                6: 'sábado',
+                7: 'domingo'
+            }
+            
+            # Formatar hora de "HH:MM:SS" para "HH:MM"
+            def formatar_hora_edit(hora_str):
+                if not hora_str:
+                    return None
+                if isinstance(hora_str, str) and ':' in hora_str:
+                    return hora_str[:5]  # Pega apenas HH:MM
+                return hora_str
+            
+            # Buscar nome do professor
+            nome_professor = 'N/A'
+            if disc.get('professores') and len(disc.get('professores', [])) > 0:
+                prof = disc['professores'][0]
+                nome_professor = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+            
+            # Montar objeto materia com dados da API
+            materia = {
+                'id': str(disc.get('id_disciplina', '')),
+                'nome': disc.get('nome_disciplina', ''),
+                'codigo': disc.get('codigo', ''),
+                'carga_horaria': f"{disc.get('carga_horaria', 0)}h",
+                'modalidade': disc.get('semestre', ''),
+                'professor': nome_professor,
+                'ementa_resumo': disc.get('ementa', ''),
+                'ementa_arquivo_nome': None,
+                'dia_semana': dias_semana_reverse.get(cronograma_data.get('dia_semana')) if cronograma_data and cronograma_data.get('dia_semana') else '',
+                'hora_inicio': formatar_hora_edit(cronograma_data.get('hora_inicio')) if cronograma_data else '',
+                'hora_fim': formatar_hora_edit(cronograma_data.get('hora_fim')) if cronograma_data else '',
+                'sala': str(cronograma_data.get('sala', '')) if cronograma_data and cronograma_data.get('sala') else '',
+                'provas': provas_dict
+            }
+        else:
+            flash('Matéria não encontrada na API.', 'error')
+            return redirect(url_for('calendario_list'))
+    except Exception as e:
+        print(f"[ERROR] Erro ao buscar dados da API: {e}")
+        flash('Erro ao carregar dados da matéria.', 'error')
+        return redirect(url_for('calendario_list'))
 
     if not materia:
         flash('Matéria não encontrada.', 'error')
@@ -1970,7 +2575,6 @@ def calendario_edit(materia_id):
     # Buscar professores da API para popular selects
     professores = []
     try:
-        headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
         if response.status_code == 200:
             professores = response.json()
@@ -1984,7 +2588,11 @@ def calendario_edit(materia_id):
         professores = []
 
     step = int(request.args.get('step') or request.form.get('step') or 1)
-    wizard = session.setdefault('edit_wizard', materia.copy())
+    # Usa dados da API se não houver wizard na sessão, senão mantém o wizard
+    if 'edit_wizard' not in session:
+        wizard = materia.copy()
+    else:
+        wizard = session.get('edit_wizard', materia.copy())
 
     if request.method == 'POST':
         if step == 1:
@@ -2050,37 +2658,292 @@ def calendario_edit(materia_id):
             }
             wizard['provas'] = provas
 
-            for idx, m in enumerate(materias):
-                if m.get('id') == materia_id:
-                    materias[idx] = wizard.copy()
-                    break
-
-            session.modified = True
-            session.pop('edit_wizard', None)
-            flash('Matéria atualizada com sucesso!', 'success')
-            return redirect(url_for('calendario_view', materia_id=materia_id))
+            # Atualizar na API
+            try:
+                headers = get_auth_headers()
+                
+                # 1. Atualizar disciplina na API
+                # Mapear dia da semana de nome para número
+                dias_semana_map = {
+                    'segunda-feira': 1,
+                    'terça-feira': 2,
+                    'quarta-feira': 3,
+                    'quinta-feira': 4,
+                    'sexta-feira': 5,
+                    'sábado': 6,
+                    'domingo': 7
+                }
+                
+                # Preparar dados da disciplina para atualização
+                disciplina_update = {
+                    'nome_disciplina': wizard.get('nome', ''),
+                    'codigo': wizard.get('codigo', ''),
+                    'semestre': wizard.get('modalidade', ''),  # Usando modalidade como semestre temporariamente
+                    'ementa': wizard.get('ementa_resumo', ''),
+                    'carga_horaria': int(wizard.get('carga_horaria', '0').replace('h', '').replace('H', '').strip()) if wizard.get('carga_horaria') else None
+                }
+                
+                # Remove campos None para não enviar
+                disciplina_update = {k: v for k, v in disciplina_update.items() if v is not None}
+                
+                print(f"[DEBUG] Atualizando disciplina {materia_id}: {disciplina_update}")
+                disciplina_response = requests.put(
+                    f"{API_BASE_URL}/disciplinas/update/{materia_id}",
+                    json=disciplina_update,
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if disciplina_response.status_code not in [200, 201]:
+                    error_detail = disciplina_response.json().get('detail', f'Erro {disciplina_response.status_code}') if disciplina_response.headers.get('content-type', '').startswith('application/json') else disciplina_response.text
+                    raise Exception(f"Erro ao atualizar disciplina: {error_detail}")
+                
+                print(f"[DEBUG] Disciplina atualizada com sucesso")
+                
+                # 2. Atualizar associação do professor (se mudou)
+                if wizard.get('professor'):
+                    # Buscar ID do professor pelo nome
+                    professores_response = requests.get(
+                        f"{API_BASE_URL}/professores/lista_professores/",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if professores_response.status_code == 200:
+                        professores_list = professores_response.json()
+                        for prof in professores_list:
+                            nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                            if nome_completo == wizard.get('professor'):
+                                professor_id = prof.get('id_professor')
+                                # Buscar disciplinas atuais do professor
+                                try:
+                                    prof_response = requests.get(
+                                        f"{API_BASE_URL}/professores/get_professor_id/{professor_id}",
+                                        headers=headers,
+                                        timeout=10
+                                    )
+                                    if prof_response.status_code == 200:
+                                        prof_data = prof_response.json()
+                                        disciplinas_atual = prof_data.get('disciplina_nomes', [])
+                                        # Se a disciplina não está na lista, adiciona
+                                        if wizard.get('nome') not in disciplinas_atual:
+                                            disciplinas_atual.append(wizard.get('nome'))
+                                        
+                                        # Atualizar professor com disciplinas
+                                        update_response = requests.put(
+                                            f"{API_BASE_URL}/professores/update/{professor_id}",
+                                            json={'disciplina_nomes': disciplinas_atual},
+                                            headers=headers,
+                                            timeout=10
+                                        )
+                                        if update_response.status_code == 200:
+                                            print(f"[DEBUG] Professor atualizado com sucesso")
+                                except Exception as e:
+                                    print(f"[WARN] Erro ao atualizar professor: {e}")
+                                break
+                
+                # 3. Buscar cronograma existente e atualizar ou criar
+                try:
+                    cronograma_response = requests.get(
+                        f"{API_BASE_URL}/cronograma/disciplina/{materia_id}",
+                        headers=headers,
+                        timeout=10
+                    )
+                    
+                    if cronograma_response.status_code == 200:
+                        cronogramas = cronograma_response.json()
+                        
+                        if wizard.get('dia_semana') and wizard.get('hora_inicio') and wizard.get('hora_fim'):
+                            # Formatar hora para HH:MM:SS se necessário
+                            hora_inicio = wizard.get('hora_inicio', '')
+                            if hora_inicio and len(hora_inicio) == 5:  # HH:MM
+                                hora_inicio = f"{hora_inicio}:00"
+                            hora_fim = wizard.get('hora_fim', '')
+                            if hora_fim and len(hora_fim) == 5:  # HH:MM
+                                hora_fim = f"{hora_fim}:00"
+                            
+                            dia_num = dias_semana_map.get(wizard.get('dia_semana', '').lower())
+                            
+                            if cronogramas and len(cronogramas) > 0:
+                                # Atualizar cronograma existente
+                                cronograma_id = cronogramas[0].get('id_cronograma')
+                                cronograma_update = {
+                                    'nome_disciplina': wizard.get('nome', ''),
+                                    'dia_semana': dia_num,
+                                    'hora_inicio': hora_inicio,
+                                    'hora_fim': hora_fim,
+                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                                }
+                                
+                                print(f"[DEBUG] Atualizando cronograma {cronograma_id}: {cronograma_update}")
+                                update_response = requests.put(
+                                    f"{API_BASE_URL}/cronograma/updade/{cronograma_id}",
+                                    json=cronograma_update,
+                                    headers=headers,
+                                    timeout=10
+                                )
+                                
+                                if update_response.status_code not in [200, 201]:
+                                    print(f"[WARN] Erro ao atualizar cronograma: {update_response.text}")
+                                else:
+                                    print(f"[DEBUG] Cronograma atualizado com sucesso")
+                            else:
+                                # Criar novo cronograma
+                                cronograma_data = {
+                                    'nome_disciplina': wizard.get('nome', ''),
+                                    'hora_inicio': hora_inicio,
+                                    'hora_fim': hora_fim,
+                                    'periodicidade': 'semanal',
+                                    'id_disciplina': str(materia_id),
+                                    'dia_semana': dia_num,
+                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                                }
+                                
+                                print(f"[DEBUG] Criando novo cronograma: {cronograma_data}")
+                                create_response = requests.post(
+                                    f"{API_BASE_URL}/cronograma/",
+                                    json=cronograma_data,
+                                    headers=headers,
+                                    timeout=10
+                                )
+                                
+                                if create_response.status_code not in [200, 201]:
+                                    print(f"[WARN] Erro ao criar cronograma: {create_response.text}")
+                                else:
+                                    print(f"[DEBUG] Cronograma criado com sucesso")
+                except Exception as e:
+                    print(f"[WARN] Erro ao atualizar/criar cronograma: {e}")
+                
+                # 4. Atualizar avaliações na API
+                for tipo_prova, dados_prova in wizard.get('provas', {}).items():
+                    try:
+                        # Formatar hora para HH:MM:SS se necessário
+                        hora_inicio_av = dados_prova.get('inicio', '')
+                        if hora_inicio_av and len(hora_inicio_av) == 5:  # HH:MM
+                            hora_inicio_av = f"{hora_inicio_av}:00"
+                        hora_fim_av = dados_prova.get('fim', '')
+                        if hora_fim_av and len(hora_fim_av) == 5:  # HH:MM
+                            hora_fim_av = f"{hora_fim_av}:00"
+                        
+                        # Buscar ID do aplicador pelo nome
+                        id_aplicador = None
+                        if dados_prova.get('aplicador'):
+                            professores_response = requests.get(
+                                f"{API_BASE_URL}/professores/lista_professores/",
+                                headers=headers,
+                                timeout=10
+                            )
+                            if professores_response.status_code == 200:
+                                professores_list = professores_response.json()
+                                for prof in professores_list:
+                                    nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                                    if nome_completo == dados_prova.get('aplicador'):
+                                        id_aplicador = prof.get('id_professor')
+                                        break
+                        
+                        avaliacao_update = {
+                            'data_prova': dados_prova.get('data', '') if dados_prova.get('data') else None,
+                            'hora_inicio': hora_inicio_av if hora_inicio_av else None,
+                            'hora_fim': hora_fim_av if hora_fim_av else None,
+                            'sala': dados_prova.get('sala', '') if dados_prova.get('sala') else None,
+                            'conteudo': dados_prova.get('conteudo', '') if dados_prova.get('conteudo') else None,
+                            'id_aplicador': str(id_aplicador) if id_aplicador else None
+                        }
+                        
+                        # Remove campos None
+                        avaliacao_update = {k: v for k, v in avaliacao_update.items() if v is not None}
+                        
+                        if dados_prova.get('data'):
+                            # Atualizar avaliação existente ou criar nova
+                            print(f"[DEBUG] Atualizando avaliação {tipo_prova}: {avaliacao_update}")
+                            update_response = requests.put(
+                                f"{API_BASE_URL}/avaliacao/disciplina/{materia_id}/tipo/{tipo_prova}",
+                                json=avaliacao_update,
+                                headers=headers,
+                                timeout=10
+                            )
+                            
+                            if update_response.status_code == 404:
+                                # Avaliação não existe, criar nova
+                                avaliacao_create = avaliacao_update.copy()
+                                avaliacao_create['tipo_avaliacao'] = tipo_prova.upper()
+                                avaliacao_create['id_disciplina'] = str(materia_id)
+                                
+                                print(f"[DEBUG] Criando nova avaliação {tipo_prova}: {avaliacao_create}")
+                                create_response = requests.post(
+                                    f"{API_BASE_URL}/avaliacao/",
+                                    json=avaliacao_create,
+                                    headers=headers,
+                                    timeout=10
+                                )
+                                
+                                if create_response.status_code not in [200, 201]:
+                                    print(f"[WARN] Erro ao criar avaliação {tipo_prova}: {create_response.text}")
+                                else:
+                                    print(f"[DEBUG] Avaliação {tipo_prova} criada com sucesso")
+                            elif update_response.status_code not in [200, 201]:
+                                print(f"[WARN] Erro ao atualizar avaliação {tipo_prova}: {update_response.text}")
+                            else:
+                                print(f"[DEBUG] Avaliação {tipo_prova} atualizada com sucesso")
+                    except Exception as e:
+                        print(f"[WARN] Erro ao atualizar avaliação {tipo_prova}: {e}")
+                
+                # 5. Upload do arquivo de ementa se houver novo arquivo
+                if request.files.get('ementa_arquivo'):
+                    arquivo = request.files.get('ementa_arquivo')
+                    if arquivo.filename:
+                        try:
+                            sucesso, mensagem = upload_documento_por_categoria(
+                                arquivo,
+                                'disciplina',
+                                nome_disciplina=wizard.get('nome')
+                            )
+                            if sucesso:
+                                print(f"[DEBUG] Arquivo de ementa enviado com sucesso")
+                            else:
+                                print(f"[WARN] Erro ao enviar arquivo de ementa: {mensagem}")
+                        except Exception as e:
+                            print(f"[WARN] Erro ao enviar arquivo de ementa: {e}")
+                
+                session.pop('edit_wizard', None)
+                flash('Matéria atualizada com sucesso na API!', 'success')
+                return redirect(url_for('calendario_view', materia_id=materia_id))
+                
+            except Exception as e:
+                print(f"[ERROR] Erro ao atualizar na API: {e}")
+                import traceback
+                traceback.print_exc()
+                flash(f'Erro ao atualizar matéria na API: {str(e)}', 'error')
+                # Mantém o wizard para o usuário poder tentar novamente
+                return redirect(url_for('calendario_edit', materia_id=materia_id, step=4))
 
     return render_template('calendario/edit.html', step=step, wizard=wizard, materia_id=materia_id, user=session.get('user', {}), professores=professores)
 
-@app.route('/calendario/delete/<int:materia_id>', methods=['POST'])
+@app.route('/calendario/delete/<materia_id>', methods=['POST'])
 @login_required
+@role_required(['admin', 'professor', 'coordenador'])
 def calendario_delete(materia_id):
-    """ Remove matéria da sessão """
+    """ Remove disciplina da API """
     try:
-        materias = get_materias_list()
-        materia = next((m for m in materias if m.get('id') == materia_id), None)
+        headers = get_auth_headers()
+        response = requests.delete(
+            f"{API_BASE_URL}/disciplinas/delete/{materia_id}",
+            headers=headers,
+            timeout=10
+        )
         
-        if not materia:
+        if response.status_code == 204:
+            flash('Matéria removida com sucesso!', 'success')
+        elif response.status_code == 404:
             flash('Matéria não encontrada.', 'error')
-            return redirect(url_for('calendario_list'))
-        
-        # Remove da lista de matérias na sessão
-        materias[:] = [m for m in materias if m.get('id') != materia_id]
-        session.modified = True
-        
-        flash('Matéria removida com sucesso!', 'success')
+        else:
+            error_detail = response.json().get('detail', f'Erro {response.status_code}') if response.headers.get('content-type', '').startswith('application/json') else response.text
+            flash(f'Erro ao remover matéria: {error_detail}', 'error')
+            print(f"[ERROR] Erro ao deletar disciplina: {response.status_code} - {error_detail}")
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Erro de conexão ao deletar disciplina: {e}")
+        flash('Erro de conexão ao remover matéria.', 'error')
     except Exception as e:
-        print(f"[DEBUG] Erro ao remover matéria: {e}")
+        print(f"[ERROR] Erro inesperado ao remover matéria: {e}")
         flash('Erro ao remover matéria.', 'error')
     
     return redirect(url_for('calendario_list'))
@@ -2122,10 +2985,38 @@ def infos_curso_add():
 def infos_curso_add_aps():
     """ Formulário para adicionar APS """
     if request.method == 'POST':
-        # Processar dados do formulário APS
-        flash('APS adicionada com sucesso!', 'success')
-        session.pop('add_info_type', None)
-        return redirect(url_for('infos_curso_list'))
+        try:
+            # Obter dados do formulário
+            semestre = request.form.get('semestre')
+            data_limite = request.form.get('data_limite')
+            tema = request.form.get('tema')
+            max_integrantes = request.form.get('max_integrantes')
+            file_storage = request.files.get('documento')
+            
+            # Fazer upload do documento se houver
+            if file_storage and file_storage.filename:
+                # Buscar nome do curso (pode vir da sessão ou ser fixo)
+                nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                
+                success, result = upload_documento_por_categoria(
+                    file_storage, 
+                    'aps',
+                    tipo='aps',
+                    nome_curso=nome_curso,
+                    data=data_limite or '2025-12-31'  # Data padrão se não fornecida
+                )
+                
+                if not success:
+                    flash(f'Erro ao fazer upload do documento: {result}', 'error')
+                    return redirect(url_for('infos_curso_add_aps'))
+            
+            # Aqui você pode salvar os outros dados (semestre, tema, etc.) na API se necessário
+            flash('APS adicionada com sucesso!', 'success')
+            session.pop('add_info_type', None)
+            return redirect(url_for('infos_curso_list'))
+        except Exception as e:
+            flash(f'Erro ao processar formulário: {str(e)}', 'error')
+            return redirect(url_for('infos_curso_add_aps'))
 
     return render_template('infos_curso/add_aps.html', user=session.get('user', {}))
 
@@ -2144,10 +3035,36 @@ def infos_curso_add_tcc():
             session['tcc_step'] = step - 1
         elif action == 'save':
             # Salvar dados do TCC
-            flash('TCC adicionado com sucesso!', 'success')
-            session.pop('tcc_step', None)
-            session.pop('add_info_type', None)
-            return redirect(url_for('infos_curso_list'))
+            try:
+                # Obter dados do formulário
+                file_storage = request.files.get('manual_tcc')
+                
+                # Fazer upload do documento se houver
+                if file_storage and file_storage.filename:
+                    # Buscar nome do curso (pode vir da sessão ou ser fixo)
+                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                    data_entrega = request.form.get('entrega_final', '2025-12-31')
+                    
+                    success, result = upload_documento_por_categoria(
+                        file_storage,
+                        'tcc',
+                        tipo='tcc',
+                        nome_curso=nome_curso,
+                        data=data_entrega
+                    )
+                    
+                    if not success:
+                        flash(f'Erro ao fazer upload do documento: {result}', 'error')
+                        return redirect(url_for('infos_curso_add_tcc'))
+                
+                # Aqui você pode salvar os outros dados do TCC na API se necessário
+                flash('TCC adicionado com sucesso!', 'success')
+                session.pop('tcc_step', None)
+                session.pop('add_info_type', None)
+                return redirect(url_for('infos_curso_list'))
+            except Exception as e:
+                flash(f'Erro ao processar formulário: {str(e)}', 'error')
+                return redirect(url_for('infos_curso_add_tcc'))
 
         return redirect(url_for('infos_curso_add_tcc'))
 
@@ -2168,10 +3085,39 @@ def infos_curso_add_estagio():
             session['estagio_step'] = step - 1
         elif action == 'save':
             # Salvar dados do Estágio
-            flash('Estágio adicionado com sucesso!', 'success')
-            session.pop('estagio_step', None)
-            session.pop('add_info_type', None)
-            return redirect(url_for('infos_curso_list'))
+            try:
+                # Obter dados do formulário (arquivo está na etapa 1)
+                # Se o arquivo foi enviado na etapa 1, ele deve estar na sessão
+                # Por enquanto, vamos processar se houver arquivo na etapa atual
+                file_storage = request.files.get('kit_estudante')
+                
+                # Fazer upload do documento se houver
+                if file_storage and file_storage.filename:
+                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                    # Pegar a primeira data de entrega se houver
+                    datas = request.form.getlist('data[]')
+                    data_entrega = datas[0] if datas else '2025-12-31'
+                    
+                    success, result = upload_documento_por_categoria(
+                        file_storage,
+                        'estagio',
+                        tipo='estagio',
+                        nome_curso=nome_curso,
+                        data=data_entrega
+                    )
+                    
+                    if not success:
+                        flash(f'Erro ao fazer upload do documento: {result}', 'error')
+                        return redirect(url_for('infos_curso_add_estagio'))
+                
+                # Aqui você pode salvar os outros dados do Estágio na API se necessário
+                flash('Estágio adicionado com sucesso!', 'success')
+                session.pop('estagio_step', None)
+                session.pop('add_info_type', None)
+                return redirect(url_for('infos_curso_list'))
+            except Exception as e:
+                flash(f'Erro ao processar formulário: {str(e)}', 'error')
+                return redirect(url_for('infos_curso_add_estagio'))
 
         return redirect(url_for('infos_curso_add_estagio'))
 
@@ -2182,10 +3128,35 @@ def infos_curso_add_estagio():
 def infos_curso_add_horas():
     """ Formulário para adicionar Horas Complementares """
     if request.method == 'POST':
-        # Processar dados do formulário Horas Complementares
-        flash('Horas Complementares adicionadas com sucesso!', 'success')
-        session.pop('add_info_type', None)
-        return redirect(url_for('infos_curso_list'))
+        try:
+            # Obter dados do formulário
+            carga_horaria = request.form.get('carga_horaria')
+            data_limite = request.form.get('data_limite')
+            file_storage = request.files.get('kit_estudante')
+            
+            # Fazer upload do documento se houver
+            if file_storage and file_storage.filename:
+                nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                
+                success, result = upload_documento_por_categoria(
+                    file_storage,
+                    'hora_complementares',
+                    tipo='hora_complementares',
+                    nome_curso=nome_curso,
+                    data=data_limite or '2025-12-31'
+                )
+                
+                if not success:
+                    flash(f'Erro ao fazer upload do documento: {result}', 'error')
+                    return redirect(url_for('infos_curso_add_horas'))
+            
+            # Aqui você pode salvar os outros dados (carga_horaria, categorias, etc.) na API se necessário
+            flash('Horas Complementares adicionadas com sucesso!', 'success')
+            session.pop('add_info_type', None)
+            return redirect(url_for('infos_curso_list'))
+        except Exception as e:
+            flash(f'Erro ao processar formulário: {str(e)}', 'error')
+            return redirect(url_for('infos_curso_add_horas'))
 
     return render_template('infos_curso/add_horas.html', user=session.get('user', {}))
 
@@ -2704,14 +3675,94 @@ def mensagens_aluno_delete(item_id):
     except requests.exceptions.RequestException as e:
         return jsonify({"error": str(e)}), 500
 
+# ===== FUNÇÕES AUXILIARES PARA UPLOAD DE DOCUMENTOS =====
+def upload_documento_por_categoria(file_storage, categoria, **kwargs):
+    """
+    Faz upload de documento usando o endpoint correto baseado na categoria.
+    
+    Args:
+        file_storage: Arquivo do Flask request.files
+        categoria: 'disciplina', 'tcc', 'aps', 'estagio', 'hora_complementares'
+        **kwargs: Parâmetros adicionais conforme a categoria:
+            - disciplina: nome_disciplina (str)
+            - tcc/aps/estagio/hora_complementares: tipo (str), nome_curso (str), data (str)
+    
+    Returns:
+        tuple: (success: bool, data: dict ou error: str)
+    """
+    try:
+        headers = get_auth_headers()
+        upload_headers = {k: v for k, v in headers.items() if k.lower() != 'content-type'}
+        
+        if not file_storage or file_storage.filename == '':
+            return False, "Nenhum arquivo enviado"
+        
+        # Reset stream position
+        file_storage.stream.seek(0)
+        files = {'file': (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+        
+        # Prepara dados conforme a categoria
+        data = {}
+        endpoint = ""
+        
+        if categoria == 'disciplina':
+            endpoint = f"{API_BASE_URL}/documentos/upload_disciplina"
+            if 'nome_disciplina' not in kwargs:
+                return False, "nome_disciplina é obrigatório para upload de disciplina"
+            data['nome_disciplina'] = kwargs['nome_disciplina']
+        
+        elif categoria == 'tcc':
+            endpoint = f"{API_BASE_URL}/documentos/upload_tcc"
+            for key in ['tipo', 'nome_curso', 'data']:
+                if key not in kwargs:
+                    return False, f"{key} é obrigatório para upload de TCC"
+                data[key] = kwargs[key]
+        
+        elif categoria == 'aps':
+            endpoint = f"{API_BASE_URL}/documentos/upload_aps"
+            for key in ['tipo', 'nome_curso', 'data']:
+                if key not in kwargs:
+                    return False, f"{key} é obrigatório para upload de APS"
+                data[key] = kwargs[key]
+        
+        elif categoria == 'estagio':
+            endpoint = f"{API_BASE_URL}/documentos/upload_estagio"
+            for key in ['tipo', 'nome_curso', 'data']:
+                if key not in kwargs:
+                    return False, f"{key} é obrigatório para upload de Estágio"
+                data[key] = kwargs[key]
+        
+        elif categoria == 'hora_complementares':
+            endpoint = f"{API_BASE_URL}/documentos/upload_hora_complementares"
+            for key in ['tipo', 'nome_curso', 'data']:
+                if key not in kwargs:
+                    return False, f"{key} é obrigatório para upload de Horas Complementares"
+                data[key] = kwargs[key]
+        
+        else:
+            return False, f"Categoria '{categoria}' não suportada"
+        
+        # Faz a requisição
+        response = requests.post(endpoint, files=files, data=data, headers=upload_headers, timeout=30)
+        
+        if response.status_code == 201:
+            return True, response.json()
+        else:
+            error_detail = response.json().get("detail", f"Erro {response.status_code}") if response.headers.get('content-type', '').startswith('application/json') else response.text
+            return False, error_detail
+            
+    except requests.exceptions.RequestException as e:
+        return False, str(e)
+    except Exception as e:
+        return False, f"Erro inesperado: {str(e)}"
+
 # ===== ROTAS DE DOCUMENTOS =====
 @app.route('/documentos/upload', methods=['POST'])
 @login_required
 def documentos_upload():
-    """ Upload de documento """
+    """ Upload de documento genérico (mantido para compatibilidade) """
     try:
         headers = get_auth_headers()
-        # Remove Content-Type do header para permitir que requests defina automaticamente com boundary
         upload_headers = {k: v for k, v in headers.items() if k.lower() != 'content-type'}
         
         if 'file' not in request.files:
@@ -2721,6 +3772,15 @@ def documentos_upload():
         if file.filename == '':
             return jsonify({"error": "Nome de arquivo vazio"}), 400
         
+        # Tenta usar upload_disciplina se nome_disciplina for fornecido
+        nome_disciplina = request.form.get('nome_disciplina')
+        if nome_disciplina:
+            success, result = upload_documento_por_categoria(file, 'disciplina', nome_disciplina=nome_disciplina)
+            if success:
+                return jsonify(result), 201
+            return jsonify({"error": result}), 400
+        
+        # Fallback para endpoint antigo (se ainda existir)
         files = {'file': (file.filename, file.stream, file.content_type)}
         response = requests.post(f"{API_BASE_URL}/documentos/upload", files=files, headers=upload_headers, timeout=30)
         
