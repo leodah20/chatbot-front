@@ -1,0 +1,206 @@
+/**
+ * Botões Padrão - UNIP Administrative Panel
+ * Estilos padronizados para botões de adicionar, editar e apagar
+ * Baseado no design do calendário
+ */
+
+/* ===== BOTÃO FLUTUANTE DE ADICIONAR (FAB) ===== */
+.fab-add,
+.fab-add-materia {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #1583FF 0%, #023D71 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(21, 131, 255, 0.4), 0 2px 8px rgba(2, 61, 113, 0.3);
+  text-decoration: none;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.fab-add:hover,
+.fab-add-materia:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 8px 25px rgba(21, 131, 255, 0.5), 0 4px 12px rgba(2, 61, 113, 0.4);
+  background: linear-gradient(135deg, #1a8fff 0%, #034a8a 100%);
+}
+
+.fab-add:active,
+.fab-add-materia:active {
+  transform: scale(0.95) translateY(0);
+  box-shadow: 0 4px 12px rgba(21, 131, 255, 0.3), 0 2px 6px rgba(2, 61, 113, 0.2);
+}
+
+.fab-add:focus,
+.fab-add-materia:focus {
+  outline: 3px solid rgba(21, 131, 255, 0.3);
+  outline-offset: 4px;
+}
+
+.fab-add svg,
+.fab-add-materia svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* ===== BOTÃO DE ADICIONAR NO ESTADO VAZIO ===== */
+.btn-add-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #1583FF;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: 'Rubik', Helvetica, sans-serif;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-add-empty:hover {
+  background: #0d6efd;
+}
+
+/* ===== BOTÕES DE EDITAR E APAGAR ===== */
+.btn-edit-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(50, 146, 249, 0.66);
+  background: rgba(167, 208, 255, 0.08);
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.17);
+  color: #023D71;
+  text-decoration: none;
+  font-family: 'Rubik', Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-edit-info:hover {
+  background: rgba(167, 208, 255, 0.2);
+}
+
+.btn-edit-info .icon-edit {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Botão de apagar (variante vermelha do btn-edit-info) */
+.btn-edit-info[style*="background-color: #dc3545"],
+.btn-delete {
+  background-color: #dc3545 !important;
+  color: white !important;
+  border-color: #dc3545 !important;
+}
+
+.btn-edit-info[style*="background-color: #dc3545"]:hover,
+.btn-delete:hover {
+  background-color: #c82333 !important;
+  border-color: #c82333 !important;
+}
+
+/* ===== BOTÃO DE ADICIONAR NA BARRA DE AÇÕES ===== */
+.btn-add-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(167, 208, 255, 0.08);
+  border: 1px solid rgba(50, 146, 249, 0.66);
+  border-radius: 8px;
+  color: #023D71;
+  text-decoration: none;
+  font-family: 'Rubik', Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.17);
+}
+
+.btn-add-action:hover {
+  background: rgba(167, 208, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-add-action svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ===== BOTÃO DE ADICIONAR INLINE (DENTRO DO DASHBOARD) ===== */
+.btn-add-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(167, 208, 255, 0.08);
+  border: 0.75px solid rgba(50, 146, 249, 0.66);
+  border-radius: 8px;
+  color: #023D71;
+  text-decoration: none;
+  font-family: 'Rubik', Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.17);
+  cursor: pointer;
+}
+
+.btn-add-inline:hover {
+  background: rgba(167, 208, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-add-inline svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+  .btn-edit-info {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .fab-add,
+  .fab-add-materia {
+    width: 48px;
+    height: 48px;
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .fab-add svg,
+  .fab-add-materia svg {
+    width: 20px;
+    height: 20px;
+  }
+}

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/calendario_styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
   
   <!-- Sistema de Toasts -->
   {% include '_toasts.html' %}
@@ -83,6 +84,17 @@
         {% endif %}
       {% endwith %}
 
+      {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+        <a href="{{ url_for('calendario_add') }}" class="btn-add-inline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Adicionar Matéria</span>
+        </a>
+      </div>
+      {% endif %}
+
       {% if materias %}
         <ul class="materias-list">
           {% for m in materias %}
@@ -101,15 +113,6 @@
             </li>
           {% endfor %}
         </ul>
-        
-        <!-- Botão flutuante para adicionar matéria (apenas quando há matérias e usuário tem permissão) -->
-        {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
-        <a href="{{ url_for('calendario_add') }}" class="fab-add-materia" title="Adicionar Matéria">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M14 7V21M7 14H21" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </a>
-        {% endif %}
       {% else %}
         <div class="empty-state">
           <p class="empty-text">Nenhuma matéria cadastrada.</p>

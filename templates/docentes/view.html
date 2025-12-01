@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
 </head>
 <body>
     <header>
@@ -70,12 +71,6 @@
                 {% endif %}
             {% endwith %}
 
-            <a href="{{ url_for('docentes_add') }}" class="add-button">
-                <svg class="add-icon" width="34" height="30" viewBox="0 0 34 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.6023 28.125V25.125C22.6023 23.5337 21.9989 22.0076 20.9248 20.8824C19.8507 19.7571 18.394 19.125 16.875 19.125H6.85227C5.33331 19.125 3.87655 19.7571 2.80248 20.8824C1.72841 22.0076 1.125 23.5337 1.125 25.125V28.125M28.3295 8.625V17.625M32.625 13.125H24.0341M17.5909 7.125C17.5909 10.4387 15.0267 13.125 11.8636 13.125C8.70055 13.125 6.13636 10.4387 6.13636 7.125C6.13636 3.81129 8.70055 1.125 11.8636 1.125C15.0267 1.125 17.5909 3.81129 17.5909 7.125Z" stroke="#1583FF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="add-text">Adicionar Docente</span>
-            </a>
 
             <div class="info-panel">
                 <div class="info-grid">
@@ -143,17 +138,18 @@
                     </div>
                 </div>
 
-                <div class="action-buttons">
-                    <a href="{{ url_for('docentes_edit', id=docente.id) }}" class="action-btn action-btn-edit">
-                        <svg class="btn-icon" width="18" height="15" viewBox="0 0 18 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8.625 14.25H16.5M12.5625 1.23991C12.9106 0.926224 13.3827 0.75 13.875 0.75C14.1188 0.75 14.3601 0.793264 14.5853 0.877322C14.8105 0.96138 15.0151 1.08459 15.1875 1.23991C15.3599 1.39522 15.4966 1.57961 15.5899 1.78255C15.6831 1.98548 15.7312 2.20299 15.7312 2.42264C15.7312 2.6423 15.6831 2.8598 15.5899 3.06273C15.4966 3.26567 15.3599 3.45006 15.1875 3.60538L4.25 13.4615L0.75 14.25L1.625 11.096L12.5625 1.23991Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <div class="action-buttons" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <a href="{{ url_for('docentes_edit', id=docente.id) }}" class="btn-edit-info">
+                        <svg class="icon-edit" width="16" height="16" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M23.375 4.00008C23.7361 3.64989 24.1649 3.3721 24.6367 3.18258C25.1086 2.99305 25.6143 2.89551 26.125 2.89551C26.6357 2.89551 27.1414 2.99305 27.6133 3.18258C28.0851 3.3721 28.5139 3.64989 28.875 4.00008C29.2361 4.35027 29.5226 4.76601 29.7181 5.22355C29.9135 5.6811 30.0141 6.1715 30.0141 6.66674C30.0141 7.16199 29.9135 7.65239 29.7181 8.10993C29.5226 8.56748 29.2361 8.98322 28.875 9.33341L10.3125 27.3334L2.75 29.3334L4.8125 22.0001L23.375 4.00008Z" stroke="#2C8DFA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Editar</span>
+                        <span>Editar Informações</span>
                     </a>
                     <form method="POST" action="{{ url_for('docentes_delete', id=docente.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este docente? Esta ação não pode ser desfeita.')">
-                        <button type="submit" class="action-btn" style="background-color: #dc3545; color: white; border: none; cursor: pointer; margin-left: 10px;">
-                            <svg class="btn-icon" width="18" height="15" viewBox="0 0 18 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M6.75 11.25V13.5M11.25 11.25V13.5M4.5 4.5L4.875 14.25C4.875 14.6478 5.03304 15.0294 5.31531 15.3107C5.59759 15.592 5.97912 15.75 6.375 15.75H11.625C12.0209 15.75 12.4024 15.592 12.6847 15.3107C12.967 15.0294 13.125 14.6478 13.125 14.25L13.5 4.5M7.5 4.5V3C7.5 2.80109 7.57902 2.61032 7.71967 2.46967C7.86032 2.32902 8.05109 2.25 8.25 2.25H9.75C9.94891 2.25 10.1397 2.32902 10.2803 2.46967C10.421 2.61032 10.5 2.80109 10.5 3V4.5M2.25 4.5H15.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button type="submit" class="btn-edit-info" style="background-color: #dc3545; color: white; border: none; cursor: pointer;">
+                            <svg class="icon-edit" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 11V17M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <span>Apagar</span>
                         </button>

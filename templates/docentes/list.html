@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/docentes_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
 </head>
 <body>
     <header>
@@ -70,12 +71,14 @@
                 {% endif %}
             {% endwith %}
 
-            <a href="{{ url_for('docentes_add') }}" class="add-button">
-                <svg class="add-icon" width="34" height="30" viewBox="0 0 34 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.6023 28.125V25.125C22.6023 23.5337 21.9989 22.0076 20.9248 20.8824C19.8507 19.7571 18.394 19.125 16.875 19.125H6.85227C5.33331 19.125 3.87655 19.7571 2.80248 20.8824C1.72841 22.0076 1.125 23.5337 1.125 25.125V28.125M28.3295 8.625V17.625M32.625 13.125H24.0341M17.5909 7.125C17.5909 10.4387 15.0267 13.125 11.8636 13.125C8.70055 13.125 6.13636 10.4387 6.13636 7.125C6.13636 3.81129 8.70055 1.125 11.8636 1.125C15.0267 1.125 17.5909 3.81129 17.5909 7.125Z" stroke="#1583FF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span class="add-text">Adicionar Docente</span>
-            </a>
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+                <a href="{{ url_for('docentes_add') }}" class="btn-add-inline">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Adicionar Docente</span>
+                </a>
+            </div>
 
             <div class="selector-container">
                 <label class="selector-label">Selecione o Docente:</label>

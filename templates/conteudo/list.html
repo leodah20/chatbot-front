@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/conteudo_styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
+  
+  <!-- Sistema de Toasts -->
+  {% include '_toasts.html' %}
 </head>
 <body>
   <header>
@@ -21,8 +25,8 @@
         </div>
         <div class="user-section">
           <div class="user-info">
-            <div class="user-name">{{ session.user.nome|title if session.user else 'Usuário' }}</div>
-            <div class="user-email">{{ session.user.email if session.user else '' }}</div>
+            <div class="user-name">{{ user.nome|title if user and user.nome else 'Usuário' }}</div>
+            <div class="user-email">{{ user.email if user and user.email else '' }}</div>
           </div>
           <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
         </div>
@@ -59,7 +63,7 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="alert-container">
+          <div class="alert-container" style="display: none;">
             {% for category, message in messages %}
               <div class="alert alert-{{ category }}">{{ message }}</div>
             {% endfor %}
@@ -67,20 +71,23 @@
         {% endif %}
       {% endwith %}
 
-      <div class="actions-bar">
-        <a class="add-button" href="{{ url_for('conteudo_add') }}">
-          <svg class="add-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="#1583FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+      {% if grouped %}
+      {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+        <a href="{{ url_for('conteudo_add') }}" class="btn-add-inline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
           <span>Adicionar Conteúdo</span>
         </a>
       </div>
-
-      {% if grouped %}
+      {% endif %}
       <div class="grid">
         <aside class="subjects">
           <div class="subjects-header">
             <span class="course-code">{{ curso_codigo or '' }}</span>
             <span class="course-name">{{ curso_nome or '' }}</span>
-            <a class="icon-button" title="Adicionar" href="{{ url_for('conteudo_add') }}">+</a>
           </div>
           <ul class="subjects-list">
             {% for disciplina, itens in grouped.items() %}
@@ -100,18 +107,27 @@
             <h4 class="block-title">Materiais de Aula</h4>
             <ul class="items">
               {% for c in grouped.get(disciplina_selecionada, []) if (c.tipo == 'aula' or c.tipo == 'Material de Aula') %}
-                <li class="item">
+                <li class="item" {% if c.url_arquivo or c.link %}style="cursor: pointer;" onclick="window.open('{{ c.url_arquivo if c.url_arquivo else c.link }}', '_blank', 'noopener,noreferrer')"{% endif %}>
                   <span class="item-title">{{ c.titulo }}</span>
-                  {% if c.url_arquivo %}
-                    <a href="{{ c.url_arquivo }}" target="_blank" rel="noopener" class="item-link">Arquivo</a>
+                  {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+                  <div style="display: flex; gap: 10px; align-items: center;" onclick="event.stopPropagation();">
+                    <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="btn-edit-info">
+                      <svg class="icon-edit" width="16" height="16" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23.375 4.00008C23.7361 3.64989 24.1649 3.3721 24.6367 3.18258C25.1086 2.99305 25.6143 2.89551 26.125 2.89551C26.6357 2.89551 27.1414 2.99305 27.6133 3.18258C28.0851 3.3721 28.5139 3.64989 28.875 4.00008C29.2361 4.35027 29.5226 4.76601 29.7181 5.22355C29.9135 5.6811 30.0141 6.1715 30.0141 6.66674C30.0141 7.16199 29.9135 7.65239 29.7181 8.10993C29.5226 8.56748 29.2361 8.98322 28.875 9.33341L10.3125 27.3334L2.75 29.3334L4.8125 22.0001L23.375 4.00008Z" stroke="#2C8DFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span>Editar</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
+                      <button type="submit" class="btn-edit-info" style="background-color: #dc3545; color: white; border: none; cursor: pointer;">
+                        <svg class="icon-edit" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M10 11V17M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Apagar</span>
+                      </button>
+                    </form>
+                  </div>
                   {% endif %}
-                  {% if c.link %}
-                    <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
-                  {% endif %}
-                  <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
-                  <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
-                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; text-decoration: underline; padding: 0;">Apagar</button>
-                  </form>
                 </li>
               {% endfor %}
             </ul>
@@ -121,18 +137,27 @@
             <h4 class="block-title">Materiais Complementares</h4>
             <ul class="items">
               {% for c in grouped.get(disciplina_selecionada, []) if (c.tipo == 'complementar' or c.tipo == 'Material Complementar') %}
-                <li class="item">
+                <li class="item" {% if c.url_arquivo or c.link %}style="cursor: pointer;" onclick="window.open('{{ c.url_arquivo if c.url_arquivo else c.link }}', '_blank', 'noopener,noreferrer')"{% endif %}>
                   <span class="item-title">{{ c.titulo }}</span>
-                  {% if c.url_arquivo %}
-                    <a href="{{ c.url_arquivo }}" target="_blank" rel="noopener" class="item-link">Arquivo</a>
+                  {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+                  <div style="display: flex; gap: 10px; align-items: center;" onclick="event.stopPropagation();">
+                    <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="btn-edit-info">
+                      <svg class="icon-edit" width="16" height="16" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M23.375 4.00008C23.7361 3.64989 24.1649 3.3721 24.6367 3.18258C25.1086 2.99305 25.6143 2.89551 26.125 2.89551C26.6357 2.89551 27.1414 2.99305 27.6133 3.18258C28.0851 3.3721 28.5139 3.64989 28.875 4.00008C29.2361 4.35027 29.5226 4.76601 29.7181 5.22355C29.9135 5.6811 30.0141 6.1715 30.0141 6.66674C30.0141 7.16199 29.9135 7.65239 29.7181 8.10993C29.5226 8.56748 29.2361 8.98322 28.875 9.33341L10.3125 27.3334L2.75 29.3334L4.8125 22.0001L23.375 4.00008Z" stroke="#2C8DFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span>Editar</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
+                      <button type="submit" class="btn-edit-info" style="background-color: #dc3545; color: white; border: none; cursor: pointer;">
+                        <svg class="icon-edit" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M10 11V17M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Apagar</span>
+                      </button>
+                    </form>
+                  </div>
                   {% endif %}
-                  {% if c.link %}
-                    <a href="{{ c.link }}" target="_blank" rel="noopener" class="item-link">Link</a>
-                  {% endif %}
-                  <a href="{{ url_for('conteudo_edit', conteudo_id=c.id) }}" class="edit-link">Editar</a>
-                  <form method="POST" action="{{ url_for('conteudo_delete', conteudo_id=c.id) }}" style="display: inline; margin-left: 10px;" onsubmit="return confirm('Tem certeza que deseja remover este conteúdo? Esta ação apagará do Supabase.')">
-                    <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; text-decoration: underline; padding: 0;">Apagar</button>
-                  </form>
                 </li>
               {% endfor %}
             </ul>
@@ -142,7 +167,9 @@
       {% else %}
         <div class="empty-state">
           <p>Nenhum conteúdo cadastrado.</p>
-          <a class="add-button" href="{{ url_for('conteudo_add') }}">Adicionar Conteúdo</a>
+          {% if user and user.tipo and user.tipo|lower in ['admin', 'professor', 'coordenador'] %}
+          <a class="btn-add-empty" href="{{ url_for('conteudo_add') }}">Adicionar Conteúdo</a>
+          {% endif %}
         </div>
       {% endif %}
     </section>

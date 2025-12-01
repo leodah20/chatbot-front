@@ -5,6 +5,7 @@ from functools import wraps
 import os
 import re
 import uuid
+import json
 from dotenv import load_dotenv
 import sys
 
@@ -895,58 +896,110 @@ def get_conteudos_api():
     """Busca conteúdo da base de conhecimento da API"""
     try:
         headers = get_auth_headers()
-        # Tenta buscar via GET /baseconhecimento/ (pode não existir)
-        # Se não existir, retorna lista vazia e usa dados da sessão
-        try:
-            resp = requests.get(f"{API_BASE_URL}/baseconhecimento/", headers=headers, timeout=8)
-            if resp.status_code == 200:
-                items = resp.json()
-                if isinstance(items, list):
-                    # Busca todas as disciplinas de uma vez para mapear IDs para nomes
-                    disciplinas_map = {}
-                    try:
-                        disc_response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
-                        if disc_response.status_code == 200:
-                            disciplinas = disc_response.json()
-                            for disc in disciplinas:
-                                disciplinas_map[disc.get('id_disciplina')] = disc.get('nome_disciplina', 'Sem Disciplina')
-                    except:
-                        pass
+        # Usa o endpoint correto para listar todos os conhecimentos
+        resp = requests.get(f"{API_BASE_URL}/baseconhecimento/get_lista_conhecimento", headers=headers, timeout=10)
+        
+        if resp.status_code == 200:
+            items = resp.json()
+            if isinstance(items, list):
+                # Busca todas as disciplinas de uma vez para mapear IDs para nomes
+                disciplinas_map = {}
+                try:
+                    disc_response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
+                    if disc_response.status_code == 200:
+                        disciplinas = disc_response.json()
+                        for disc in disciplinas:
+                            disc_id = str(disc.get('id_disciplina', ''))
+                            disciplinas_map[disc_id] = disc.get('nome_disciplina', 'Sem Disciplina')
+                except Exception as e:
+                    print(f"[WARN] Erro ao buscar disciplinas: {e}")
+                
+                # Transforma dados da base de conhecimento para o formato do frontend
+                conteudos = []
+                for item in items:
+                    # Busca nome da disciplina se tiver id_disciplina
+                    disciplina_nome = 'Sem Disciplina'
+                    id_disciplina = item.get('id_disciplina')
+                    if id_disciplina:
+                        id_disciplina_str = str(id_disciplina)
+                        disciplina_nome = disciplinas_map.get(id_disciplina_str, 'Sem Disciplina')
                     
-                    # Transforma dados da base de conhecimento para o formato do frontend
-                    conteudos = []
-                    for item in items:
-                        # Busca nome da disciplina se tiver id_disciplina
-                        disciplina_nome = 'Sem Disciplina'
-                        if item.get('id_disciplina'):
-                            disciplina_nome = disciplinas_map.get(item.get('id_disciplina'), item.get('id_disciplina'))
-                        
-                        # Extrai link do conteúdo processado
-                        link = ''
-                        conteudo_texto = item.get('conteudo_processado', '')
-                        if 'Link:' in conteudo_texto:
-                            link = conteudo_texto.replace('Link: ', '').split('\n')[0].strip()
-                        
-                        conteudo = {
-                            'id': str(item.get('id_conhecimento', '')),
-                            'titulo': item.get('nome_arquivo_origem', 'Sem título'),
-                            'disciplina': disciplina_nome,
-                            'tipo': item.get('categoria', 'Material de Aula'),
-                            'link': link,
-                            'url_arquivo': item.get('nome_arquivo_origem', ''),
-                        }
-                        conteudos.append(conteudo)
-                    print(f"[INFO] {len(conteudos)} conteúdos encontrados na base de conhecimento")
-                    return conteudos
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                print(f"[INFO] Endpoint GET /baseconhecimento/ não encontrado - usando dados da sessão")
+                    # Extrai link e URL do arquivo do conteúdo processado
+                    link = ''
+                    url_arquivo = item.get('url_documento', '')  # Campo direto do banco
+                    conteudo_texto = item.get('conteudo_processado', '') or ''
+                    
+                    # Tenta extrair link do conteúdo processado
+                    if conteudo_texto and 'Link:' in conteudo_texto:
+                        link_parts = conteudo_texto.split('Link:')
+                        if len(link_parts) > 1:
+                            link = link_parts[1].split('\n')[0].strip()
+                    
+                    # Tenta extrair URL do arquivo do conteúdo processado se não tiver no campo direto
+                    if not url_arquivo and conteudo_texto and 'Arquivo:' in conteudo_texto:
+                        arquivo_parts = conteudo_texto.split('Arquivo:')
+                        if len(arquivo_parts) > 1:
+                            url_arquivo = arquivo_parts[1].split('\n')[0].strip()
+                    
+                    # Determina o tipo baseado na categoria
+                    categoria = item.get('categoria', 'Material de Aula')
+                    if categoria in ['Material Complementar', 'complementar', 'Material Complementar']:
+                        tipo = 'complementar'
+                    else:
+                        tipo = 'aula'  # Default para Material de Aula
+                    
+                    # Título pode vir do nome_arquivo_origem ou do conteúdo processado
+                    titulo = item.get('nome_arquivo_origem', 'Sem título')
+                    if (titulo == 'Sem título' or not titulo) and conteudo_texto:
+                        # Tenta extrair título do conteúdo processado
+                        if 'Material:' in conteudo_texto:
+                            titulo_parts = conteudo_texto.split('Material:')
+                            if len(titulo_parts) > 1:
+                                titulo = titulo_parts[1].split('\n')[0].strip()
+                    
+                    # Se ainda não tem título, usa o nome do arquivo de origem
+                    if not titulo or titulo == 'Sem título':
+                        titulo = item.get('nome_arquivo_origem', 'Sem título') or 'Sem título'
+                    
+                    conteudo = {
+                        'id': str(item.get('id_conhecimento', '')),
+                        'titulo': titulo,
+                        'disciplina': disciplina_nome,
+                        'tipo': tipo,
+                        'link': link,
+                        'url_arquivo': url_arquivo,
+                        'categoria': categoria
+                    }
+                    conteudos.append(conteudo)
+                
+                print(f"[INFO] {len(conteudos)} conteúdos encontrados na base de conhecimento")
+                return conteudos
             else:
-                print(f"[WARN] Erro ao buscar base de conhecimento: {e.response.status_code}")
-        except Exception as e:
-            print(f"[WARN] Endpoint GET /baseconhecimento/ não disponível: {e}")
+                print(f"[WARN] Resposta da API não é uma lista: {type(items)}")
+        else:
+            print(f"[WARN] Erro ao buscar base de conhecimento: Status {resp.status_code}")
+            if resp.status_code == 401:
+                print(f"[ERROR] Não autorizado - verifique o token de autenticação")
+            elif resp.status_code == 403:
+                print(f"[ERROR] Acesso negado")
+            else:
+                try:
+                    error_detail = resp.json()
+                    print(f"[ERROR] Detalhes do erro: {error_detail}")
+                except:
+                    print(f"[ERROR] Resposta: {resp.text[:200]}")
+                    
+    except requests.exceptions.HTTPError as e:
+        print(f"[ERROR] Erro HTTP ao buscar base de conhecimento: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[ERROR] Status: {e.response.status_code}")
     except requests.exceptions.RequestException as e:
-        print(f"[DEBUG] Conteúdo GET falhou: {e}")
+        print(f"[ERROR] Erro de requisição ao buscar base de conhecimento: {e}")
+    except Exception as e:
+        print(f"[ERROR] Erro inesperado ao buscar base de conhecimento: {e}")
+        import traceback
+        traceback.print_exc()
+    
     return []
 
 def get_disciplina_id_by_name(disciplina_nome):
@@ -997,10 +1050,18 @@ def create_conteudo_api(data, file_storage=None):
         nome_arquivo_final = titulo
         conteudo_para_base = f"Material: {titulo}"
         
+        # Mapear tipo para categoria
+        categoria_map = {
+            'aula': 'Material de Aula',
+            'complementar': 'Material Complementar'
+        }
+        categoria = categoria_map.get(tipo, 'Material de Aula')
+        
+        # 1. CASO 1: Upload de arquivo (o endpoint já cria na baseconhecimento automaticamente)
         if file_storage and file_storage.filename:
             print(f"[INFO] Fazendo upload do arquivo: {file_storage.filename}")
             
-            # Se houver disciplina, usa upload_disciplina, senão usa endpoint genérico
+            # Usa upload_disciplina que já salva na baseconhecimento
             if disciplina_nome and disciplina_nome != 'Sem Disciplina':
                 success, result = upload_documento_por_categoria(
                     file_storage,
@@ -1009,140 +1070,113 @@ def create_conteudo_api(data, file_storage=None):
                 )
                 
                 if success:
-                    nome_arquivo_final = result.get('filename', file_storage.filename)
-                    print(f"[INFO] ✅ Arquivo enviado com sucesso (categoria: disciplina)")
-                    print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
-                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                    # O endpoint já criou o registro na baseconhecimento
+                    base_conhecimento = result.get('base_conhecimento', {})
+                    id_conhecimento = base_conhecimento.get('id_conhecimento')
+                    url_documento = result.get('url_documento', '') or base_conhecimento.get('url_documento', '')
+                    
+                    if id_conhecimento:
+                        # Atualiza o registro criado com título e categoria corretos
+                        update_data = {
+                            "nome_arquivo_origem": titulo or file_storage.filename,
+                            "categoria": categoria,
+                            "palavra_chave": json.dumps([titulo.lower()] if titulo else []),
+                        }
+                        
+                        # Atualiza o conteúdo processado para incluir título
+                        conteudo_existente = base_conhecimento.get('resumo', '')
+                        conteudo_atualizado = f"{conteudo_existente}\nMaterial: {titulo}" if conteudo_existente else f"Material: {titulo}"
+                        update_data["conteudo_processado"] = conteudo_atualizado
+                        
+                        update_response = requests.put(
+                            f"{API_BASE_URL}/baseconhecimento/update/{id_conhecimento}",
+                            json=update_data,
+                            headers=headers,
+                            timeout=10
+                        )
+                        
+                        if update_response.status_code in (200, 204):
+                            print(f"[INFO] ✅ Registro atualizado com título e categoria")
+                        
+                        return True, {
+                            'id': str(id_conhecimento),
+                            'titulo': titulo or file_storage.filename,
+                            'disciplina': disciplina_nome,
+                            'tipo': tipo,
+                            'link': '',
+                            'url_arquivo': url_documento,
+                            'message': 'Conteúdo salvo com sucesso na API e armazenado no Supabase'
+                        }
+                    else:
+                        print(f"[WARN] Upload bem-sucedido mas ID não retornado. Dados: {result}")
+                        return False, "Erro: Upload concluído mas ID do conhecimento não foi retornado."
                 else:
                     error_msg = f"Erro ao fazer upload do arquivo: {result}"
                     print(f"[ERROR] {error_msg}")
                     return False, error_msg
             else:
-                # Fallback para endpoint genérico se não houver disciplina
-                headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
-                file_storage.stream.seek(0)
-                files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-                
-                upload_response = requests.post(
-                    f"{API_BASE_URL}/documentos/upload",
-                    files=files,
-                    headers=headers_multipart,
-                    timeout=15
-                )
-                
-                if upload_response.status_code == 201:
-                    upload_data = upload_response.json()
-                    nome_arquivo_final = upload_data.get('filename', file_storage.filename)
-                    print(f"[INFO] ✅ Arquivo enviado com sucesso")
-                    print(f"[INFO] Nome do arquivo salvo: {nome_arquivo_final}")
-                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
-                else:
-                    error_msg = f"Erro ao fazer upload do arquivo: {upload_response.status_code}"
-                    print(f"[ERROR] {error_msg}")
-                    try:
-                        error_detail = upload_response.json()
-                        error_msg = error_detail.get('detail', error_msg)
-                    except:
-                        error_msg = upload_response.text or error_msg
-                    return False, error_msg
+                # Sem disciplina: precisa criar diretamente na baseconhecimento
+                error_msg = "Disciplina é obrigatória para upload de arquivos."
+                print(f"[ERROR] {error_msg}")
+                return False, error_msg
+        
+        # CASO 2: Apenas link (cria diretamente na baseconhecimento)
         elif link:
-            # Se tiver apenas link, não precisa de upload
-            conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
-            nome_arquivo_final = titulo
-        
-        # 2. Buscar ID da disciplina
-        id_disciplina = None
-        if disciplina_nome and disciplina_nome != 'Sem Disciplina':
-            id_disciplina = get_disciplina_id_by_name(disciplina_nome)
-            if not id_disciplina:
-                print(f"[WARN] Disciplina '{disciplina_nome}' não encontrada, criando sem disciplina")
-        
-        # 3. Mapear tipo para categoria
-        categoria_map = {
-            'aula': 'Material de Aula',
-            'complementar': 'Material Complementar'
-        }
-        categoria = categoria_map.get(tipo, 'Material de Aula')
-        
-        # 4. Preparar dados para base de conhecimento
-        # Garante que todos os campos obrigatórios estão presentes
-        base_conhecimento_data = {
-            "nome_arquivo_origem": nome_arquivo_final,
-            "conteudo_processado": conteudo_para_base,
-            "palavra_chave": [titulo.lower()] if titulo else [],  # Usa o título como palavra-chave
-            "categoria": categoria,
-            "status": "ativo",  # Status ativo para que o RASA possa consultar
-        }
-        
-        # Adiciona id_disciplina apenas se encontrado (opcional)
-        if id_disciplina:
-            # Garante que o UUID está no formato correto (string)
-            base_conhecimento_data["id_disciplina"] = str(id_disciplina)
-            print(f"[INFO] Associando conteúdo à disciplina ID: {id_disciplina}")
-        
-        print(f"[INFO] Salvando na base de conhecimento: {base_conhecimento_data}")
-        
-        # 5. Salvar na base de conhecimento
-        base_response = requests.post(
-            f"{API_BASE_URL}/baseconhecimento/",
-            json=base_conhecimento_data,
-            headers=headers,
-            timeout=10
-        )
-        
-        print(f"[INFO] POST /baseconhecimento/ - Status: {base_response.status_code}")
-        
-        if base_response.status_code == 201:
-            response_data = base_response.json()
-            id_conhecimento = response_data.get('id_conhecimento', '')
-            print(f"[INFO] ✅ Conteúdo salvo com sucesso na base de conhecimento (Supabase)")
-            print(f"[INFO] ID do conhecimento criado: {id_conhecimento}")
-            print(f"[INFO] Dados salvos no Supabase: {response_data}")
+            print(f"[INFO] Criando conteúdo com apenas link (sem arquivo)")
             
-            # Retorna dados no formato esperado pelo frontend
-            return True, {
-                'id': str(id_conhecimento),
-                'titulo': titulo,
-                'disciplina': disciplina_nome,
-                'tipo': tipo,
-                'link': link,
-                'url_arquivo': nome_arquivo_final if file_storage else '',
-                'message': 'Conteúdo salvo com sucesso na API e armazenado no Supabase'
+            # Buscar ID da disciplina
+            id_disciplina = None
+            if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+                id_disciplina = get_disciplina_id_by_name(disciplina_nome)
+            
+            # Preparar dados para base de conhecimento
+            base_conhecimento_data = {
+                "nome_arquivo_origem": titulo,
+                "conteudo_processado": f"Link: {link}\nMaterial: {titulo}",
+                "palavra_chave": [titulo.lower()] if titulo else [],
+                "categoria": categoria,
+                "status": "publicado",
             }
-        
-        # Tratamento de erros
-        if base_response.status_code == 401:
-            error_msg = "Sua sessão expirou. Por favor, faça login novamente."
-            print(f"[ERROR] POST /baseconhecimento/ - Status: 401 - Não autorizado")
-            return False, error_msg
-        elif base_response.status_code == 403:
-            error_msg = "Acesso negado. Você não tem permissão para criar conteúdo."
-            print(f"[ERROR] POST /baseconhecimento/ - Status: 403 - Acesso negado")
-            return False, error_msg
-        elif base_response.status_code == 422:
-            try:
-                error_detail = base_response.json()
-                error_msg = f"Dados inválidos: {error_detail}"
-            except:
-                error_msg = f"Dados inválidos: {base_response.text[:200]}"
-            print(f"[ERROR] POST /baseconhecimento/ - Status: 422 - {error_msg}")
-            return False, error_msg
-        elif base_response.status_code == 500:
-            error_msg = "Erro interno do servidor. Tente novamente mais tarde."
-            print(f"[ERROR] POST /baseconhecimento/ - Status: 500 - Erro do servidor")
-            try:
-                error_detail = base_response.json()
-                print(f"[DEBUG] Detalhes do erro: {error_detail}")
-            except:
-                print(f"[DEBUG] Resposta: {base_response.text[:200]}")
-            return False, error_msg
+            
+            if id_disciplina:
+                base_conhecimento_data["id_disciplina"] = str(id_disciplina)
+            
+            # Salvar na base de conhecimento
+            base_response = requests.post(
+                f"{API_BASE_URL}/baseconhecimento/",
+                json=base_conhecimento_data,
+                headers=headers,
+                timeout=10
+            )
+            
+            print(f"[INFO] POST /baseconhecimento/ - Status: {base_response.status_code}")
+            
+            if base_response.status_code == 201:
+                response_data = base_response.json()
+                id_conhecimento = response_data.get('id_conhecimento', '')
+                print(f"[INFO] ✅ Conteúdo salvo com sucesso na base de conhecimento")
+                
+                return True, {
+                    'id': str(id_conhecimento),
+                    'titulo': titulo,
+                    'disciplina': disciplina_nome,
+                    'tipo': tipo,
+                    'link': link,
+                    'url_arquivo': '',
+                    'message': 'Conteúdo salvo com sucesso na API e armazenado no Supabase'
+                }
+            else:
+                try:
+                    error_detail = base_response.json()
+                    error_msg = error_detail.get('detail', base_response.text)
+                except:
+                    error_msg = base_response.text or f"Erro HTTP {base_response.status_code}"
+                print(f"[ERROR] POST /baseconhecimento/ - Status: {base_response.status_code} - {error_msg}")
+                return False, error_msg
         else:
-            try:
-                error_detail = base_response.json()
-                error_msg = error_detail.get('detail', base_response.text) if isinstance(error_detail, dict) else str(error_detail)
-            except:
-                error_msg = base_response.text or f"Erro HTTP {base_response.status_code}"
-            print(f"[ERROR] POST /baseconhecimento/ - Status: {base_response.status_code} - {error_msg}")
+            # Nem arquivo nem link - retorna erro
+            error_msg = "É necessário fornecer um arquivo ou um link."
+            print(f"[ERROR] {error_msg}")
             return False, error_msg
             
     except requests.exceptions.ConnectionError as e:
@@ -1169,14 +1203,25 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
         tipo = data.get('tipo', 'aula')
         link = data.get('link', '')
         
-        # 1. Upload do novo arquivo se houver
-        nome_arquivo_final = titulo
-        conteudo_para_base = f"Material: {titulo}"
+        # Mapear tipo para categoria
+        categoria_map = {
+            'aula': 'Material de Aula',
+            'complementar': 'Material Complementar'
+        }
+        categoria = categoria_map.get(tipo, 'Material de Aula')
+        
+        # Buscar ID da disciplina
+        id_disciplina = None
+        if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+            id_disciplina = get_disciplina_id_by_name(disciplina_nome)
+        
+        # CASO 1: Upload de novo arquivo (cria novo registro, depois atualiza o antigo e deleta o novo)
+        novo_id_conhecimento = None
+        url_documento_novo = None
         
         if file_storage and file_storage.filename:
             print(f"[INFO] Fazendo upload do novo arquivo: {file_storage.filename}")
             
-            # Se houver disciplina, usa upload_disciplina
             if disciplina_nome and disciplina_nome != 'Sem Disciplina':
                 success, result = upload_documento_por_categoria(
                     file_storage,
@@ -1185,58 +1230,42 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
                 )
                 
                 if success:
-                    nome_arquivo_final = result.get('filename', file_storage.filename)
-                    print(f"[INFO] ✅ Novo arquivo enviado com sucesso (categoria: disciplina)")
-                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
+                    # O upload criou um novo registro na baseconhecimento
+                    base_conhecimento = result.get('base_conhecimento', {})
+                    novo_id_conhecimento = base_conhecimento.get('id_conhecimento')
+                    url_documento_novo = result.get('url_documento', '') or base_conhecimento.get('url_documento', '')
+                    
+                    if novo_id_conhecimento and url_documento_novo:
+                        print(f"[INFO] ✅ Novo arquivo enviado. Novo registro criado: {novo_id_conhecimento}")
+                        print(f"[INFO] URL do documento: {url_documento_novo}")
+                    else:
+                        print(f"[WARN] Upload concluído mas dados incompletos: {result}")
                 else:
                     print(f"[WARN] Erro ao fazer upload do novo arquivo: {result}")
-                    nome_arquivo_final = titulo
-            else:
-                # Fallback para endpoint genérico
-                headers_multipart = {k: v for k, v in headers.items() if k != "Content-Type"}
-                file_storage.stream.seek(0)
-                files = {"file": (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
-                
-                upload_response = requests.post(
-                    f"{API_BASE_URL}/documentos/upload",
-                    files=files,
-                    headers=headers_multipart,
-                    timeout=15
-                )
-                
-                if upload_response.status_code == 201:
-                    upload_data = upload_response.json()
-                    nome_arquivo_final = upload_data.get('filename', file_storage.filename)
-                    conteudo_para_base = f"Arquivo: {nome_arquivo_final}\nMaterial: {titulo}"
-                else:
-                    print(f"[WARN] Erro ao fazer upload do novo arquivo: {upload_response.status_code}")
-                    nome_arquivo_final = titulo
-        elif link:
-            conteudo_para_base = f"Link: {link}\nMaterial: {titulo}"
+                    return False
         
-        # 2. Buscar ID da disciplina
-        id_disciplina = None
-        if disciplina_nome and disciplina_nome != 'Sem Disciplina':
-            id_disciplina = get_disciplina_id_by_name(disciplina_nome)
-        
-        # 3. Mapear tipo para categoria
-        categoria_map = {
-            'aula': 'Material de Aula',
-            'complementar': 'Material Complementar'
-        }
-        categoria = categoria_map.get(tipo, 'Material de Aula')
-        
-        # 4. Preparar dados para atualização
+        # Preparar dados para atualização
         update_data = {
-            "nome_arquivo_origem": nome_arquivo_final,
-            "conteudo_processado": conteudo_para_base,
+            "nome_arquivo_origem": titulo,
             "categoria": categoria,
+            "palavra_chave": json.dumps([titulo.lower()] if titulo else []),
         }
+        
+        # Se houver novo arquivo, atualiza com o novo url_documento
+        if url_documento_novo:
+            update_data["url_documento"] = url_documento_novo
+        
+        # Se houver link, atualiza o conteúdo processado
+        if link:
+            update_data["conteudo_processado"] = f"Link: {link}\nMaterial: {titulo}"
+        elif url_documento_novo:
+            # Atualiza com informação do novo arquivo
+            update_data["conteudo_processado"] = f"Arquivo: {titulo}\nMaterial: {titulo}"
         
         if id_disciplina:
             update_data["id_disciplina"] = str(id_disciplina)
         
-        # 5. Atualizar na base de conhecimento (Supabase)
+        # Atualizar registro existente na base de conhecimento
         resp = requests.put(
             f"{API_BASE_URL}/baseconhecimento/update/{conteudo_id}",
             json=update_data,
@@ -1245,18 +1274,43 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
         )
         
         print(f"[INFO] PUT /baseconhecimento/update/{conteudo_id} - Status: {resp.status_code}")
+        
         if resp.status_code in (200, 204):
             print(f"[INFO] ✅ Conteúdo atualizado com sucesso no Supabase")
-            if resp.status_code == 200:
+            
+            # Se um novo registro foi criado pelo upload, deleta ele (já que atualizamos o antigo)
+            if novo_id_conhecimento and str(novo_id_conhecimento) != str(conteudo_id):
+                print(f"[INFO] Deletando registro duplicado criado pelo upload: {novo_id_conhecimento}")
                 try:
-                    response_data = resp.json()
-                    print(f"[INFO] Dados atualizados no Supabase: {response_data}")
-                except:
-                    pass
-        return resp.status_code in (200, 204)
+                    delete_resp = requests.delete(
+                        f"{API_BASE_URL}/baseconhecimento/delete/{novo_id_conhecimento}",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if delete_resp.status_code in (200, 204):
+                        print(f"[INFO] ✅ Registro duplicado deletado com sucesso")
+                except Exception as e:
+                    print(f"[WARN] Erro ao deletar registro duplicado: {e}")
+            
+            return True
+        else:
+            print(f"[ERROR] Erro ao atualizar conteúdo: Status {resp.status_code}")
+            try:
+                error_detail = resp.json()
+                print(f"[ERROR] Detalhes: {error_detail}")
+            except:
+                print(f"[ERROR] Resposta: {resp.text[:200]}")
+            return False
         
     except requests.exceptions.RequestException as e:
         print(f"[ERROR] Conteúdo PUT falhou: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    except Exception as e:
+        print(f"[ERROR] Erro inesperado ao atualizar conteúdo: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def delete_conteudo_api(conteudo_id):
@@ -1328,17 +1382,26 @@ def group_by_disciplina(items):
 @app.route('/conteudo')
 @login_required
 def conteudo_list():
+    # Sempre busca da API primeiro
     api_items = get_conteudos_api()
-    if api_items:
+    
+    # Se conseguir buscar da API, usa esses dados
+    if api_items and len(api_items) > 0:
         set_conteudo_list_session(api_items)
         items = api_items
+        print(f"[INFO] Carregados {len(items)} conteúdos da API")
     else:
+        # Fallback para sessão apenas se a API não retornar nada
         items = get_conteudo_list_session()
+        if items:
+            print(f"[INFO] Usando {len(items)} conteúdos da sessão (fallback)")
+        else:
+            print(f"[INFO] Nenhum conteúdo encontrado na API nem na sessão")
 
     grouped = group_by_disciplina(items)
-    disciplina = request.args.get('disciplina') or (next(iter(grouped.keys()), 'Sem Disciplina'))
+    disciplina = request.args.get('disciplina') or (next(iter(grouped.keys()), 'Sem Disciplina') if grouped else 'Sem Disciplina')
 
-    return render_template('conteudo/list.html', grouped=grouped, disciplina_selecionada=disciplina)
+    return render_template('conteudo/list.html', grouped=grouped, disciplina_selecionada=disciplina, user=session.get('user', {}))
 
 @app.route('/conteudo/add', methods=['GET', 'POST'])
 @login_required
