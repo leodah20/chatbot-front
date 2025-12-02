@@ -94,6 +94,9 @@
   transition: background 0.2s;
   cursor: pointer;
   white-space: nowrap;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .btn-edit-info:hover {

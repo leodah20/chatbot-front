@@ -76,23 +76,21 @@
                 <div class="info-grid">
                     <div class="info-column">
                         <div class="form-group">
-                            <label class="field-label">Selecione o Docente:</label>
-                            <div class="display-field display-field-select">
+                            <label class="field-label">Docente:</label>
+                            <div class="display-field">
                                 <span class="field-value-bold">{{ docente.nome_professor }} {{ docente.sobrenome_professor }}</span>
-                                <svg class="dropdown-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="display-field">
                                 <span class="field-label-inline">Matrícula:</span>
-                                <span class="field-value">{{ docente.id_funcional }}</span>
+                                <span class="field-value">{{ docente.id_funcional or 'N/A' }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="info-column">
-                        <div class="form-group">
+                        <div class="form-group form-group-with-label">
+                            <label class="field-label field-label-spacer">Nível de Acesso:</label>
                             <div class="display-field">
                                 <span class="field-label-inline">Nível de Acesso:</span>
                                 <span class="field-value">{{ docente.nivel_acesso|title if docente.nivel_acesso else 'Professor' }}</span>
@@ -101,7 +99,7 @@
                         <div class="form-group">
                             <div class="display-field">
                                 <span class="field-label-inline">E-mail:</span>
-                                <span class="field-value">{{ docente.email_institucional }}</span>
+                                <span class="field-value">{{ docente.email_institucional or 'N/A' }}</span>
                             </div>
                         </div>
                     </div>
@@ -127,17 +125,18 @@
                         <h3 class="section-subtitle">Disciplinas:</h3>
                         <div class="form-group">
                             <div class="display-field">
-                                <span class="field-value">Ciência da Computação</span>
+                                <span class="field-value field-value-disciplina">Ciência da Computação</span>
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="display-field">
-                                <span class="field-value">Análise e Desenvolvimento de Sistemas</span>
+                                <span class="field-value field-value-disciplina">Análise e Desenvolvimento de Sistemas</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {% if user and user.tipo and user.tipo|lower in ['admin', 'coordenador'] %}
                 <div class="action-buttons" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <a href="{{ url_for('docentes_edit', id=docente.id) }}" class="btn-edit-info">
                         <svg class="icon-edit" width="16" height="16" viewBox="0 0 33 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -146,7 +145,7 @@
                         <span>Editar Informações</span>
                     </a>
                     <form method="POST" action="{{ url_for('docentes_delete', id=docente.id) }}" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja remover este docente? Esta ação não pode ser desfeita.')">
-                        <button type="submit" class="btn-edit-info" style="background-color: #dc3545; color: white; border: none; cursor: pointer;">
+                        <button type="submit" class="btn-edit-info btn-delete">
                             <svg class="icon-edit" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M10 11V17M14 11V17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -155,6 +154,7 @@
                         </button>
                     </form>
                 </div>
+                {% endif %}
             </div>
         </section>
     </main>

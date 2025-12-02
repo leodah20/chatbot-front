@@ -522,6 +522,7 @@ def docentes_list():
 
 @app.route('/docentes/add', methods=['GET', 'POST'])
 @login_required
+@role_required(['admin', 'coordenador'])
 def docentes_add():
     """ Adiciona novo docente via API """
     # Buscar disciplinas da API para popular select
@@ -632,7 +633,7 @@ def docentes_add():
 def docentes_view(id):
     """ Visualiza docente - busca da API ou sessão """
     try:
-        print(f"[DEBUG] Buscando professor {id}")
+        print(f"[DEBUG] Buscando professor {id} (tipo: {type(id)})")
         headers = get_auth_headers()
         # Tenta buscar da API primeiro
         response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
@@ -640,19 +641,56 @@ def docentes_view(id):
         docente = None
         if response.status_code == 200:
             professores = response.json()
-            docente = next((p for p in professores if str(p.get('id')) == str(id)), None)
+            print(f"[DEBUG] Professores encontrados: {len(professores)}")
+            # Compara IDs como string (suporta UUID e números)
+            id_str = str(id).strip()
+            for p in professores:
+                p_id = p.get('id')
+                if p_id is not None:
+                    p_id_str = str(p_id).strip()
+                    if p_id_str == id_str:
+                        docente = p
+                        print(f"[DEBUG] Docente encontrado na API: {docente.get('nome_professor', 'N/A')}")
+                        break
+                    # Tenta também comparar como int se ambos forem numéricos
+                    try:
+                        if str(p_id_str).isdigit() and str(id_str).isdigit():
+                            if int(p_id_str) == int(id_str):
+                                docente = p
+                                print(f"[DEBUG] Docente encontrado na API (comparação numérica): {docente.get('nome_professor', 'N/A')}")
+                                break
+                    except (ValueError, TypeError):
+                        pass
         
         # Se não encontrou na API, tenta da sessão
         if not docente:
             docentes_list = get_docentes_list()
-            docente = next((d for d in docentes_list if str(d.get('id')) == str(id)), None)
+            id_str = str(id).strip()
+            for d in docentes_list:
+                d_id = d.get('id')
+                if d_id is not None:
+                    d_id_str = str(d_id).strip()
+                    if d_id_str == id_str:
+                        docente = d
+                        print(f"[DEBUG] Docente encontrado na sessão: {docente.get('nome_professor', 'N/A')}")
+                        break
+                    # Tenta também comparar como int se ambos forem numéricos
+                    try:
+                        if str(d_id_str).isdigit() and str(id_str).isdigit():
+                            if int(d_id_str) == int(id_str):
+                                docente = d
+                                print(f"[DEBUG] Docente encontrado na sessão (comparação numérica): {docente.get('nome_professor', 'N/A')}")
+                                break
+                    except (ValueError, TypeError):
+                        pass
         
         if not docente:
+            print(f"[DEBUG] Docente {id} não encontrado na API nem na sessão")
             flash("Docente não encontrado.", "error")
             return redirect(url_for('docentes_list'))
         
-        print(f"[DEBUG] Docente encontrado: {docente}")
-        return render_template('docentes/view.html', docente=docente)
+        print(f"[DEBUG] Docente encontrado: ID={docente.get('id')}, Nome={docente.get('nome_professor', 'N/A')}")
+        return render_template('docentes/view.html', docente=docente, user=session.get('user', {}))
         
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] Erro ao buscar professor: {e}")
@@ -661,6 +699,7 @@ def docentes_view(id):
 
 @app.route('/docentes/edit/<id>', methods=['GET', 'POST'])
 @login_required
+@role_required(['admin', 'coordenador'])
 def docentes_edit(id):
     """ Edita docente - GET usa mock, POST envia para API """
     # Buscar disciplinas da API para popular select
@@ -707,8 +746,26 @@ def docentes_edit(id):
             print(f"[DEBUG] Response: {response.text}")
             
             response.raise_for_status()
+            
+            # Obtém o docente atualizado da resposta
+            docente_atualizado = response.json()
+            docente_id_atualizado = docente_atualizado.get('id')
+            
+            # Atualiza o docente na lista da sessão
+            if 'docentes_list' in session and docente_id_atualizado:
+                for i, d in enumerate(session['docentes_list']):
+                    if d.get('id') == docente_id_atualizado or str(d.get('id')) == str(docente_id_atualizado):
+                        session['docentes_list'][i] = docente_atualizado
+                        session.modified = True
+                        print(f"[DEBUG] Docente atualizado na sessão")
+                        break
+            
+            # Usa o ID retornado pela API para o redirect
+            id_para_redirect = docente_id_atualizado if docente_id_atualizado else id
+            print(f"[DEBUG] Redirecionando para visualização com ID: {id_para_redirect}")
+            
             flash("Docente atualizado com sucesso!", "success")
-            return redirect(url_for('docentes_view', id=id))
+            return redirect(url_for('docentes_view', id=id_para_redirect))
             
         except requests.exceptions.HTTPError as e:
             print(f"[DEBUG] HTTPError: {e}")
@@ -720,91 +777,138 @@ def docentes_edit(id):
                     flash("Dados inválidos. Verifique o formato.", "error")
             else:
                 flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
+            # Em caso de erro, redireciona de volta para a página de edição para que o usuário possa corrigir
+            return redirect(url_for('docentes_edit', id=id))
         except requests.exceptions.RequestException as e:
             print(f"[DEBUG] RequestException: {e}")
             flash("Erro de comunicação com o servidor.", "error")
+            # Em caso de erro, redireciona de volta para a página de edição
+            return redirect(url_for('docentes_edit', id=id))
         except Exception as e:
             print(f"[DEBUG] Exception: {e}")
+            import traceback
+            print(f"[DEBUG] Traceback: {traceback.format_exc()}")
             flash("Erro inesperado ao atualizar docente.", "error")
+            # Em caso de erro, redireciona de volta para a página de edição
+            return redirect(url_for('docentes_edit', id=id))
     
-    # GET - Buscar dados do docente para edição (usando dados mock)
-    print(f"[DEBUG] API não suporta GET /professores/{id} - usando dados mock para edição")
-    
-    # Dados mock baseados no ID (mesmo da função view)
-    mock_docentes = {
-        1: {
-            'id': 1,
-            'nome_professor': 'João',
-            'sobrenome_professor': 'Silva',
-            'email_institucional': 'joao.silva@docente.unip.br',
-            'id_funcional': 'F123456',
-            'nivel_acesso': 'professor',
-            'disciplinas': ['ciencia_computacao', 'ads'],
-            'dia_semana': 'terca',
-            'horario_inicio': '14:00',
-            'horario_fim': '18:00'
-        },
-        2: {
-            'id': 2,
-            'nome_professor': 'Maria',
-            'sobrenome_professor': 'Santos',
-            'email_institucional': 'maria.santos@docente.unip.br',
-            'id_funcional': 'F789012',
-            'nivel_acesso': 'coordenador',
-            'disciplinas': ['eng_software'],
-            'dia_semana': 'quinta',
-            'horario_inicio': '19:00',
-            'horario_fim': '23:00'
-        },
-        3: {
-            'id': 3,
-            'nome_professor': 'Carlos',
-            'sobrenome_professor': 'Oliveira',
-            'email_institucional': 'carlos.oliveira@docente.unip.br',
-            'id_funcional': 'F345678',
-            'nivel_acesso': 'professor',
-            'disciplinas': ['sistemas_info'],
-            'dia_semana': 'segunda',
-            'horario_inicio': '08:00',
-            'horario_fim': '12:00'
-        }
-    }
-    
-    docente = mock_docentes.get(id)
-    if not docente:
-        flash("Docente não encontrado.", "error")
+    # GET - Buscar dados do docente para edição
+    print(f"[DEBUG] Buscando professor {id} para edição (tipo: {type(id)})")
+    try:
+        headers = get_auth_headers()
+        # Tenta buscar da API primeiro
+        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+        
+        docente = None
+        if response.status_code == 200:
+            professores = response.json()
+            print(f"[DEBUG] Professores encontrados: {len(professores)}")
+            # Tenta encontrar o docente comparando IDs como string (suporta UUID e números)
+            id_str = str(id).strip()
+            for p in professores:
+                p_id = p.get('id')
+                if p_id is not None:
+                    p_id_str = str(p_id).strip()
+                    # Compara como string (funciona para UUID e números)
+                    if p_id_str == id_str:
+                        docente = p
+                        print(f"[DEBUG] Docente encontrado na API: {docente.get('nome_professor', 'N/A')}")
+                        break
+                    # Tenta também comparar como int se ambos forem numéricos
+                    try:
+                        if str(p_id_str).isdigit() and str(id_str).isdigit():
+                            if int(p_id_str) == int(id_str):
+                                docente = p
+                                print(f"[DEBUG] Docente encontrado na API (comparação numérica): {docente.get('nome_professor', 'N/A')}")
+                                break
+                    except (ValueError, TypeError):
+                        pass
+        
+        # Se não encontrou na API, tenta da sessão
+        if not docente:
+            docentes_list = get_docentes_list()
+            id_str = str(id).strip()
+            for d in docentes_list:
+                d_id = d.get('id')
+                if d_id is not None:
+                    d_id_str = str(d_id).strip()
+                    if d_id_str == id_str:
+                        docente = d
+                        print(f"[DEBUG] Docente encontrado na sessão: {docente.get('nome_professor', 'N/A')}")
+                        break
+                    # Tenta também comparar como int se ambos forem numéricos
+                    try:
+                        if str(d_id_str).isdigit() and str(id_str).isdigit():
+                            if int(d_id_str) == int(id_str):
+                                docente = d
+                                print(f"[DEBUG] Docente encontrado na sessão (comparação numérica): {docente.get('nome_professor', 'N/A')}")
+                                break
+                    except (ValueError, TypeError):
+                        pass
+        
+        if not docente:
+            print(f"[DEBUG] Docente {id} não encontrado na API nem na sessão")
+            print(f"[DEBUG] IDs disponíveis na API: {[str(p.get('id', 'N/A')) for p in professores[:5]]}")
+            flash("Docente não encontrado.", "error")
+            return redirect(url_for('docentes_list'))
+        
+        print(f"[DEBUG] Docente encontrado para edição: ID={docente.get('id')}, Nome={docente.get('nome_professor', 'N/A')}")
+        return render_template('docentes/edit.html', docente=docente, disciplinas=disciplinas, user=session.get('user', {}))
+        
+    except requests.exceptions.RequestException as e:
+        print(f"[DEBUG] Erro ao buscar professor: {e}")
+        import traceback
+        print(f"[DEBUG] Traceback: {traceback.format_exc()}")
+        flash("Erro ao carregar dados do docente.", "error")
         return redirect(url_for('docentes_list'))
-    
-    print(f"[DEBUG] Docente encontrado para edição: {docente}")
-    
-    return render_template('docentes/edit.html', docente=docente, disciplinas=disciplinas)
+    except Exception as e:
+        print(f"[DEBUG] Erro inesperado: {e}")
+        import traceback
+        print(f"[DEBUG] Traceback: {traceback.format_exc()}")
+        flash("Erro inesperado ao carregar dados do docente.", "error")
+        return redirect(url_for('docentes_list'))
 
 @app.route('/docentes/delete/<id>', methods=['POST'])
 @login_required
+@role_required(['admin', 'coordenador'])
 def docentes_delete(id):
     """ Remove docente via API """
     try:
-        print(f"[DEBUG] Removendo docente {id}")
-        # DELETE /professores/{id} - conforme documentação da API
+        print(f"[DEBUG] Removendo docente {id} (tipo: {type(id)})")
+        # DELETE /professores/delete/{id} - endpoint correto da API
         headers = get_auth_headers()
-        response = requests.delete(f"{API_BASE_URL}/professores/detele/{id}", headers=headers, timeout=10)
+        url = f"{API_BASE_URL}/professores/delete/{id}"
+        print(f"[DEBUG] URL da requisição: {url}")
+        print(f"[DEBUG] Headers: {headers}")
+        
+        response = requests.delete(url, headers=headers, timeout=10)
         print(f"[DEBUG] Status Code: {response.status_code}")
+        print(f"[DEBUG] Response Text: {response.text}")
         
-        response.raise_for_status()
-        
-        # Remove o docente da lista da sessão
-        remove_docente_from_list(id)
-        
-        flash("Docente removido com sucesso!", "success")
+        # Status 204 (No Content) é o esperado para delete bem-sucedido
+        if response.status_code == 204:
+            # Remove o docente da lista da sessão
+            remove_docente_from_list(id)
+            flash("Docente removido com sucesso!", "success")
+        else:
+            response.raise_for_status()
         
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
-        flash(f"Erro ao remover docente (HTTP {e.response.status_code}).", "error")
+        print(f"[DEBUG] Response: {e.response.text if e.response else 'N/A'}")
+        if e.response and e.response.status_code == 404:
+            flash("Docente não encontrado.", "error")
+        elif e.response and e.response.status_code == 403:
+            flash("Você não tem permissão para remover este docente.", "error")
+        else:
+            flash(f"Erro ao remover docente (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] RequestException: {e}")
         flash("Erro de comunicação com o servidor.", "error")
     except Exception as e:
         print(f"[DEBUG] Exception: {e}")
+        import traceback
+        print(f"[DEBUG] Traceback: {traceback.format_exc()}")
         flash("Erro inesperado ao remover docente.", "error")
     
     return redirect(url_for('docentes_list'))
@@ -852,8 +956,15 @@ def add_docente_to_list(docente_data, response_data=None):
 def remove_docente_from_list(docente_id):
     """ Remove um docente da lista da sessão """
     if 'docentes_list' in session:
-        session['docentes_list'] = [d for d in session['docentes_list'] if d.get('id') != docente_id]
+        original_count = len(session['docentes_list'])
+        # Compara IDs como string para garantir que funcione independente do tipo
+        session['docentes_list'] = [
+            d for d in session['docentes_list'] 
+            if d.get('id') is not None and str(d.get('id')) != str(docente_id)
+        ]
         session.modified = True
+        removed_count = original_count - len(session['docentes_list'])
+        print(f"[DEBUG] Docente {docente_id} removido da sessão. {removed_count} removido(s), restam {len(session['docentes_list'])} docentes.")
 
 # ===== ROTAS DE CONTEÚDO =====
 

@@ -239,26 +239,20 @@ header {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 15px 201px;
+    padding: 15px clamp(20px, 5vw, 100px);
     min-height: calc(100vh - 120px);
     max-height: calc(100vh - 120px);
     overflow-y: auto;
 }
 
-@media (max-width: 1400px) {
-    .main-container {
-        padding: 15px 100px;
-    }
-}
-
 .content-card {
     display: flex;
-    width: 1200px;
-    max-width: 100%;
-    padding: 8px 20px 16px;
+    width: 100%;
+    max-width: 1400px;
+    padding: 8.25px clamp(20px, 4vw, 60px);
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 20px;
     border-radius: 13.5px;
     background: var(--unip-bg-card);
     box-shadow: var(--shadow-md);
@@ -266,22 +260,23 @@ header {
 
 .card-header {
     display: flex;
-    height: auto;
-    padding: 4px 0;
+    min-height: 84px;
+    padding: 0 clamp(20px, 10vw, 200px);
     justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 20.25px;
     align-self: stretch;
+    width: 100%;
 }
 
 .header-icon {
-    width: 42px;
-    height: 50px;
+    width: 51.75px;
+    height: 63px;
 }
 
 .page-title {
     color: var(--unip-primary);
-    font-size: 32px;
+    font-size: 40px;
     font-weight: 700;
     line-height: normal;
 }
@@ -291,7 +286,14 @@ header {
     max-width: 100%;
     height: 0.75px;
     background: rgba(175, 175, 175, 0.96);
-    margin: 8px auto;
+    margin: 0 auto;
+}
+
+/* Separator seguindo padrão do calendário */
+.separator-line {
+    width: 100%;
+    height: 1px;
+    background: rgba(21, 131, 255, 0.83);
 }
 
 .separator-blue {
@@ -419,9 +421,9 @@ header {
 
 .info-panel {
     display: flex;
-    width: 1051px;
+    width: 100%;
     max-width: 100%;
-    padding: 25px 32px;
+    padding: 25px clamp(20px, 3vw, 40px);
     flex-direction: column;
     align-items: flex-end;
     gap: 25px;
@@ -433,21 +435,72 @@ header {
 
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 27px;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(20px, 3vw, 35px);
     width: 100%;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
 }
 
 .info-column {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto;
     gap: 15px;
+    min-width: 0; /* Permite que o grid funcione corretamente */
+    align-items: start;
+}
+
+.info-column .form-group {
+    width: 100%;
+}
+
+.info-column .display-field {
+    width: 100%;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    width: 100%;
+    min-height: 0;
+}
+
+.form-group-with-label .field-label-spacer {
+    display: block;
+    height: auto;
+    min-height: 1.5em;
+    margin: 0;
+    padding: 0;
+    visibility: hidden;
+    overflow: hidden;
+    line-height: 1.5em;
+    font-size: 21.75px;
+    font-weight: 400;
+    letter-spacing: 0.87px;
+    color: var(--unip-primary);
+}
+
+/* Garantir alinhamento perfeito entre as colunas */
+.info-grid .info-column:first-child .form-group:first-child,
+.info-grid .info-column:last-child .form-group:first-child {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 14px;
+}
+
+.info-grid .info-column:first-child .form-group:not(:first-child),
+.info-grid .info-column:last-child .form-group:not(:first-child) {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 14px;
+    padding-top: 0;
 }
 
 .field-label {
@@ -460,17 +513,42 @@ header {
 
 .display-field {
     display: flex;
-    height: 50px;
-    padding: 12px 17px;
-    align-items: center;
+    min-height: 50px;
+    padding: 14px 20px;
+    align-items: flex-start;
     gap: 15px;
     border-radius: var(--radius-lg);
     background: var(--unip-bg-light);
     box-shadow: 0 3px 3.075px 0.75px rgba(50, 146, 249, 0.28);
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: space-between;
 }
 
 .display-field-select {
     justify-content: space-between;
+}
+
+.display-field-select .field-value-bold {
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Campo de docente na visualização - apenas exibição */
+.display-field .field-value-bold:only-child {
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-arrow {
+    flex-shrink: 0;
+}
+
+.field-value-disciplina {
+    text-align: left !important;
 }
 
 .field-label-inline {
@@ -478,20 +556,39 @@ header {
     font-size: 21.75px;
     font-weight: 500;
     line-height: normal;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: fit-content;
+    align-self: flex-start;
+    padding-top: 2px;
 }
 
 .field-value {
     color: var(--unip-text-secondary);
     font-size: 18.75px;
     font-weight: 500;
-    line-height: normal;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+    text-align: right;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    align-self: flex-start;
+    padding-top: 2px;
 }
 
 .field-value-bold {
     color: var(--unip-text-primary);
     font-size: 22.5px;
     font-weight: 600;
-    line-height: normal;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 0;
+    text-align: right;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    align-self: flex-start;
+    padding-top: 2px;
 }
 
 .section-subtitle {
@@ -506,6 +603,8 @@ header {
     display: flex;
     align-items: center;
     gap: 11px;
+    position: relative;
+    z-index: 10;
 }
 
 .action-btn {
@@ -825,6 +924,10 @@ header {
         gap: 20px;
     }
     
+    .info-column {
+        width: 100%;
+    }
+    
     .form-row {
         grid-template-columns: 1fr;
     }
@@ -850,6 +953,11 @@ header {
     .time-inputs {
         grid-template-columns: 1fr;
     }
+    
+    .field-value,
+    .field-value-bold {
+        text-align: left;
+    }
 }
 
 @media (min-width: 769px) {
@@ -859,54 +967,344 @@ header {
     }
 }
 
-/* ===== CARDS DE DOCENTES ===== */
-.docente-item {
+/**
+ * ===== ESTILOS DO CALENDÁRIO (REUTILIZADOS) =====
+ * 
+ * Estilos reutilizados do calendário para manter consistência visual
+ */
+.page-body {
+    background: #FFF;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-header {
+    background: #023D71;
+    color: #fff;
+    width: 100%;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 30px 8px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.header-brand {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--unip-bg-light);
-    box-shadow: 0 3px 3px rgba(50,146,249,.28);
-    border-radius: 26px;
-    padding: 10px 14px;
-    transition: all 0.2s ease;
-    list-style: none;
+    flex: 1 1 auto;
+}
+
+.header-logo {
+    width: clamp(150px, 18vw, 200px);
+    height: auto;
+}
+
+.header-title {
+    font-size: clamp(20px, 3.5vw, 32px);
+    font-weight: 700;
+    line-height: normal;
     margin: 0;
+    color: #fff;
 }
 
-.docente-item:hover {
-    background: #F5F9FF;
-    box-shadow: 0 4px 4px rgba(50,146,249,.35);
-    transform: translateY(-1px);
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    flex-wrap: wrap;
 }
 
-.docente-content {
-    flex: 1;
-    cursor: pointer;
+.user-info-panel {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-width: 0;
+    align-items: flex-end;
+    gap: 8px;
 }
 
-.docente-nome {
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--unip-text-primary);
-    font-family: 'Rubik', sans-serif;
-    line-height: 1.3;
+.user-name-text,
+.user-email-text {
+    font-size: clamp(14px, 1.3vw, 16px);
+    font-weight: 700;
+    line-height: normal;
+    color: #fff;
 }
 
-.docente-info {
-    font-size: 12px;
-    color: var(--unip-text-secondary);
-    font-family: 'Rubik', sans-serif;
+.header-submenu {
+    background: #075EBD;
+    padding: 4px 30px;
+}
+
+.submenu-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    cursor: pointer;
+}
+
+.icon-menu {
+    width: 23px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.submenu-text {
+    font-size: clamp(14px, 1.5vw, 18px);
     font-weight: 400;
+    color: #fff;
+}
+
+/* Dropdown menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #FFF;
+    min-width: 250px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 8px 0;
+    margin-top: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.submenu-wrapper:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 12px 20px;
+    color: #023D71;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.dropdown-item:hover {
+    background: #F0F7FF;
+    color: #075EBD;
+}
+
+.page-main {
+    min-height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: clamp(12px, 1.5vw, 20px) clamp(12px, 1.5vw, 25px);
+    background: #FFF;
+    overflow-y: auto;
+}
+
+.container-card {
+    width: 100%;
+    max-width: 1189px;
+    padding: clamp(16px, 2vw, 24px) clamp(20px, 3vw, 35px);
+    background: #FFFEFE;
+    border-radius: 20px;
+    box-shadow: 0 4px 8px 1px rgba(0, 0, 0, 0.19);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(16px, 2vw, 24px);
+    position: relative;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(16px, 2vw, 20px) 0;
+}
+
+.calendar-title-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(12px, 1.5vw, 16px);
+}
+
+.calendar-icon {
+    width: clamp(40px, 4.5vw, 50px);
+    height: clamp(44px, 5vw, 55px);
+    flex-shrink: 0;
+}
+
+.calendar-title {
+    color: #023D71;
+    font-family: "Rubik", Helvetica;
+    font-size: clamp(28px, 3.5vw, 40px);
+    font-weight: 700;
+    font-style: normal;
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0px;
+    line-height: normal;
+}
+
+/**
+ * ===== LISTA DE DOCENTES (PADRÃO CALENDÁRIO) =====
+ * 
+ * Estilos para a lista de docentes seguindo o mesmo padrão visual
+ * e proporções da lista de calendário
+ */
+.docentes-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.5vw, 16px);
+    padding: 0;
+    margin: 0;
+    padding-bottom: clamp(80px, 10vw, 100px);
+    position: relative;
+    z-index: 1;
+}
+
+.docente-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 0;
+    background: #FBFBFB;
+    border-radius: clamp(12px, 1.5vw, 16px);
+    box-shadow: 0 4px 4px 1px rgba(50, 146, 249, 0.28);
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.docente-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px 2px rgba(50, 146, 249, 0.35);
+    background: #F5F9FF;
+}
+
+.docente-card:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px 1px rgba(50, 146, 249, 0.25);
+}
+
+.docente-card-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: clamp(12px, 1.5vw, 20px);
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+    flex-wrap: wrap;
+    cursor: pointer;
+    flex: 1;
+}
+
+.docente-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 200px;
+}
+
+.docente-title-text {
+    color: #023D71;
+    font-family: var(--escrita-curso-font-family, "Rubik", Helvetica);
+    font-size: clamp(18px, 2vw, 32px);
+    font-weight: var(--escrita-curso-font-weight, 500);
+    font-style: normal;
+    line-height: normal;
+    letter-spacing: 0px;
+}
+
+.docente-info-text {
+    color: #4A4A4A;
+    font-size: clamp(14px, 1.4vw, 16px);
     line-height: 1.3;
+}
+
+.docente-badges {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1vw, 12px);
+    flex-wrap: wrap;
+}
+
+.badge-item {
+    padding: 6px 12px;
+    background: rgba(167, 208, 255, 0.2);
+    border-radius: 16px;
+    color: #023D71;
+    font-size: clamp(12px, 1.2vw, 14px);
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 .docente-actions {
     display: flex;
     gap: 8px;
     align-items: center;
+    padding-right: clamp(12px, 1.5vw, 20px);
     flex-shrink: 0;
+}
+
+/* Empty State - seguindo padrão do calendário */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: clamp(32px, 4vw, 48px);
+}
+
+.empty-text {
+    color: #4A4A4A;
+    font-size: clamp(16px, 1.6vw, 18px);
+    text-align: center;
+}
+
+/* Responsividade para lista de docentes */
+@media (max-width: 768px) {
+    .docente-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .docente-card-link {
+        width: 100%;
+    }
+    
+    .docente-actions {
+        width: 100%;
+        justify-content: flex-end;
+        padding-right: clamp(12px, 1.5vw, 20px);
+        padding-bottom: clamp(12px, 1.5vw, 20px);
+    }
+    
+    .docente-badges {
+        width: 100%;
+    }
 }
