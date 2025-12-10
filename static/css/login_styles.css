@@ -74,7 +74,50 @@ body {
     color: #738AA7;
     font-size: 35px;
     padding: 0 32px;
+    padding-right: 80px;
     outline: none;
+}
+
+/* Container para campo de senha com botão de revelar */
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+    z-index: 10;
+}
+
+.password-icon {
+    width: 24px;
+    height: 24px;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+.password-toggle:hover .password-icon,
+.password-toggle:focus .password-icon {
+    opacity: 0.7;
+}
+
+.password-toggle:active .password-icon {
+    transform: scale(0.95);
+}
+
+.password-icon svg {
+    display: block;
 }
 
 .input::placeholder {

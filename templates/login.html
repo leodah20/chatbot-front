@@ -54,17 +54,48 @@
 
           <!-- Campo de senha -->
           <label class="sr-only" for="senha">Senha</label>
-          <input id="senha" name="password" type="password" placeholder="Senha" required class="input" />
+          <div class="password-wrapper">
+            <input id="senha" name="password" type="password" placeholder="Senha" required class="input" />
+            <button type="button" class="password-toggle" id="togglePassword" aria-label="Mostrar senha">
+              <svg class="password-icon password-icon-visible" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#738AA7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" stroke="#738AA7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <svg class="password-icon password-icon-hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                <path d="M17.94 17.94C16.2306 19.243 14.1491 19.9649 12 20C5 20 1 12 1 12C2.24389 9.68192 3.96914 7.65663 6.06 6.06M9.9 4.24C10.5883 4.0789 11.2931 3.99836 12 4C19 4 23 12 23 12C22.393 13.1356 21.6691 14.2048 20.84 15.19M14.12 14.12C13.8454 14.4148 13.5141 14.6512 13.1462 14.8151C12.7782 14.9791 12.3809 15.0673 11.9781 15.0744C11.5753 15.0815 11.1751 15.0074 10.8016 14.8565C10.4281 14.7056 10.0887 14.4811 9.80385 14.1962C9.51897 13.9113 9.29439 13.5719 9.14351 13.1984C8.99262 12.8249 8.91853 12.4247 8.92563 12.0219C8.93274 11.6191 9.02091 11.2218 9.18488 10.8538C9.34884 10.4859 9.58525 10.1546 9.88 9.88M1 1L23 23" stroke="#738AA7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
 
           <!-- Botão de submissão -->
           <button type="submit" class="btn-primary">Entrar</button>
-
-          <div class="actions">
-            <a href="#" class="link">Esqueceu sua senha?</a>
-            <a href="#" class="link">Criar conta</a>
-          </div>
         </form>
       </section>
     </main>
+
+    <!-- Script para revelar/ocultar senha -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('senha');
+        const toggleButton = document.getElementById('togglePassword');
+        const iconVisible = toggleButton.querySelector('.password-icon-visible');
+        const iconHidden = toggleButton.querySelector('.password-icon-hidden');
+        
+        toggleButton.addEventListener('click', function() {
+          // Alterna entre tipo password e text
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            iconVisible.style.display = 'none';
+            iconHidden.style.display = 'block';
+            toggleButton.setAttribute('aria-label', 'Ocultar senha');
+          } else {
+            passwordInput.type = 'password';
+            iconVisible.style.display = 'block';
+            iconHidden.style.display = 'none';
+            toggleButton.setAttribute('aria-label', 'Mostrar senha');
+          }
+        });
+      });
+    </script>
 </body>
 </html>

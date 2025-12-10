@@ -1183,9 +1183,6 @@ header {
 
 .docente-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
     padding: 0;
     background: #FBFBFB;
     border-radius: clamp(12px, 1.5vw, 16px);
@@ -1219,7 +1216,7 @@ header {
     color: inherit;
     flex-wrap: wrap;
     cursor: pointer;
-    flex: 1;
+    min-height: 100%;
 }
 
 .docente-main {
@@ -1262,13 +1259,6 @@ header {
     white-space: nowrap;
 }
 
-.docente-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding-right: clamp(12px, 1.5vw, 20px);
-    flex-shrink: 0;
-}
 
 /* Empty State - seguindo padrão do calendário */
 .empty-state {
@@ -1295,13 +1285,6 @@ header {
     
     .docente-card-link {
         width: 100%;
-    }
-    
-    .docente-actions {
-        width: 100%;
-        justify-content: flex-end;
-        padding-right: clamp(12px, 1.5vw, 20px);
-        padding-bottom: clamp(12px, 1.5vw, 20px);
     }
     
     .docente-badges {

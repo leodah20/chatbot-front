@@ -8,6 +8,8 @@ import uuid
 import json
 from dotenv import load_dotenv
 import sys
+from datetime import timedelta
+import time
 
 # ===== CARREGAMENTO E VALIDAÇÃO DE VARIÁVEIS DE AMBIENTE =====
 # Carrega as variáveis do arquivo .env
@@ -75,6 +77,17 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 app = Flask(__name__)
 app.secret_key = SECRET_KEY  # Chave secreta para sessões (obrigatória)
 
+# Timestamp de inicialização do servidor - usado para invalidar sessões após reiniciar
+SERVER_START_TIME = time.time()
+
+# Configuração de sessão: expira após 24 horas de inatividade
+# Sessões não persistentes - expiram quando o navegador fecha
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Força que a sessão expire quando o navegador fecha (não permanente)
+app.config['SESSION_COOKIE_SECURE'] = False  # True apenas em HTTPS
+
 # Configuração do modo debug baseado na variável de ambiente
 if FLASK_ENV == 'development':
     app.config['DEBUG'] = True
@@ -88,7 +101,64 @@ print(f"[INFO] Configuração carregada com sucesso!")
 print(f"[INFO] API_BASE_URL: {API_BASE_URL}")
 print(f"[INFO] SECRET_KEY configurada: {'*' * 20}...{SECRET_KEY[-8:]}")
 
-# ===== FUNÇÃO HELPER PARA AUTENTICAÇÃO =====
+# ===== FUNÇÕES HELPER PARA AUTENTICAÇÃO =====
+
+def handle_token_expiration():
+    # Faz logout automático quando o token expira
+    print("[INFO] Token expirado - fazendo logout automático")
+    session.clear()
+    flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
+    return redirect(url_for('index'))
+
+def check_token_validity():
+    # Verifica se o token da sessão ainda é válido fazendo uma requisição de teste à API
+    # Retorna True se válido, False caso contrário. Invalida sessão se token expirado ou API indisponível
+    if 'user' not in session or not session['user'].get('access_token'):
+        return False
+    
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {session['user']['access_token'].strip()}"
+        }
+        # Faz uma requisição leve para verificar se o token é válido
+        # Usa um endpoint que não requer permissões especiais
+        test_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=5)
+        
+        if test_response.status_code == 401:
+            print("[INFO] Token expirado detectado - fazendo logout automático")
+            session.clear()
+            flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
+            return False
+        elif test_response.status_code in [200, 403]:
+            # 200 = token válido, 403 = token válido mas sem permissão (ainda é válido)
+            return True
+        else:
+            # Outros erros podem indicar problema de conexão, mas não necessariamente token inválido
+            return True
+    except requests.exceptions.ConnectionError as e:
+        print(f"[WARN] API não está disponível (ConnectionError): {e}")
+        # Se a API não estiver disponível (servidor reiniciado), invalida a sessão
+        print("[INFO] API não disponível - invalidando sessão para forçar novo login")
+        session.clear()
+        flash("Servidor não está disponível. Por favor, faça login novamente.", "error")
+        return False
+    except requests.exceptions.Timeout as e:
+        print(f"[WARN] Timeout ao verificar token: {e}")
+        # Timeout também pode indicar que o servidor não está respondendo
+        print("[INFO] Timeout na verificação - invalidando sessão")
+        session.clear()
+        flash("Servidor não está respondendo. Por favor, faça login novamente.", "error")
+        return False
+    except Exception as e:
+        print(f"[WARN] Erro ao verificar token: {e}")
+        # Para outros erros, assume que pode ser problema temporário
+        # Mas por segurança, invalida a sessão se não conseguir verificar
+        print("[INFO] Erro na verificação - invalidando sessão por segurança")
+        session.clear()
+        flash("Erro ao verificar sessão. Por favor, faça login novamente.", "error")
+        return False
+
 def get_auth_headers():
     # Retorna os headers de autenticação com o access_token da sessão atual.
     # Usado para todas as requisições autenticadas à API.
@@ -98,10 +168,28 @@ def get_auth_headers():
     
     # Adiciona o token Bearer se existir na sessão
     if 'user' in session and session['user'].get('access_token'):
-        headers["Authorization"] = f"Bearer {session['user']['access_token']}"
-        print(f"[DEBUG] Token incluído nos headers: {session['user']['access_token'][:20]}...")
+        token = session['user']['access_token']
+        # Remove espaços e quebras de linha do token
+        token = str(token).strip()
+        
+        # Verifica se o token não está vazio
+        if not token:
+            print("[ERROR] Token encontrado mas está vazio!")
+            return headers
+        
+        headers["Authorization"] = f"Bearer {token}"
+        user_role = session['user'].get('tipo', 'N/A')
+        user_email = session['user'].get('email', 'N/A')
+        print(f"[DEBUG] Token incluído nos headers: {token[:20]}...")
+        print(f"[DEBUG] Token length: {len(token)} caracteres")
+        print(f"[DEBUG] User Role: {user_role}, Email: {user_email}")
+        print(f"[DEBUG] Authorization header completo: Bearer {token[:30]}...")
     else:
         print("[DEBUG] ATENÇÃO: Nenhum access_token encontrado na sessão!")
+        if 'user' in session:
+            print(f"[DEBUG] Session user keys: {list(session['user'].keys())}")
+        else:
+            print("[DEBUG] Nenhum 'user' encontrado na sessão!")
     
     return headers
 
@@ -113,17 +201,29 @@ def login_required(f):
             session.pop('user', None)
             flash("Por favor, faça login para aceder a esta página.", "error")
             return redirect(url_for('index'))
+        
+        # Verifica se a sessão foi criada antes do servidor ser reiniciado
+        session_start_time = session.get('server_start_time')
+        if session_start_time is None or session_start_time < SERVER_START_TIME:
+            print("[INFO] Sessão criada antes do reinício do servidor - invalidando")
+            session.clear()
+            flash("Servidor foi reiniciado. Por favor, faça login novamente.", "info")
+            return redirect(url_for('index'))
+        
+        # Verifica se o token ainda é válido quando a sessão é restaurada
+        # Isso garante que sessões antigas sejam invalidadas se o token expirou
+        if not check_token_validity():
+            # Se o token não for válido, check_token_validity já fez logout e redirecionou
+            # Mas vamos garantir que não continuamos a execução
+            if 'user' not in session:
+                return redirect(url_for('index'))
+        
         return f(*args, **kwargs)
     return decorated_function
 
 # Decorator para verificar roles permitidos
 def role_required(allowed_roles):
-    """
-    Decorator que verifica se o usuário tem um dos roles permitidos.
-    
-    Args:
-        allowed_roles: Lista de roles permitidos (ex: ['admin', 'professor', 'coordenador'])
-    """
+    # Verifica se o usuário tem um dos roles permitidos na lista
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -151,14 +251,29 @@ def role_required(allowed_roles):
 
 @app.route('/')
 def index():
-    """ Página inicial - redireciona para login ou dashboard """
+    # Página inicial - redireciona para login ou dashboard
     if 'user' in session and session['user'].get('id'):
-        return redirect(url_for('dashboard'))
+        # Verifica se a sessão foi criada antes do servidor ser reiniciado
+        # Isso garante que sessões antigas sejam sempre invalidadas após reiniciar
+        session_start_time = session.get('server_start_time')
+        if session_start_time is None or session_start_time < SERVER_START_TIME:
+            print("[INFO] Sessão criada antes do reinício do servidor - invalidando")
+            session.clear()
+            flash("Servidor foi reiniciado. Por favor, faça login novamente.", "info")
+            return render_template('login.html')
+        
+        # Valida o token antes de redirecionar para o dashboard
+        # Isso garante que sessões antigas sejam invalidadas
+        if check_token_validity():
+            return redirect(url_for('dashboard'))
+        else:
+            # Token inválido - sessão já foi limpa por check_token_validity
+            return render_template('login.html')
     return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """ Processa login do usuário via API """
+    # Processa login do usuário via API
     if request.method == 'GET' and 'user' in session and session['user'].get('id'):
         return redirect(url_for('dashboard'))
 
@@ -170,7 +285,7 @@ def login():
             flash("Email e senha são obrigatórios.", "error")
             return redirect(url_for('index'))
 
-        auth_url = f"{API_BASE_URL}/login"
+        auth_url = f"{API_BASE_URL}/auth/login"
         credentials = {"email": email, "password": password}
 
         try:
@@ -230,6 +345,10 @@ def login():
             
             # Extrai o tipo/role do usuário
             user_tipo = user_data.get('role', 'usuario')
+            # Normaliza o role para lowercase para garantir consistência
+            if user_tipo:
+                user_tipo = user_tipo.lower().strip()
+            print(f"[DEBUG] Role extraído da API: '{user_tipo}' (original: '{user_data.get('role', 'N/A')}')")
             
             # Extrai o email
             user_email = user_data.get('email', email)
@@ -237,21 +356,39 @@ def login():
             # Extrai o access_token
             access_token = api_response.get('access_token', '')
             
+            # Limpa o token (remove espaços e quebras de linha)
+            if access_token:
+                access_token = str(access_token).strip()
+            
             if not access_token:
                 print("[ERROR] Access token não encontrado na resposta")
                 flash("Erro: Token de acesso não encontrado na resposta da API.", "error")
                 return redirect(url_for('index'))
+            
+            print(f"[DEBUG] Token recebido do login: {len(access_token)} caracteres")
+            print(f"[DEBUG] Token preview: {access_token[:30]}...")
 
             # Guarda informações na sessão
             session['user'] = {
                 'id': user_id,
                 'nome': nome_completo,
                 'email': user_email,
-                'tipo': user_tipo,
+                'tipo': user_tipo,  # Já normalizado para lowercase
                 'matricula': user_data.get('matricula_ra', ''),
-                'access_token': access_token,
+                'access_token': access_token.strip(),  # Garante que está limpo
                 'raw_data': api_response  # Guarda dados brutos para debug
             }
+            
+            # Validação adicional: verifica se o token foi salvo corretamente
+            saved_token = session['user'].get('access_token', '')
+            if not saved_token:
+                print("[ERROR] CRÍTICO: access_token não foi salvo na sessão!")
+            else:
+                print(f"[DEBUG] Token salvo na sessão: {len(saved_token)} caracteres")
+                print(f"[DEBUG] Token salvo (preview): {saved_token[:30]}...")
+                # Verifica se o token salvo é igual ao recebido
+                if saved_token != access_token.strip():
+                    print(f"[WARN] Token salvo difere do recebido! Salvo: {len(saved_token)}, Recebido: {len(access_token)}")
             
             print(f"[INFO] ====== LOGIN REALIZADO COM SUCESSO ======")
             print(f"[INFO] User ID: {user_id}")
@@ -262,7 +399,11 @@ def login():
             print(f"[INFO] ===========================================")
 
             # Login bem-sucedido - configurar sessão
-            session.permanent = True
+            # Sessão não permanente - expira quando o navegador é fechado
+            # Marca o timestamp de inicialização do servidor na sessão
+            # Isso garante que ao reiniciar o servidor, o usuário precise fazer login novamente
+            session.permanent = False
+            session['server_start_time'] = SERVER_START_TIME
             flash(f"Bem-vindo(a), {session['user'].get('nome', 'Usuário')}!", "success")
             return redirect(url_for('dashboard'))
 
@@ -319,7 +460,7 @@ def login():
 
 @app.route('/logout')
 def logout():
-    """ Limpa a sessão do utilizador (faz logout). """
+    # Limpa a sessão do utilizador (faz logout)
     print(f"[DEBUG] Logout realizado por: {session.get('user', {}).get('nome', 'Desconhecido')}")
     # Limpa toda a sessão para garantir que nenhum dado permaneça
     session.clear()
@@ -333,25 +474,136 @@ def debug_token():
     user = session.get('user', {})
     token = user.get('access_token', 'N/A')
     
+    # Testa o token fazendo uma requisição à API
+    token_valid = False
+    api_role = 'N/A'
+    api_error_detail = None
+    test_post_result = None
+    
+    if token != 'N/A':
+        try:
+            headers = get_auth_headers()
+            # Faz uma requisição GET para verificar se o token funciona
+            test_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=5)
+            token_valid = test_response.status_code == 200
+            
+            if test_response.status_code == 401:
+                api_role = "Token inválido ou expirado"
+                try:
+                    api_error_detail = test_response.json()
+                except:
+                    api_error_detail = test_response.text
+            elif test_response.status_code == 403:
+                api_role = "Token válido mas sem permissão"
+                try:
+                    api_error_detail = test_response.json()
+                except:
+                    api_error_detail = test_response.text
+            elif test_response.status_code == 200:
+                api_role = "Token válido e com permissão"
+            
+            # Testa também um POST para verificar permissões específicas
+            test_post_data = {
+                'id_funcional': 'TEST999',
+                'nome_professor': 'Teste',
+                'sobrenome_professor': 'Debug',
+                'email_institucional': 'teste.debug@docente.unip.br',
+                'password': '123456'
+            }
+            test_post_response = requests.post(f"{API_BASE_URL}/professores/", json=test_post_data, headers=headers, timeout=5)
+            test_post_result = {
+                'status_code': test_post_response.status_code,
+                'response': test_post_response.text[:200] if test_post_response.text else 'Sem resposta'
+            }
+            
+        except Exception as e:
+            api_role = f"Erro ao testar: {str(e)}"
+    
     debug_info = {
         'access_token': token,
         'token_length': len(token) if token != 'N/A' else 0,
         'token_preview': token[:50] + '...' if token != 'N/A' and len(token) > 50 else token,
+        'token_valid': token_valid,
+        'api_response': api_role,
+        'api_error_detail': api_error_detail,
+        'test_post_result': test_post_result,
         'user_id': user.get('id', 'N/A'),
         'user_email': user.get('email', 'N/A'),
         'user_role': user.get('tipo', 'N/A'),
-        'session_exists': 'user' in session
+        'user_role_normalized': user.get('tipo', 'N/A').lower() if user.get('tipo') else 'N/A',
+        'session_exists': 'user' in session,
+        'session_keys': list(user.keys()) if user else [],
+        'expected_roles': ['admin', 'coordenador'],
+        'role_match': user.get('tipo', '').lower() in ['admin', 'coordenador'] if user.get('tipo') else False
     }
     
     # Retorna como JSON para fácil visualização
     return jsonify(debug_info), 200
+
+# Rota para verificar e corrigir o role do usuário atual
+@app.route('/debug/check-role')
+@login_required
+def check_user_role():
+    # Verifica o role do usuário atual e compara com o esperado
+    user = session.get('user', {})
+    token = user.get('access_token', 'N/A')
+    user_email = user.get('email', 'N/A')
+    user_role_session = user.get('tipo', 'N/A')
+    
+    # Tenta buscar o role diretamente da API usando o token
+    role_from_api = None
+    api_error = None
+    
+    if token != 'N/A':
+        try:
+            headers = get_auth_headers()
+            # Faz uma requisição que retorna informações do usuário
+            # Usa o endpoint de professores para testar, mas o importante é ver o role
+            test_response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=5)
+            
+            if test_response.status_code == 200:
+                role_from_api = "Token válido - role verificado via API"
+            elif test_response.status_code == 401:
+                api_error = "Token inválido ou expirado"
+            elif test_response.status_code == 403:
+                api_error = "Token válido mas sem permissão (role pode estar incorreto)"
+                try:
+                    error_detail = test_response.json()
+                    api_error = error_detail.get('detail', api_error)
+                except:
+                    pass
+        except Exception as e:
+            api_error = f"Erro ao verificar: {str(e)}"
+    
+    check_info = {
+        'user_email': user_email,
+        'role_in_session': user_role_session,
+        'role_normalized': user_role_session.lower() if user_role_session != 'N/A' else 'N/A',
+        'expected_roles': ['admin', 'coordenador'],
+        'role_is_valid': user_role_session.lower() in ['admin', 'coordenador'] if user_role_session != 'N/A' else False,
+        'token_status': 'present' if token != 'N/A' else 'missing',
+        'api_response': role_from_api or api_error,
+        'recommendation': None
+    }
+    
+    # Gera recomendação
+    if not check_info['role_is_valid']:
+        check_info['recommendation'] = f"O role '{user_role_session}' não está nos roles permitidos (admin, coordenador). Verifique o user_metadata no Supabase."
+    elif api_error and '403' in api_error:
+        check_info['recommendation'] = "O role na sessão está correto, mas a API está rejeitando. O role no Supabase pode estar diferente. Verifique o user_metadata."
+    elif api_error and '401' in api_error:
+        check_info['recommendation'] = "O token está expirado ou inválido. Faça logout e login novamente."
+    else:
+        check_info['recommendation'] = "Tudo parece estar correto. Se ainda houver problemas, verifique os logs do servidor."
+    
+    return jsonify(check_info), 200
 
 # ===== ROTAS PROTEGIDAS =====
 
 @app.route('/dashboard')
 @login_required  
 def dashboard():
-    """ Dashboard principal - busca avisos da API """
+    # Dashboard principal - busca avisos da API
     print(f"[DEBUG] Dashboard acessado por: {session.get('user', {}).get('nome', 'Desconhecido')}")
     
     # Inicializa estrutura de dados do dashboard
@@ -391,8 +643,7 @@ def dashboard():
             # Continua sem avisos, mas não bloqueia o dashboard
         elif response.status_code == 401:
             print(f"[ERROR] Avisos - Status 401 - Token inválido ou expirado")
-            flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
-            return redirect(url_for('index'))
+            return handle_token_expiration()
         else:
             print(f"[WARN] Avisos retornou status {response.status_code}")
             try:
@@ -417,7 +668,7 @@ def dashboard():
 @app.route('/test-api')
 @login_required
 def test_api():
-    """ Testa conectividade com a API - útil para debug """
+    # Testa conectividade com a API - útil para debug
     try:
         print(f"[DEBUG] Testando API em: {API_BASE_URL}")
         
@@ -497,7 +748,7 @@ def test_api():
 @app.route('/docentes')
 @login_required
 def docentes_list():
-    """ Lista docentes - busca da API """
+    # Lista docentes - busca da API
     try:
         print(f"[DEBUG] Buscando professores em: {API_BASE_URL}/professores/lista_professores/")
         headers = get_auth_headers()
@@ -524,7 +775,7 @@ def docentes_list():
 @login_required
 @role_required(['admin', 'coordenador'])
 def docentes_add():
-    """ Adiciona novo docente via API """
+    # Adiciona novo docente via API
     # Buscar disciplinas da API para popular select
     disciplinas = []
     try:
@@ -569,22 +820,98 @@ def docentes_add():
                 flash("Formato de email inválido.", "error")
                 return render_template('docentes/add.html', disciplinas=disciplinas)
             
-            # Coleta dados extras (não enviados para API ainda)
-            dados_extras = {
-                'nivel_acesso': request.form.get('nivel_acesso', ''),
-                'disciplinas': request.form.getlist('disciplinas'),
-                'dia_semana': request.form.get('dia_semana', ''),
-                'horario_inicio': request.form.get('horario_inicio', ''),
-                'horario_fim': request.form.get('horario_fim', '')
-            }
+            # Coleta IDs de disciplinas selecionadas do formulário
+            disciplinas_ids = request.form.getlist('disciplinas')
+            disciplinas_ids = [d for d in disciplinas_ids if d]  # Remove valores vazios
+            
+            # Converte IDs de disciplinas para nomes (API espera nomes, não IDs)
+            disciplina_nomes = []
+            if disciplinas_ids and disciplinas:
+                for disc_id in disciplinas_ids:
+                    for disciplina in disciplinas:
+                        disc_id_api = str(disciplina.get('id_disciplina', ''))
+                        disc_id_form = str(disc_id).strip()
+                        if disc_id_api == disc_id_form:
+                            nome_disciplina = disciplina.get('nome_disciplina', '')
+                            if nome_disciplina and nome_disciplina not in disciplina_nomes:
+                                disciplina_nomes.append(nome_disciplina)
+                                break
+            
+            # Adiciona disciplinas ao payload se houver
+            if disciplina_nomes:
+                docente_data['disciplina_nomes'] = disciplina_nomes
+            
+            # Coleta dados de atendimento se fornecidos
+            dia_semana = request.form.get('dia_semana', '').strip()
+            horario_inicio = request.form.get('horario_inicio', '').strip()
+            horario_fim = request.form.get('horario_fim', '').strip()
+            
+            if dia_semana:
+                docente_data['dias_atendimento'] = [dia_semana]
+            
+            if horario_inicio:
+                # Converte formato HH:MM para time object se necessário
+                try:
+                    docente_data['atendimento_hora_inicio'] = horario_inicio
+                except:
+                    pass
+            
+            if horario_fim:
+                try:
+                    docente_data['atendimento_hora_fim'] = horario_fim
+                except:
+                    pass
             
             print(f"[DEBUG] Criando docente: {docente_data}")
+            print(f"[DEBUG] Disciplinas selecionadas (IDs): {disciplinas_ids}")
+            print(f"[DEBUG] Disciplinas convertidas (nomes): {disciplina_nomes}")
             print(f"[DEBUG] URL da API: {API_BASE_URL}/professores/")
             headers = get_auth_headers()
+            
+            # Debug detalhado dos headers
+            print(f"[DEBUG] Headers sendo enviados: {list(headers.keys())}")
+            if 'Authorization' in headers:
+                auth_header = headers['Authorization']
+                print(f"[DEBUG] Authorization header: {auth_header[:50]}...")
+                # Verifica se o header tem o formato correto
+                if not auth_header.startswith('Bearer '):
+                    print("[ERROR] Authorization header não começa com 'Bearer '!")
+                    flash("Erro de configuração de autenticação. Por favor, faça logout e login novamente.", "error")
+                    return render_template('docentes/add.html', disciplinas=disciplinas)
+            else:
+                print("[ERROR] Authorization header NÃO está presente!")
+                flash("Erro de autenticação: Token não encontrado. Por favor, faça logout e login novamente.", "error")
+                return render_template('docentes/add.html', disciplinas=disciplinas)
+            
+            # Debug da sessão
+            user_info = session.get('user', {})
+            print(f"[DEBUG] User na sessão: role={user_info.get('tipo')}, email={user_info.get('email')}, tem_token={'access_token' in user_info}")
+            
+            # Verifica se o token ainda é válido antes de fazer o POST
+            if not check_token_validity():
+                # Se o token expirou, check_token_validity já fez logout e redirecionou
+                # Mas se retornou False por outro motivo, redireciona aqui também
+                if 'user' not in session:
+                    return redirect(url_for('index'))
+            
             response = requests.post(f"{API_BASE_URL}/professores/", json=docente_data, headers=headers, timeout=10)
             print(f"[DEBUG] Status Code: {response.status_code}")
             print(f"[DEBUG] Response Headers: {dict(response.headers)}")
             print(f"[DEBUG] Response Text: {response.text}")
+            
+            # Se for 401, o token expirou - faz logout automático
+            if response.status_code == 401:
+                print("[INFO] Token expirado detectado na resposta - fazendo logout automático")
+                return handle_token_expiration()
+            elif response.status_code == 403:
+                try:
+                    error_detail = response.json()
+                    print(f"[ERROR] Detalhes do erro 403: {error_detail}")
+                    error_msg = error_detail.get('detail', 'Acesso negado')
+                    flash(f"Acesso negado: {error_msg}. Verifique se seu usuário tem permissão de coordenador ou admin.", "error")
+                except:
+                    print(f"[ERROR] Resposta 403 (texto): {response.text}")
+                    flash("Acesso negado (HTTP 403). Verifique se seu usuário tem permissão de coordenador ou admin.", "error")
             
             if response.status_code == 201:
                 try:
@@ -611,14 +938,16 @@ def docentes_add():
             
         except requests.exceptions.HTTPError as e:
             print(f"[DEBUG] HTTPError: {e}")
-            if e.response.status_code == 422:
+            if e.response and e.response.status_code == 401:
+                return handle_token_expiration()
+            elif e.response and e.response.status_code == 422:
                 try:
                     error_detail = e.response.json()
                     flash(f"Dados inválidos: {error_detail}", "error")
                 except:
                     flash("Dados inválidos. Verifique o formato.", "error")
             else:
-                flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
+                flash(f"Erro no servidor (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
         except requests.exceptions.RequestException as e:
             print(f"[DEBUG] RequestException: {e}")
             flash("Erro de comunicação com o servidor.", "error")
@@ -631,7 +960,7 @@ def docentes_add():
 @app.route('/docentes/view/<id>')
 @login_required
 def docentes_view(id):
-    """ Visualiza docente - busca da API ou sessão """
+    # Visualiza docente - busca da API ou sessão
     try:
         print(f"[DEBUG] Buscando professor {id} (tipo: {type(id)})")
         headers = get_auth_headers()
@@ -701,7 +1030,7 @@ def docentes_view(id):
 @login_required
 @role_required(['admin', 'coordenador'])
 def docentes_edit(id):
-    """ Edita docente - GET usa mock, POST envia para API """
+    # Edita docente - GET usa mock, POST envia para API
     # Buscar disciplinas da API para popular select
     disciplinas = []
     try:
@@ -721,23 +1050,50 @@ def docentes_edit(id):
             nome_professor = partes_nome[0] if partes_nome else ''
             sobrenome_professor = partes_nome[1] if len(partes_nome) > 1 else ''
             
-            # Dados para API PUT (apenas campos editáveis conforme documentação)
+            # Dados para API PUT
             docente_data = {
                 'nome_professor': nome_professor,
                 'sobrenome_professor': sobrenome_professor,
                 'email_institucional': request.form.get('email', '')
             }
             
-            # Dados extras para futura implementação (armazenados localmente)
-            dados_extras = {
-                'nivel_acesso': request.form.get('nivel_acesso', ''),
-                'disciplinas': request.form.getlist('disciplinas'),
-                'dia_semana': request.form.get('dia_semana', ''),
-                'horario_inicio': request.form.get('horario_inicio', ''),
-                'horario_fim': request.form.get('horario_fim', '')
-            }
+            # Coleta IDs de disciplinas selecionadas do formulário
+            disciplinas_ids = request.form.getlist('disciplinas')
+            disciplinas_ids = [d for d in disciplinas_ids if d]  # Remove valores vazios
             
-            print(f"[DEBUG] Dados extras (futura implementação): {dados_extras}")
+            # Converte IDs de disciplinas para nomes (API espera nomes, não IDs)
+            disciplina_nomes = []
+            if disciplinas_ids and disciplinas:
+                for disc_id in disciplinas_ids:
+                    for disciplina in disciplinas:
+                        disc_id_api = str(disciplina.get('id_disciplina', ''))
+                        disc_id_form = str(disc_id).strip()
+                        if disc_id_api == disc_id_form:
+                            nome_disciplina = disciplina.get('nome_disciplina', '')
+                            if nome_disciplina and nome_disciplina not in disciplina_nomes:
+                                disciplina_nomes.append(nome_disciplina)
+                                break
+            
+            # Adiciona disciplinas ao payload se houver
+            if disciplina_nomes:
+                docente_data['disciplina_nomes'] = disciplina_nomes
+            
+            # Coleta dados de atendimento se fornecidos
+            dia_semana = request.form.get('dia_semana', '').strip()
+            horario_inicio = request.form.get('horario_inicio', '').strip()
+            horario_fim = request.form.get('horario_fim', '').strip()
+            
+            if dia_semana:
+                docente_data['dias_atendimento'] = [dia_semana]
+            
+            if horario_inicio:
+                docente_data['atendimento_hora_inicio'] = horario_inicio
+            
+            if horario_fim:
+                docente_data['atendimento_hora_fim'] = horario_fim
+            
+            print(f"[DEBUG] Disciplinas selecionadas (IDs): {disciplinas_ids}")
+            print(f"[DEBUG] Disciplinas convertidas (nomes): {disciplina_nomes}")
             
             print(f"[DEBUG] Atualizando docente {id}: {docente_data}")
             headers = get_auth_headers()
@@ -769,14 +1125,16 @@ def docentes_edit(id):
             
         except requests.exceptions.HTTPError as e:
             print(f"[DEBUG] HTTPError: {e}")
-            if e.response.status_code == 422:
+            if e.response and e.response.status_code == 401:
+                return handle_token_expiration()
+            elif e.response and e.response.status_code == 422:
                 try:
                     error_detail = e.response.json()
                     flash(f"Dados inválidos: {error_detail}", "error")
                 except:
                     flash("Dados inválidos. Verifique o formato.", "error")
             else:
-                flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
+                flash(f"Erro no servidor (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
             # Em caso de erro, redireciona de volta para a página de edição para que o usuário possa corrigir
             return redirect(url_for('docentes_edit', id=id))
         except requests.exceptions.RequestException as e:
@@ -872,7 +1230,7 @@ def docentes_edit(id):
 @login_required
 @role_required(['admin', 'coordenador'])
 def docentes_delete(id):
-    """ Remove docente via API """
+    # Remove docente via API
     try:
         print(f"[DEBUG] Removendo docente {id} (tipo: {type(id)})")
         # DELETE /professores/delete/{id} - endpoint correto da API
@@ -896,7 +1254,9 @@ def docentes_delete(id):
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
         print(f"[DEBUG] Response: {e.response.text if e.response else 'N/A'}")
-        if e.response and e.response.status_code == 404:
+        if e.response and e.response.status_code == 401:
+            return handle_token_expiration()
+        elif e.response and e.response.status_code == 404:
             flash("Docente não encontrado.", "error")
         elif e.response and e.response.status_code == 403:
             flash("Você não tem permissão para remover este docente.", "error")
@@ -916,11 +1276,11 @@ def docentes_delete(id):
 # ===== FUNÇÕES AUXILIARES PARA DOCENTES =====
 
 def get_docentes_list():
-    """ Retorna a lista de docentes da sessão (vem da API) ou lista vazia """
+    # Retorna a lista de docentes da sessão (vem da API) ou lista vazia
     return session.get('docentes_list', [])
 
 def add_docente_to_list(docente_data, response_data=None):
-    """ Adiciona um novo docente à lista da sessão """
+    # Adiciona um novo docente à lista da sessão
     if 'docentes_list' not in session:
         session['docentes_list'] = []
     
@@ -954,7 +1314,7 @@ def add_docente_to_list(docente_data, response_data=None):
     return novo_docente
 
 def remove_docente_from_list(docente_id):
-    """ Remove um docente da lista da sessão """
+    # Remove um docente da lista da sessão
     if 'docentes_list' in session:
         original_count = len(session['docentes_list'])
         # Compara IDs como string para garantir que funcione independente do tipo
@@ -978,11 +1338,9 @@ def _join_url(base, path):
     return f"{base}{path if path.startswith('/') else '/' + path}"
 
 def resolve_content_endpoint():
-    """
-    Tenta detectar qual endpoint de conteúdo está disponível na API.
-    Retorna o primeiro endpoint que responder (mesmo com erro 400 ou 405, pois indica que existe).
-    Se nenhum for encontrado, retorna '/conteudo' como padrão.
-    """
+    # Tenta detectar qual endpoint de conteúdo está disponível na API
+    # Retorna o primeiro endpoint que responder (mesmo com erro 400 ou 405, pois indica que existe)
+    # Se nenhum for encontrado, retorna '/conteudo' como padrão
     print(f"[DEBUG] Tentando detectar endpoint de conteúdo em {API_BASE_URL}")
     for cand in CONTENT_ENDPOINT_CANDIDATES:
         try:
@@ -1005,7 +1363,7 @@ def resolve_content_endpoint():
     return "/conteudo"
 
 def get_conteudos_api():
-    """Busca conteúdo da base de conhecimento da API"""
+    # Busca conteúdo da base de conhecimento da API
     try:
         headers = get_auth_headers()
         # Usa o endpoint correto para listar todos os conhecimentos
@@ -1091,7 +1449,8 @@ def get_conteudos_api():
         else:
             print(f"[WARN] Erro ao buscar base de conhecimento: Status {resp.status_code}")
             if resp.status_code == 401:
-                print(f"[ERROR] Não autorizado - verifique o token de autenticação")
+                print(f"[ERROR] Não autorizado - token expirado")
+                return handle_token_expiration()
             elif resp.status_code == 403:
                 print(f"[ERROR] Acesso negado")
             else:
@@ -1105,6 +1464,8 @@ def get_conteudos_api():
         print(f"[ERROR] Erro HTTP ao buscar base de conhecimento: {e}")
         if hasattr(e, 'response') and e.response is not None:
             print(f"[ERROR] Status: {e.response.status_code}")
+            if e.response.status_code == 401:
+                return handle_token_expiration()
     except requests.exceptions.RequestException as e:
         print(f"[ERROR] Erro de requisição ao buscar base de conhecimento: {e}")
     except Exception as e:
@@ -1115,7 +1476,7 @@ def get_conteudos_api():
     return []
 
 def get_disciplina_id_by_name(disciplina_nome):
-    """Busca o ID da disciplina pelo nome usando a API"""
+    # Busca o ID da disciplina pelo nome usando a API
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/disciplinas/lista_disciplina/", headers=headers, timeout=10)
@@ -1141,11 +1502,9 @@ def get_disciplina_id_by_name(disciplina_nome):
     return None
 
 def create_conteudo_api(data, file_storage=None):
-    """
-    Cria conteúdo usando os endpoints existentes:
-    - /documentos/upload para arquivos
-    - /baseconhecimento/ para metadados
-    """
+    # Cria conteúdo usando os endpoints existentes:
+    # - /documentos/upload para arquivos
+    # - /baseconhecimento/ para metadados
     user_email = session.get('user', {}).get('email', 'unknown')
     print(f"[INFO] Criando conteúdo - Usuário: {user_email}")
     print(f"[DEBUG] Dados recebidos: {data}")
@@ -1307,7 +1666,7 @@ def create_conteudo_api(data, file_storage=None):
         return False, error_msg
 
 def update_conteudo_api(conteudo_id, data, file_storage=None):
-    """Atualiza conteúdo usando /baseconhecimento/update/{item_id}"""
+    # Atualiza conteúdo usando /baseconhecimento/update/{item_id}
     try:
         headers = get_auth_headers()
         titulo = data.get('titulo', '')
@@ -1426,7 +1785,7 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
         return False
 
 def delete_conteudo_api(conteudo_id):
-    """Deleta conteúdo usando /baseconhecimento/delete/{item_id}"""
+    # Deleta conteúdo usando /baseconhecimento/delete/{item_id}
     try:
         headers = get_auth_headers()
         resp = requests.delete(
@@ -1445,7 +1804,7 @@ def delete_conteudo_api(conteudo_id):
 # ===== Sessão (fallback local) =====
 
 def get_conteudo_list_session():
-    """ Retorna lista de conteúdos da sessão ou lista vazia se não houver dados """
+    # Retorna lista de conteúdos da sessão ou lista vazia se não houver dados
     return session.get('conteudos_list', [])
 
 def set_conteudo_list_session(items):
@@ -1615,7 +1974,7 @@ def conteudo_edit(conteudo_id):
 @app.route('/conteudo/delete/<conteudo_id>', methods=['POST'])
 @login_required
 def conteudo_delete(conteudo_id):
-    """ Remove conteúdo via API (Supabase) """
+    # Remove conteúdo via API (Supabase)
     try:
         print(f"[DEBUG] Removendo conteúdo {conteudo_id}")
         
@@ -1643,7 +2002,7 @@ def conteudo_delete(conteudo_id):
 @app.route('/avisos')
 @login_required
 def avisos_list():
-    """ Lista avisos - busca da API """
+    # Lista avisos - busca da API
     try:
         print(f"[DEBUG] Buscando avisos em: {API_BASE_URL}/aviso/get_lista_aviso/")
         headers = get_auth_headers()
@@ -1667,7 +2026,7 @@ def avisos_list():
 @app.route('/avisos/add', methods=['GET', 'POST'])
 @login_required
 def avisos_add():
-    """ Adiciona novo aviso via API """
+    # Adiciona novo aviso via API
     # Carregar professores e coordenadores para o formulário
     professores = []
     coordenadores = []
@@ -1771,8 +2130,7 @@ def avisos_add():
                 return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
             elif response.status_code == 401:
                 print(f"[ERROR] POST /aviso/ - Status: 401 - Token inválido ou não fornecido")
-                flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
-                return redirect(url_for('index'))
+                return handle_token_expiration()
             else:
                 response.raise_for_status()
             
@@ -1780,7 +2138,9 @@ def avisos_add():
             status_code = e.response.status_code if hasattr(e, 'response') else 'N/A'
             print(f"[ERROR] POST /aviso/ - HTTPError: Status {status_code}")
             print(f"[DEBUG] HTTPError: {e}")
-            if e.response.status_code == 422:
+            if e.response and e.response.status_code == 401:
+                return handle_token_expiration()
+            elif e.response and e.response.status_code == 422:
                 try:
                     error_detail = e.response.json()
                     flash(f"Dados inválidos: {error_detail}", "error")
@@ -1801,8 +2161,7 @@ def avisos_add():
                 return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
             elif e.response.status_code == 401:
                 print(f"[ERROR] POST /aviso/ - Status: 401 - Token inválido ou não fornecido")
-                flash("Sua sessão expirou. Por favor, faça login novamente.", "error")
-                return redirect(url_for('index'))
+                return handle_token_expiration()
             else:
                 flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
                 return render_template('avisos/add.html', professores=professores, coordenadores=coordenadores)
@@ -1836,7 +2195,9 @@ def avisos_view(aviso_id):
             
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
-        flash(f"Erro ao buscar aviso (HTTP {e.response.status_code}).", "error")
+        if e.response and e.response.status_code == 401:
+            return handle_token_expiration()
+        flash(f"Erro ao buscar aviso (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] RequestException: {e}")
         flash("Erro de comunicação com o servidor.", "error")
@@ -1849,7 +2210,7 @@ def avisos_view(aviso_id):
 @app.route('/avisos/edit/<aviso_id>', methods=['GET', 'POST'])
 @login_required
 def avisos_edit(aviso_id):
-    """ Edita aviso existente """
+    # Edita aviso existente
     if request.method == 'POST':
         try:
             # Coleta dados do formulário
@@ -1965,14 +2326,16 @@ def avisos_edit(aviso_id):
             
         except requests.exceptions.HTTPError as e:
             print(f"[DEBUG] HTTPError: {e}")
-            if e.response.status_code == 422:
+            if e.response and e.response.status_code == 401:
+                return handle_token_expiration()
+            elif e.response and e.response.status_code == 422:
                 try:
                     error_detail = e.response.json()
                     flash(f"Dados inválidos: {error_detail}", "error")
                 except:
                     flash("Dados inválidos. Verifique o formato.", "error")
             else:
-                flash(f"Erro no servidor (HTTP {e.response.status_code}).", "error")
+                flash(f"Erro no servidor (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
         except requests.exceptions.RequestException as e:
             print(f"[DEBUG] RequestException: {e}")
             flash("Erro de comunicação com o servidor.", "error")
@@ -2018,7 +2381,9 @@ def avisos_edit(aviso_id):
             
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
-        flash(f"Erro ao buscar aviso (HTTP {e.response.status_code}).", "error")
+        if e.response and e.response.status_code == 401:
+            return handle_token_expiration()
+        flash(f"Erro ao buscar aviso (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] RequestException: {e}")
         flash("Erro de comunicação com o servidor.", "error")
@@ -2031,7 +2396,7 @@ def avisos_edit(aviso_id):
 @app.route('/avisos/delete/<aviso_id>', methods=['POST'])
 @login_required
 def avisos_delete(aviso_id):
-    """ Remove aviso via API """
+    # Remove aviso via API
     try:
         print(f"[DEBUG] Removendo aviso {aviso_id}")
         headers = get_auth_headers()
@@ -2047,7 +2412,9 @@ def avisos_delete(aviso_id):
         
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
-        flash(f"Erro ao remover aviso (HTTP {e.response.status_code}).", "error")
+        if e.response and e.response.status_code == 401:
+            return handle_token_expiration()
+        flash(f"Erro ao remover aviso (HTTP {e.response.status_code if e.response else 'N/A'}).", "error")
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] RequestException: {e}")
         flash("Erro de comunicação com o servidor.", "error")
@@ -2061,7 +2428,7 @@ def avisos_delete(aviso_id):
 # ===== ROTAS DE CALENDÁRIO =====
 
 def get_materias_list():
-    """Busca a lista de disciplinas (matérias) da API"""
+    # Busca a lista de disciplinas (matérias) da API
     try:
         headers = get_auth_headers()
         response = requests.get(
@@ -2279,35 +2646,43 @@ def calendario_add():
                         for prof in professores_list:
                             nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
                             if nome_completo == wizard.get('professor'):
-                                professor_id = prof.get('id_professor')
+                                # Campo correto é 'id', não 'id_professor'
+                                professor_id = prof.get('id')
+                                if not professor_id:
+                                    print(f"[WARN] Professor encontrado mas sem ID: {nome_completo}")
+                                    break
+                                
                                 # Associar professor à disciplina via atualização do professor
                                 # A API cria a associação automaticamente quando atualizamos disciplina_nomes
                                 try:
-                                    # Buscar disciplinas atuais do professor
-                                    prof_response = requests.get(
-                                        f"{API_BASE_URL}/professores/get_professor_id/{professor_id}",
+                                    # Buscar disciplinas atuais do professor (se retornadas pela API)
+                                    disciplinas_atual = prof.get('disciplina_nomes', [])
+                                    
+                                    # Se não estiver na lista de disciplinas, adiciona
+                                    nome_disciplina = wizard.get('nome', '')
+                                    if nome_disciplina and nome_disciplina not in disciplinas_atual:
+                                        disciplinas_atual.append(nome_disciplina)
+                                    
+                                    # Atualizar professor com nova disciplina (a API cria a associação)
+                                    update_response = requests.put(
+                                        f"{API_BASE_URL}/professores/update/{professor_id}",
+                                        json={'disciplina_nomes': disciplinas_atual},
                                         headers=headers,
                                         timeout=10
                                     )
-                                    if prof_response.status_code == 200:
-                                        prof_data = prof_response.json()
-                                        disciplinas_atual = prof_data.get('disciplina_nomes', [])
-                                        if wizard.get('nome') not in disciplinas_atual:
-                                            disciplinas_atual.append(wizard.get('nome'))
-                                        
-                                        # Atualizar professor com nova disciplina (a API cria a associação)
-                                        update_response = requests.put(
-                                            f"{API_BASE_URL}/professores/update/{professor_id}",
-                                            json={'disciplina_nomes': disciplinas_atual},
-                                            headers=headers,
-                                            timeout=10
-                                        )
-                                        if update_response.status_code == 200:
-                                            print(f"[DEBUG] Professor associado à disciplina")
-                                        else:
-                                            print(f"[WARN] Erro ao atualizar professor: {update_response.text}")
+                                    if update_response.status_code == 200:
+                                        print(f"[DEBUG] Professor {nome_completo} associado à disciplina {nome_disciplina}")
+                                    else:
+                                        error_text = update_response.text
+                                        try:
+                                            error_detail = update_response.json().get('detail', error_text)
+                                        except:
+                                            error_detail = error_text
+                                        print(f"[WARN] Erro ao atualizar professor: {error_detail}")
                                 except Exception as e:
                                     print(f"[WARN] Erro ao associar professor: {e}")
+                                    import traceback
+                                    traceback.print_exc()
                                 break
                 
                 # 3. Criar cronograma na API (se houver dados)
@@ -2364,7 +2739,7 @@ def calendario_add():
                                     for prof in professores_list:
                                         nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
                                         if nome_completo == dados_prova.get('aplicador'):
-                                            id_aplicador = prof.get('id_professor')
+                                            id_aplicador = prof.get('id')  # Campo correto é 'id', não 'id_professor'
                                             break
                             
                             # Formatar hora para HH:MM:SS se necessário
@@ -2436,13 +2811,12 @@ def calendario_add():
 @app.route('/calendario/view/<materia_id>')
 @login_required
 def calendario_view(materia_id):
-    """Visualiza detalhes de uma disciplina específica"""
+    # Visualiza detalhes de uma disciplina específica
     materia = None
     try:
         headers = get_auth_headers()
-        # A API tem um bug: a URL usa {disciplina} mas o parâmetro da função é disciplina_id
-        # Por isso precisamos passar também como query parameter
-        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}?disciplina_id={materia_id}"
+        # Endpoint GET disciplina por ID - corrigido na API para usar disciplina_id
+        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}"
         print(f"[DEBUG] Buscando disciplina: {url}")
         print(f"[DEBUG] Materia ID recebido: {materia_id} (tipo: {type(materia_id)})")
         
@@ -2509,20 +2883,30 @@ def calendario_view(materia_id):
                             nome_aplicador = 'N/A'
                             if avaliacao.get('id_aplicador'):
                                 try:
-                                    # Tenta buscar o nome do professor/aplicador
+                                    # Buscar o nome do professor/aplicador na lista de professores
                                     aplicador_id = avaliacao.get('id_aplicador')
-                                    aplicador_response = requests.get(
-                                        f"{API_BASE_URL}/professores/get_professor_id/{aplicador_id}",
+                                    aplicador_data = None
+                                    professores_response = requests.get(
+                                        f"{API_BASE_URL}/professores/lista_professores/",
                                         headers=headers,
                                         timeout=5
                                     )
-                                    if aplicador_response.status_code == 200:
-                                        aplicador_data = aplicador_response.json()
+                                    if professores_response.status_code == 200:
+                                        professores_list = professores_response.json()
+                                        for prof in professores_list:
+                                            if str(prof.get('id')) == str(aplicador_id):
+                                                aplicador_data = prof
+                                                break
+                                    
+                                    if aplicador_data:
                                         nome_aplicador = f"{aplicador_data.get('nome_professor', '')} {aplicador_data.get('sobrenome_professor', '')}".strip()
                                         if not nome_aplicador:
                                             nome_aplicador = 'N/A'
+                                    else:
+                                        nome_aplicador = 'N/A'
                                 except Exception as e:
                                     print(f"[WARN] Erro ao buscar nome do aplicador: {e}")
+                                    nome_aplicador = 'N/A'
                             
                             provas_dict[tipo] = {
                                 'data': data_formatada,
@@ -2624,7 +3008,7 @@ def calendario_edit(materia_id):
     
     try:
         # Buscar disciplina da API
-        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}?disciplina_id={materia_id}"
+        url = f"{API_BASE_URL}/disciplinas/get_diciplina_id/{materia_id}"
         response = requests.get(url, headers=headers, timeout=10)
         
         if response.status_code == 200:
@@ -2671,17 +3055,30 @@ def calendario_edit(materia_id):
                             nome_aplicador = 'N/A'
                             if avaliacao.get('id_aplicador'):
                                 try:
+                                    # Buscar o nome do professor/aplicador na lista de professores
                                     aplicador_id = avaliacao.get('id_aplicador')
-                                    aplicador_response = requests.get(
-                                        f"{API_BASE_URL}/professores/get_professor_id/{aplicador_id}",
+                                    aplicador_data = None
+                                    professores_response = requests.get(
+                                        f"{API_BASE_URL}/professores/lista_professores/",
                                         headers=headers,
                                         timeout=5
                                     )
-                                    if aplicador_response.status_code == 200:
-                                        aplicador_data = aplicador_response.json()
+                                    if professores_response.status_code == 200:
+                                        professores_list = professores_response.json()
+                                        for prof in professores_list:
+                                            if str(prof.get('id')) == str(aplicador_id):
+                                                aplicador_data = prof
+                                                break
+                                    
+                                    if aplicador_data:
                                         nome_aplicador = f"{aplicador_data.get('nome_professor', '')} {aplicador_data.get('sobrenome_professor', '')}".strip()
+                                        if not nome_aplicador:
+                                            nome_aplicador = 'N/A'
+                                    else:
+                                        nome_aplicador = 'N/A'
                                 except Exception as e:
                                     print(f"[WARN] Erro ao buscar nome do aplicador: {e}")
+                                    nome_aplicador = 'N/A'
                             
                             provas_dict[tipo] = {
                                 'data': data_prova,
@@ -2888,32 +3285,41 @@ def calendario_edit(materia_id):
                         for prof in professores_list:
                             nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
                             if nome_completo == wizard.get('professor'):
-                                professor_id = prof.get('id_professor')
-                                # Buscar disciplinas atuais do professor
+                                # Campo correto é 'id', não 'id_professor'
+                                professor_id = prof.get('id')
+                                if not professor_id:
+                                    print(f"[WARN] Professor encontrado mas sem ID: {nome_completo}")
+                                    break
+                                
+                                # Buscar disciplinas atuais do professor (se retornadas pela API)
                                 try:
-                                    prof_response = requests.get(
-                                        f"{API_BASE_URL}/professores/get_professor_id/{professor_id}",
+                                    disciplinas_atual = prof.get('disciplina_nomes', [])
+                                    
+                                    # Se a disciplina não está na lista, adiciona
+                                    nome_disciplina = wizard.get('nome', '')
+                                    if nome_disciplina and nome_disciplina not in disciplinas_atual:
+                                        disciplinas_atual.append(nome_disciplina)
+                                    
+                                    # Atualizar professor com disciplinas (a API atualiza as relações)
+                                    update_response = requests.put(
+                                        f"{API_BASE_URL}/professores/update/{professor_id}",
+                                        json={'disciplina_nomes': disciplinas_atual},
                                         headers=headers,
                                         timeout=10
                                     )
-                                    if prof_response.status_code == 200:
-                                        prof_data = prof_response.json()
-                                        disciplinas_atual = prof_data.get('disciplina_nomes', [])
-                                        # Se a disciplina não está na lista, adiciona
-                                        if wizard.get('nome') not in disciplinas_atual:
-                                            disciplinas_atual.append(wizard.get('nome'))
-                                        
-                                        # Atualizar professor com disciplinas
-                                        update_response = requests.put(
-                                            f"{API_BASE_URL}/professores/update/{professor_id}",
-                                            json={'disciplina_nomes': disciplinas_atual},
-                                            headers=headers,
-                                            timeout=10
-                                        )
-                                        if update_response.status_code == 200:
-                                            print(f"[DEBUG] Professor atualizado com sucesso")
+                                    if update_response.status_code == 200:
+                                        print(f"[DEBUG] Professor {nome_completo} atualizado com disciplina {nome_disciplina}")
+                                    else:
+                                        error_text = update_response.text
+                                        try:
+                                            error_detail = update_response.json().get('detail', error_text)
+                                        except:
+                                            error_detail = error_text
+                                        print(f"[WARN] Erro ao atualizar professor: {error_detail}")
                                 except Exception as e:
                                     print(f"[WARN] Erro ao atualizar professor: {e}")
+                                    import traceback
+                                    traceback.print_exc()
                                 break
                 
                 # 3. Buscar cronograma existente e atualizar ou criar
@@ -3012,7 +3418,7 @@ def calendario_edit(materia_id):
                                 for prof in professores_list:
                                     nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
                                     if nome_completo == dados_prova.get('aplicador'):
-                                        id_aplicador = prof.get('id_professor')
+                                        id_aplicador = prof.get('id')  # Campo correto é 'id', não 'id_professor'
                                         break
                         
                         avaliacao_update = {
@@ -3097,7 +3503,7 @@ def calendario_edit(materia_id):
 @login_required
 @role_required(['admin', 'professor', 'coordenador'])
 def calendario_delete(materia_id):
-    """ Remove disciplina da API """
+    # Remove disciplina da API
     try:
         headers = get_auth_headers()
         response = requests.delete(
@@ -3128,13 +3534,13 @@ def calendario_delete(materia_id):
 @app.route('/infos-curso')
 @login_required
 def infos_curso_list():
-    """ Lista informações do curso """
+    # Lista informações do curso
     return render_template('infos_curso/list.html', user=session.get('user', {}))
 
 @app.route('/infos-curso/add', methods=['GET', 'POST'])
 @login_required
 def infos_curso_add():
-    """ Adicionar nova informação do curso """
+    # Adicionar nova informação do curso
     if request.method == 'POST':
         tipo = request.form.get('tipo')
 
@@ -3158,7 +3564,7 @@ def infos_curso_add():
 @app.route('/infos-curso/add/aps', methods=['GET', 'POST'])
 @login_required
 def infos_curso_add_aps():
-    """ Formulário para adicionar APS """
+    # Formulário para adicionar APS
     if request.method == 'POST':
         try:
             # Obter dados do formulário
@@ -3198,7 +3604,7 @@ def infos_curso_add_aps():
 @app.route('/infos-curso/add/tcc', methods=['GET', 'POST'])
 @login_required
 def infos_curso_add_tcc():
-    """ Formulário multi-etapas para adicionar TCC """
+    # Formulário multi-etapas para adicionar TCC
     step = session.get('tcc_step', 1)
 
     if request.method == 'POST':
@@ -3248,7 +3654,7 @@ def infos_curso_add_tcc():
 @app.route('/infos-curso/add/estagio', methods=['GET', 'POST'])
 @login_required
 def infos_curso_add_estagio():
-    """ Formulário multi-etapas para adicionar Estágio """
+    # Formulário multi-etapas para adicionar Estágio
     step = session.get('estagio_step', 1)
 
     if request.method == 'POST':
@@ -3301,7 +3707,7 @@ def infos_curso_add_estagio():
 @app.route('/infos-curso/add/horas', methods=['GET', 'POST'])
 @login_required
 def infos_curso_add_horas():
-    """ Formulário para adicionar Horas Complementares """
+    # Formulário para adicionar Horas Complementares
     if request.method == 'POST':
         try:
             # Obter dados do formulário
@@ -3339,7 +3745,7 @@ def infos_curso_add_horas():
 @app.route('/alunos')
 @login_required
 def alunos_list():
-    """ Lista alunos - busca da API """
+    # Lista alunos - busca da API
     try:
         print(f"[DEBUG] Buscando alunos em: {API_BASE_URL}/alunos/get_list_alunos/")
         headers = get_auth_headers()
@@ -3361,7 +3767,7 @@ def alunos_list():
 @app.route('/alunos/get_email/<email>')
 @login_required
 def alunos_get_by_email(email):
-    """ Busca aluno por email """
+    # Busca aluno por email
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/alunos/get_email/{email}", headers=headers, timeout=10)
@@ -3375,7 +3781,7 @@ def alunos_get_by_email(email):
 @app.route('/disciplinas')
 @login_required
 def disciplinas_list():
-    """ Lista disciplinas - busca da API """
+    # Lista disciplinas - busca da API
     try:
         print(f"[DEBUG] Buscando disciplinas em: {API_BASE_URL}/disciplinas/lista_disciplina/")
         headers = get_auth_headers()
@@ -3395,7 +3801,7 @@ def disciplinas_list():
 @app.route('/disciplinas/get/<disciplina_id>')
 @login_required
 def disciplinas_get(disciplina_id):
-    """ Busca disciplina por ID """
+    # Busca disciplina por ID
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/disciplinas/get_diciplina_id/{disciplina_id}", headers=headers, timeout=10)
@@ -3409,7 +3815,7 @@ def disciplinas_get(disciplina_id):
 @app.route('/cursos')
 @login_required
 def cursos_list():
-    """ Lista cursos - busca da API """
+    # Lista cursos - busca da API
     try:
         headers = get_auth_headers()
         # Nota: API pode não ter endpoint de lista, verificar
@@ -3427,7 +3833,7 @@ def cursos_list():
 @app.route('/cursos/get/<curso_id>')
 @login_required
 def cursos_get(curso_id):
-    """ Busca curso por ID """
+    # Busca curso por ID
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/curso/get_curso/{curso_id}", headers=headers, timeout=10)
@@ -3441,7 +3847,7 @@ def cursos_get(curso_id):
 @app.route('/cronograma')
 @login_required
 def cronograma_list():
-    """ Lista cronogramas - busca da API """
+    # Lista cronogramas - busca da API
     try:
         headers = get_auth_headers()
         # Nota: API pode precisar de disciplina_id, verificar
@@ -3459,7 +3865,7 @@ def cronograma_list():
 @app.route('/cronograma/disciplina/<disciplina_id>')
 @login_required
 def cronograma_by_disciplina(disciplina_id):
-    """ Busca cronograma por disciplina """
+    # Busca cronograma por disciplina
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/cronograma/disciplina/{disciplina_id}", headers=headers, timeout=10)
@@ -3473,7 +3879,7 @@ def cronograma_by_disciplina(disciplina_id):
 @app.route('/coordenadores')
 @login_required
 def coordenadores_list():
-    """ Lista coordenadores - busca da API """
+    # Lista coordenadores - busca da API
     try:
         print(f"[DEBUG] Buscando coordenadores em: {API_BASE_URL}/coordenador/get_list_coordenador/")
         headers = get_auth_headers()
@@ -3494,7 +3900,7 @@ def coordenadores_list():
 @app.route('/avaliacoes/disciplina/<disciplina_id>')
 @login_required
 def avaliacoes_by_disciplina(disciplina_id):
-    """ Busca avaliações por disciplina """
+    # Busca avaliações por disciplina
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/avaliacao/disciplina/{disciplina_id}", headers=headers, timeout=10)
@@ -3508,7 +3914,7 @@ def avaliacoes_by_disciplina(disciplina_id):
 @app.route('/trabalho_academico', methods=['GET', 'POST'])
 @login_required
 def trabalho_academico_list_create():
-    """ Lista trabalhos acadêmicos ou cria novo """
+    # Lista trabalhos acadêmicos ou cria novo
     if request.method == 'GET':
         try:
             headers = get_auth_headers()
@@ -3531,7 +3937,7 @@ def trabalho_academico_list_create():
 @app.route('/trabalho_academico/<trabalho_id>')
 @login_required
 def trabalho_academico_get(trabalho_id):
-    """ Busca trabalho acadêmico por ID """
+    # Busca trabalho acadêmico por ID
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/trabalho_academico/{trabalho_id}", headers=headers, timeout=10)
@@ -3544,7 +3950,7 @@ def trabalho_academico_get(trabalho_id):
 @app.route('/trabalho_academico/curso/<curso_id>')
 @login_required
 def trabalho_academico_by_curso(curso_id):
-    """ Lista trabalhos acadêmicos por curso """
+    # Lista trabalhos acadêmicos por curso
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/trabalho_academico/curso/{curso_id}", headers=headers, timeout=10)
@@ -3557,7 +3963,7 @@ def trabalho_academico_by_curso(curso_id):
 @app.route('/trabalho_academico/disciplina/<disciplina_id>')
 @login_required
 def trabalho_academico_by_disciplina(disciplina_id):
-    """ Lista trabalhos acadêmicos por disciplina """
+    # Lista trabalhos acadêmicos por disciplina
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/trabalho_academico/disciplina/{disciplina_id}", headers=headers, timeout=10)
@@ -3570,7 +3976,7 @@ def trabalho_academico_by_disciplina(disciplina_id):
 @app.route('/trabalho_academico/update/<trabalho_id>', methods=['PUT'])
 @login_required
 def trabalho_academico_update(trabalho_id):
-    """ Atualiza trabalho acadêmico """
+    # Atualiza trabalho acadêmico
     try:
         headers = get_auth_headers()
         data = request.get_json() if request.is_json else request.form.to_dict()
@@ -3584,7 +3990,7 @@ def trabalho_academico_update(trabalho_id):
 @app.route('/trabalho_academico/delete/<trabalho_id>', methods=['DELETE'])
 @login_required
 def trabalho_academico_delete(trabalho_id):
-    """ Deleta trabalho acadêmico """
+    # Deleta trabalho acadêmico
     try:
         headers = get_auth_headers()
         response = requests.delete(f"{API_BASE_URL}/trabalho_academico/delete/{trabalho_id}", headers=headers, timeout=10)
@@ -3598,7 +4004,7 @@ def trabalho_academico_delete(trabalho_id):
 @app.route('/baseconhecimento', methods=['GET', 'POST'])
 @login_required
 def base_conhecimento_list_create():
-    """ Lista base de conhecimento ou cria novo """
+    # Lista base de conhecimento ou cria novo
     if request.method == 'GET':
         try:
             headers = get_auth_headers()
@@ -3629,7 +4035,7 @@ def base_conhecimento_list_create():
 @app.route('/baseconhecimento/buscar')
 @login_required
 def base_conhecimento_buscar():
-    """ Busca na base de conhecimento """
+    # Busca na base de conhecimento
     try:
         headers = get_auth_headers()
         query = request.args.get('q', '')
@@ -3645,7 +4051,7 @@ def base_conhecimento_buscar():
 @app.route('/baseconhecimento/<item_id>')
 @login_required
 def base_conhecimento_get(item_id):
-    """ Busca base de conhecimento por ID """
+    # Busca base de conhecimento por ID
     try:
         headers = get_auth_headers()
         response = requests.get(f"{API_BASE_URL}/baseconhecimento/get_baseconhecimento_id/{item_id}", headers=headers, timeout=10)
@@ -3658,7 +4064,7 @@ def base_conhecimento_get(item_id):
 @app.route('/baseconhecimento/update/<item_id>', methods=['PUT'])
 @login_required
 def base_conhecimento_update(item_id):
-    """ Atualiza base de conhecimento """
+    # Atualiza base de conhecimento
     try:
         headers = get_auth_headers()
         data = request.get_json() if request.is_json else request.form.to_dict()
@@ -3672,7 +4078,7 @@ def base_conhecimento_update(item_id):
 @app.route('/baseconhecimento/delete/<item_id>', methods=['DELETE'])
 @login_required
 def base_conhecimento_delete(item_id):
-    """ Deleta base de conhecimento """
+    # Deleta base de conhecimento
     try:
         headers = get_auth_headers()
         response = requests.delete(f"{API_BASE_URL}/baseconhecimento/delete/{item_id}", headers=headers, timeout=10)
@@ -3686,7 +4092,7 @@ def base_conhecimento_delete(item_id):
 @app.route('/duvidas-frequentes')
 @login_required
 def duvidas_frequentes_list():
-    """ Lista dúvidas frequentes dos alunos (mensagens do chatbot) """
+    # Lista dúvidas frequentes dos alunos (mensagens do chatbot)
     try:
         headers = get_auth_headers()
         user = session.get('user', {})
@@ -3764,7 +4170,7 @@ def duvidas_frequentes_list():
 @app.route('/duvidas-frequentes/delete/<item_id>', methods=['POST'])
 @login_required
 def duvidas_frequentes_delete(item_id):
-    """ Remove mensagem de aluno (dúvida frequente) via API """
+    # Remove mensagem de aluno (dúvida frequente) via API
     try:
         print(f"[DEBUG] Removendo mensagem de aluno {item_id}")
         headers = get_auth_headers()
@@ -3786,7 +4192,9 @@ def duvidas_frequentes_delete(item_id):
             
     except requests.exceptions.HTTPError as e:
         print(f"[DEBUG] HTTPError: {e}")
-        flash(f'Erro ao remover dúvida frequente (HTTP {e.response.status_code}).', 'error')
+        if e.response and e.response.status_code == 401:
+            return handle_token_expiration()
+        flash(f'Erro ao remover dúvida frequente (HTTP {e.response.status_code if e.response else "N/A"}).', 'error')
     except requests.exceptions.RequestException as e:
         print(f"[DEBUG] RequestException: {e}")
         flash('Erro de comunicação com o servidor.', 'error')
@@ -3800,7 +4208,7 @@ def duvidas_frequentes_delete(item_id):
 @app.route('/mensagens_aluno', methods=['GET', 'POST'])
 @login_required
 def mensagens_aluno_list_create():
-    """ Lista mensagens de aluno ou cria nova """
+    # Lista mensagens de aluno ou cria nova
     if request.method == 'GET':
         try:
             headers = get_auth_headers()
@@ -3826,7 +4234,7 @@ def mensagens_aluno_list_create():
 @app.route('/mensagens_aluno/update/<item_id>', methods=['PUT'])
 @login_required
 def mensagens_aluno_update(item_id):
-    """ Atualiza mensagem de aluno """
+    # Atualiza mensagem de aluno
     try:
         headers = get_auth_headers()
         data = request.get_json() if request.is_json else request.form.to_dict()
@@ -3840,7 +4248,7 @@ def mensagens_aluno_update(item_id):
 @app.route('/mensagens_aluno/delete/<item_id>', methods=['DELETE'])
 @login_required
 def mensagens_aluno_delete(item_id):
-    """ Deleta mensagem de aluno """
+    # Deleta mensagem de aluno
     try:
         headers = get_auth_headers()
         response = requests.delete(f"{API_BASE_URL}/mensagens_aluno/delete/{item_id}", headers=headers, timeout=10)
@@ -3852,19 +4260,9 @@ def mensagens_aluno_delete(item_id):
 
 # ===== FUNÇÕES AUXILIARES PARA UPLOAD DE DOCUMENTOS =====
 def upload_documento_por_categoria(file_storage, categoria, **kwargs):
-    """
-    Faz upload de documento usando o endpoint correto baseado na categoria.
-    
-    Args:
-        file_storage: Arquivo do Flask request.files
-        categoria: 'disciplina', 'tcc', 'aps', 'estagio', 'hora_complementares'
-        **kwargs: Parâmetros adicionais conforme a categoria:
-            - disciplina: nome_disciplina (str)
-            - tcc/aps/estagio/hora_complementares: tipo (str), nome_curso (str), data (str)
-    
-    Returns:
-        tuple: (success: bool, data: dict ou error: str)
-    """
+    # Faz upload de documento usando o endpoint correto baseado na categoria
+    # categoria: 'disciplina', 'tcc', 'aps', 'estagio', 'hora_complementares'
+    # Retorna: (success: bool, data: dict ou error: str)
     try:
         headers = get_auth_headers()
         upload_headers = {k: v for k, v in headers.items() if k.lower() != 'content-type'}
@@ -3935,7 +4333,7 @@ def upload_documento_por_categoria(file_storage, categoria, **kwargs):
 @app.route('/documentos/upload', methods=['POST'])
 @login_required
 def documentos_upload():
-    """ Upload de documento genérico (mantido para compatibilidade) """
+    # Upload de documento genérico (mantido para compatibilidade)
     try:
         headers = get_auth_headers()
         upload_headers = {k: v for k, v in headers.items() if k.lower() != 'content-type'}
@@ -3969,7 +4367,7 @@ def documentos_upload():
 @app.route('/ia/gerar-resposta', methods=['POST'])
 @login_required
 def ia_gerar_resposta():
-    """ Gera resposta usando IA """
+    # Gera resposta usando IA
     try:
         headers = get_auth_headers()
         data = request.get_json() if request.is_json else request.form.to_dict()
@@ -3989,7 +4387,7 @@ def ia_gerar_resposta():
 # ===== ERROS =====
 @app.errorhandler(404)
 def handle_404(e):
-    """ Handler para erros 404 - Página não encontrada """
+    # Handler para erros 404 - Página não encontrada
     if request.path.startswith('/debug/'):
         # Para rotas de debug, retorna JSON
         return jsonify({

@@ -165,12 +165,48 @@
                         </svg>
                         <span>Cancelar</span>
                     </a>
-                    <button type="submit" class="form-btn form-btn-submit">
+                    <button type="submit" class="form-btn form-btn-submit" id="btn-cadastrar">
                         <span>Cadastrar</span>
                     </button>
                 </div>
             </form>
         </section>
     </main>
+    
+    <script>
+        // Debug: Verifica se o formulário está sendo submetido
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form.form-panel');
+            const btnCadastrar = document.getElementById('btn-cadastrar');
+            
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    console.log('[DEBUG] Formulário sendo submetido');
+                    console.log('[DEBUG] Método:', form.method);
+                    console.log('[DEBUG] Action:', form.action);
+                    
+                    // Verifica se todos os campos obrigatórios estão preenchidos
+                    const nome = form.querySelector('input[name="nome"]').value.trim();
+                    const email = form.querySelector('input[name="email"]').value.trim();
+                    const matricula = form.querySelector('input[name="matricula"]').value.trim();
+                    
+                    if (!nome || !email || !matricula) {
+                        console.log('[DEBUG] Campos obrigatórios não preenchidos');
+                        e.preventDefault();
+                        alert('Por favor, preencha todos os campos obrigatórios.');
+                        return false;
+                    }
+                    
+                    console.log('[DEBUG] Todos os campos válidos, enviando formulário...');
+                });
+            }
+            
+            if (btnCadastrar) {
+                btnCadastrar.addEventListener('click', function(e) {
+                    console.log('[DEBUG] Botão Cadastrar clicado');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
