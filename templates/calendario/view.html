@@ -124,36 +124,74 @@
         <details class="section-details">
           <summary class="section-summary">Calendário e Horários</summary>
           <div class="section-content calendario-content">
-            <div class="calendario-info-row">
-              <div class="calendario-field">
-                <span class="calendario-field-label">Dia da semana:</span>
-                <span class="calendario-field-value">{{ materia.dia_semana or 'N/A' }}</span>
+            {% if materia.cronogramas and materia.cronogramas|length > 0 %}
+              {% for cronograma in materia.cronogramas %}
+                {% if loop.index > 1 %}
+                  <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;"></div>
+                {% endif %}
+                <div class="calendario-info-row">
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Dia da semana:</span>
+                    <span class="calendario-field-value">{{ cronograma.dia_semana or 'N/A' }}</span>
+                  </div>
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Período:</span>
+                    <span class="calendario-field-value">{{ cronograma.tipo_aula or 'N/A' }}</span>
+                  </div>
+                </div>
+                <div class="calendario-info-row">
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Horário Início:</span>
+                    <span class="calendario-field-value">{{ cronograma.hora_inicio or 'N/A' }}</span>
+                  </div>
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Horário Fim:</span>
+                    <span class="calendario-field-value">{{ cronograma.hora_fim or 'N/A' }}</span>
+                  </div>
+                </div>
+                <div class="calendario-info-row">
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Sala:</span>
+                    <span class="calendario-field-value">{{ cronograma.sala or 'N/A' }}</span>
+                  </div>
+                  <div class="calendario-field">
+                    <span class="calendario-field-label">Bloco:</span>
+                    <span class="calendario-field-value">{{ cronograma.bloco or 'N/A' }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="calendario-info-row">
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Dia da semana:</span>
+                  <span class="calendario-field-value">{{ materia.dia_semana or 'N/A' }}</span>
+                </div>
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Período:</span>
+                  <span class="calendario-field-value">{{ materia.tipo_aula or 'N/A' }}</span>
+                </div>
               </div>
-              <div class="calendario-field">
-                <span class="calendario-field-label">Período:</span>
-                <span class="calendario-field-value">{{ materia.tipo_aula or 'N/A' }}</span>
+              <div class="calendario-info-row">
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Horário Início:</span>
+                  <span class="calendario-field-value">{{ materia.hora_inicio or 'N/A' }}</span>
+                </div>
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Horário Fim:</span>
+                  <span class="calendario-field-value">{{ materia.hora_fim or 'N/A' }}</span>
+                </div>
               </div>
-            </div>
-            <div class="calendario-info-row">
-              <div class="calendario-field">
-                <span class="calendario-field-label">Horário Início:</span>
-                <span class="calendario-field-value">{{ materia.hora_inicio or 'N/A' }}</span>
+              <div class="calendario-info-row">
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Sala:</span>
+                  <span class="calendario-field-value">{{ materia.sala or 'N/A' }}</span>
+                </div>
+                <div class="calendario-field">
+                  <span class="calendario-field-label">Bloco:</span>
+                  <span class="calendario-field-value">{{ materia.bloco or 'N/A' }}</span>
+                </div>
               </div>
-              <div class="calendario-field">
-                <span class="calendario-field-label">Horário Fim:</span>
-                <span class="calendario-field-value">{{ materia.hora_fim or 'N/A' }}</span>
-              </div>
-            </div>
-            <div class="calendario-info-row">
-              <div class="calendario-field">
-                <span class="calendario-field-label">Sala:</span>
-                <span class="calendario-field-value">{{ materia.sala or 'N/A' }}</span>
-              </div>
-              <div class="calendario-field">
-                <span class="calendario-field-label">Bloco:</span>
-                <span class="calendario-field-value">{{ materia.bloco or 'N/A' }}</span>
-              </div>
-            </div>
+            {% endif %}
           </div>
         </details>
 

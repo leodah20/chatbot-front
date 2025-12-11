@@ -2829,8 +2829,8 @@ def calendario_view(materia_id):
             disc = response.json()
             print(f"[DEBUG] Disciplina encontrada: {disc.get('nome_disciplina', 'N/A')}")
             
-            # Busca o cronograma da disciplina
-            cronograma_data = None
+            # Busca todos os cronogramas da disciplina
+            cronogramas_list = []
             try:
                 cronograma_response = requests.get(
                     f"{API_BASE_URL}/cronograma/disciplina/{materia_id}",
@@ -2839,10 +2839,10 @@ def calendario_view(materia_id):
                 )
                 if cronograma_response.status_code == 200:
                     cronogramas = cronograma_response.json()
-                    # Pega o primeiro cronograma se houver
+                    # Mantém todos os cronogramas
                     if cronogramas and len(cronogramas) > 0:
-                        cronograma_data = cronogramas[0]
-                        print(f"[DEBUG] Cronograma encontrado: {cronograma_data.get('dia_semana', 'N/A')}")
+                        cronogramas_list = cronogramas
+                        print(f"[DEBUG] {len(cronogramas_list)} cronograma(s) encontrado(s)")
             except Exception as e:
                 print(f"[WARN] Erro ao buscar cronograma: {e}")
             
@@ -2940,6 +2940,21 @@ def calendario_view(materia_id):
                     return hora_str[:5]  # Pega apenas HH:MM
                 return hora_str
             
+            # Processa todos os cronogramas
+            cronogramas_formatados = []
+            for cronograma in cronogramas_list:
+                cronogramas_formatados.append({
+                    'dia_semana': dias_semana.get(cronograma.get('dia_semana')) if cronograma.get('dia_semana') else None,
+                    'hora_inicio': formatar_hora(cronograma.get('hora_inicio')),
+                    'hora_fim': formatar_hora(cronograma.get('hora_fim')),
+                    'sala': cronograma.get('sala'),
+                    'bloco': cronograma.get('bloco'),
+                    'tipo_aula': cronograma.get('tipo_aula')
+                })
+            
+            # Pega o primeiro cronograma para compatibilidade (caso o template ainda use campos individuais)
+            primeiro_cronograma = cronogramas_formatados[0] if cronogramas_formatados else None
+            
             # Transforma os dados da API para o formato esperado pelo template
             ementa = disc.get('ementa', '') or ''
             materia = {
@@ -2953,13 +2968,15 @@ def calendario_view(materia_id):
                 'professor': 'N/A',
                 'modalidade': disc.get('semestre', 'N/A'),  # Usa semestre como modalidade
                 'ementa_arquivo_nome': None,  # Não há arquivo de ementa na API atual
-                # Dados do cronograma
-                'dia_semana': dias_semana.get(cronograma_data.get('dia_semana')) if cronograma_data and cronograma_data.get('dia_semana') else None,
-                'hora_inicio': formatar_hora(cronograma_data.get('hora_inicio')) if cronograma_data else None,
-                'hora_fim': formatar_hora(cronograma_data.get('hora_fim')) if cronograma_data else None,
-                'sala': cronograma_data.get('sala') if cronograma_data else None,
-                'bloco': cronograma_data.get('bloco') if cronograma_data else None,
-                'tipo_aula': cronograma_data.get('tipo_aula') if cronograma_data else None,
+                # Dados do cronograma (mantido para compatibilidade)
+                'dia_semana': primeiro_cronograma.get('dia_semana') if primeiro_cronograma else None,
+                'hora_inicio': primeiro_cronograma.get('hora_inicio') if primeiro_cronograma else None,
+                'hora_fim': primeiro_cronograma.get('hora_fim') if primeiro_cronograma else None,
+                'sala': primeiro_cronograma.get('sala') if primeiro_cronograma else None,
+                'bloco': primeiro_cronograma.get('bloco') if primeiro_cronograma else None,
+                'tipo_aula': primeiro_cronograma.get('tipo_aula') if primeiro_cronograma else None,
+                # Lista de todos os cronogramas
+                'cronogramas': cronogramas_formatados,
                 'provas': provas_dict  # Avaliações da API
             }
             
@@ -2970,7 +2987,7 @@ def calendario_view(materia_id):
                 if nome_prof:
                     materia['professor'] = nome_prof
             
-            print(f"[DEBUG] Dados do cronograma mapeados: dia={materia['dia_semana']}, hora_inicio={materia['hora_inicio']}, sala={materia['sala']}")
+            print(f"[DEBUG] {len(cronogramas_formatados)} cronograma(s) mapeado(s) para a disciplina")
         elif response.status_code == 404:
             error_detail = response.json().get('detail', 'Disciplina não encontrada') if response.headers.get('content-type', '').startswith('application/json') else response.text
             print(f"[ERROR] Disciplina não encontrada: {error_detail}")
