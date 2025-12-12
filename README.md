@@ -394,6 +394,7 @@ chatbot-front/
 │
 ├── app.py                          # Aplicação principal Flask
 ├── requirements.txt                # Dependências do projeto
+├── LICENSE.txt                     # Licença MIT
 ├── .gitignore                      # Arquivos ignorados pelo Git
 ├── README.md                       # Este arquivo
 │
@@ -611,7 +612,7 @@ chore: tarefas de manutenção
 
 ## 📝 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE.txt](LICENSE.txt) para mais detalhes.
 
 ---
 
