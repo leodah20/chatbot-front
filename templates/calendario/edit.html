@@ -223,14 +223,24 @@
             </div>
           </div>
 
-          <div class="form-field-group">
-            <label class="field-label">Sala:</label>
-            <select class="field-select field-small" name="sala">
-              <option value="">Selecione</option>
-              <option value="427" {% if wizard.sala == '427' %}selected{% endif %}>427</option>
-              <option value="428" {% if wizard.sala == '428' %}selected{% endif %}>428</option>
-              <option value="429" {% if wizard.sala == '429' %}selected{% endif %}>429</option>
-            </select>
+          <div class="form-row-group">
+            <div class="form-field-group">
+              <label class="field-label">Sala:</label>
+              <select class="field-select field-small" name="sala">
+                <option value="">Selecione</option>
+                <option value="427" {% if wizard.sala == '427' %}selected{% endif %}>427</option>
+                <option value="428" {% if wizard.sala == '428' %}selected{% endif %}>428</option>
+                <option value="429" {% if wizard.sala == '429' %}selected{% endif %}>429</option>
+              </select>
+            </div>
+            <div class="form-field-group">
+              <label class="field-label">Tipo de Aula:</label>
+              <select class="field-select field-small" name="tipo_aula">
+                <option value="">Selecione</option>
+                <option value="T" {% if wizard.tipo_aula == 'T' %}selected{% endif %}>T - Teórica</option>
+                <option value="N" {% if wizard.tipo_aula == 'N' %}selected{% endif %}>N - Noturna</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-actions">

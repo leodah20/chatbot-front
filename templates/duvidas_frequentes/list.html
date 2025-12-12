@@ -3,11 +3,247 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dúvidas Frequentes - Painel Administrativo</title>
+  <title>Dashboard - Dúvidas Frequentes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/duvidas_frequentes_styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/conteudo_styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/common_buttons.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Override do CSS padrão para o dashboard */
+    body {
+      font-family: 'Rubik', sans-serif;
+      background-color: #f5f5f5 !important;
+      color: #333;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    
+    /* Ajuste do main-container para não ter max-height fixo */
+    .main-container {
+      max-width: 1400px !important;
+      width: 100% !important;
+      margin: 2rem auto !important;
+      padding: 0 2rem !important;
+      display: block !important;
+      min-height: auto !important;
+      max-height: none !important;
+      overflow-y: visible !important;
+      overflow-x: hidden !important;
+    }
+    
+    /* Garantir que o header não interfira */
+    header {
+      position: relative;
+      z-index: 100;
+    }
+    
+    /* Título da página */
+    .page-title-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+    
+    .page-title-section h2 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: #023D71;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0;
+    }
+    
+    /* Grid de estatísticas */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #023D71;
+      min-width: 0; /* Permite que o card encolha */
+      overflow: hidden; /* Evita overflow */
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      color: #666;
+      margin-bottom: 0.5rem;
+      word-wrap: break-word;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #023D71;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .stat-subtitle {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 0.25rem;
+      word-wrap: break-word;
+    }
+    
+    /* Seções do dashboard */
+    .dashboard-section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+      overflow: visible;
+    }
+    
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #023D71;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    /* Container dos gráficos */
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin: 2rem 0;
+      width: 100%;
+      min-height: 400px;
+      max-width: 100%;
+      overflow: visible;
+    }
+    
+    /* Garantir que os canvas dos gráficos não sejam cortados */
+    .chart-container canvas {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+    
+    /* Lista de dúvidas */
+    .duvidas-list {
+      display: grid;
+      gap: 1rem;
+      width: 100%;
+    }
+    
+    .duvida-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1.25rem;
+      border-left: 4px solid #023D71;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    .duvida-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+    
+    .duvida-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .duvida-pergunta {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #333;
+      flex: 1;
+      min-width: 200px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      line-height: 1.5;
+      hyphens: auto;
+      overflow: visible;
+    }
+    
+    .duvida-count {
+      background: #023D71;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .duvida-topic {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #023D71;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+      word-wrap: break-word;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #999;
+    }
+    
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 0 1rem !important;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .chart-container {
+        height: 300px;
+      }
+      
+      .duvida-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .duvida-count {
+        align-self: flex-end;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -15,14 +251,14 @@
       <div class="header-content">
         <div class="brand-section">
           <a href="{{ url_for('dashboard') }}" style="text-decoration: none;">
-            <img src="https://api.builder.io/api/v1/image/assets/TEMP/c31fcbcb8d593740846e1ea27ca675ca1434c256?width=558" alt="UNIP Logo" class="logo" />
+            <img src="https://api.builder.io/api/v1/image/assets/TEMP/fb4d5eed694b229a53829dcdc98665ec0db0d36c?width=558" alt="UNIP Logo" class="logo" />
           </a>
           <h1 class="site-title">Painel Administrativo</h1>
         </div>
         <div class="user-section">
           <div class="user-info">
-            <div class="user-name">{{ user.nome|title if user else 'Usuário' }}</div>
-            <div class="user-email">{{ user.email if user else '' }}</div>
+            <div class="user-name">{{ user.nome|title if user and user.nome else 'Usuário' }}</div>
+            <div class="user-email">{{ user.email if user and user.email else '' }}</div>
           </div>
           <a href="{{ url_for('logout') }}" class="btn-logout">sair</a>
         </div>
@@ -30,8 +266,8 @@
     </div>
     <div class="header-sub">
       <div class="menu-toggle">
-        <svg class="menu-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M24.9709 7.14124H1.97898M24.9709 1.47656H1.97898M24.9709 12.8059H1.97898M24.9709 18.4706H1.97898" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg class="menu-icon" width="25" height="19" viewBox="0 0 25 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.9916 6.66419H0.999649M23.9916 0.999512H0.999649M23.9916 12.3289H0.999649M23.9916 17.9936H0.999649" stroke="white" stroke-width="1.9993" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span class="menu-text">Menu</span>
         <div class="dropdown-menu">
@@ -48,9 +284,14 @@
   </header>
 
   <main class="main-container">
-    <section class="content-card">
-      <div class="card-header">
-        <svg class="header-icon" viewBox="0 0 175 131" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {% set stats = dashboard_data.get('estatisticas', {}) %}
+    {% set topicos = dashboard_data.get('topicos', []) %}
+    {% set duvidas = dashboard_data.get('duvidas_frequentes', []) %}
+    
+    <!-- Título da Página -->
+    <div class="page-title-section">
+      <h2>
+        <svg width="32" height="32" viewBox="0 0 175 131" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M59.2072 65.3962C59.2072 77.707 49.3226 87.6868 37.1294 87.6868C24.9362 87.6868 15.0516 77.707 15.0516 65.3962C15.0516 53.0855 24.9362 43.1057 37.1294 43.1057C49.3226 43.1057 59.2072 53.0855 59.2072 65.3962Z" fill="#023D71"/>
           <path d="M0.333267 120.539C0.333267 106.088 12.0481 94.3737 26.499 94.3737H47.7601C62.2111 94.3737 73.9258 106.088 73.9258 120.539V121.988C73.9258 126.434 70.3213 130.039 65.8748 130.039H8.38426C3.93782 130.039 0.333267 126.434 0.333267 121.988V120.539Z" fill="#023D71"/>
           <path d="M30.6363 7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978H167.891C171.782 0.375978 174.936 3.52997 174.936 7.4206V15.4329C174.936 19.3235 171.782 22.4775 167.891 22.4775H37.681C33.7903 22.4775 30.6363 19.3235 30.6363 15.4329V7.4206Z" fill="#023D71"/>
@@ -59,163 +300,241 @@
           <path d="M31.5224 37.212C31.033 37.212 30.6363 36.8153 30.6363 36.326V7.4206C30.6363 3.52997 33.7903 0.375978 37.681 0.375978L50.7734 0.376073C51.6062 0.376073 52.2813 1.05118 52.2813 1.88398V16.4531C52.2813 27.9179 42.9872 37.212 31.5224 37.212Z" fill="#023D71"/>
           <path d="M102.786 96.1495H141.747V118.251H102.786V96.1495Z" fill="#023D71"/>
         </svg>
-        <h2 class="page-title">Dúvidas Frequentes</h2>
+        Dashboard - Dúvidas Frequentes
+      </h2>
+    </div>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total de Mensagens</div>
+        <div class="stat-value">{{ dashboard_data.get('total_geral', 0) }}</div>
+        <div class="stat-subtitle">Todas as dúvidas recebidas</div>
       </div>
-      <div class="separator"></div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Dúvidas Frequentes</div>
+        <div class="stat-value">{{ dashboard_data.get('total_frequentes', 0) }}</div>
+        <div class="stat-subtitle">Acima do limiar de frequência</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Limiar de Frequência</div>
+        <div class="stat-value">{{ stats.get('limiar_frequencia', 0) }}</div>
+        <div class="stat-subtitle">Mínimo de ocorrências: {{ stats.get('limiar_frequencia', 0) }}</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Média de Ocorrências</div>
+        <div class="stat-value">{{ stats.get('media', 0) }}</div>
+        <div class="stat-subtitle">Por grupo de dúvidas similares</div>
+      </div>
+    </div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="alert-container">
-            {% for category, message in messages %}
-              <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
+    <!-- Gráfico de Tópicos -->
+    <div class="dashboard-section">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 3V21H21" stroke="#023D71" stroke-width="2" stroke-linecap="round"/>
+          <path d="M7 16L12 11L16 15L21 10" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Distribuição por Tópicos
+      </h2>
+      <div class="chart-container">
+        <canvas id="topicosChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Gráfico de Top Dúvidas -->
+    <div class="dashboard-section">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Top Dúvidas Frequentes
+      </h2>
+      <div class="chart-container">
+        <canvas id="topDuvidasChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Lista de Dúvidas Frequentes -->
+    <div class="dashboard-section">
+      <h2 class="section-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 10L12 15L17 10" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 15V3" stroke="#023D71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Dúvidas Frequentes por Tópico
+      </h2>
+      
+      {% if duvidas %}
+        <div class="duvidas-list">
+          {% for duvida in duvidas %}
+          <div class="duvida-card">
+            <div class="duvida-header">
+              <div class="duvida-pergunta">{{ duvida.get('pergunta', '') }}</div>
+              <div class="duvida-count">{{ duvida.get('count', 0) }}x</div>
+            </div>
+            <span class="duvida-topic">{{ duvida.get('topico', 'Geral') }}</span>
           </div>
-        {% endif %}
-      {% endwith %}
-
-      {% if curso_codigo and curso_nome %}
-      <div class="course-info">
-        <span class="course-code">{{ curso_codigo }} -</span>
-        <span class="course-name">{{ curso_nome }}</span>
-      </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#999"/>
+          </svg>
+          <p>Nenhuma dúvida frequente encontrada acima do limiar de frequência.</p>
+        </div>
       {% endif %}
-
-      <div class="categories-nav">
-        <button class="category-btn active" data-category="materia" type="button">
-          <span>Dúvidas de Matéria</span>
-        </button>
-        <button class="category-btn" data-category="institucional" type="button">
-          <span>Dúvidas de Informações Institucionais</span>
-        </button>
-      </div>
-
-      <div class="duvidas-content">
-        <div id="duvidas-materia" class="duvidas-category active">
-          {% if duvidas_materia and duvidas_materia|length > 0 %}
-            <div class="duvidas-list">
-              {% for mensagem in duvidas_materia %}
-                <div class="duvida-item">
-                  {% if mensagem is mapping %}
-                    {% set pergunta = mensagem.get('primeira_pergunta', '') %}
-                    {% set item_id = mensagem.get('id_mensagem') or mensagem.get('id') %}
-                    {% set topico = mensagem.get('topico', []) %}
-                    {% set feedback = mensagem.get('feedback', '') %}
-                    
-                    {% if pergunta %}
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                        <div style="flex: 1;">
-                          <h3 class="duvida-titulo">{{ pergunta }}</h3>
-                          {% if topico %}
-                            <div class="duvida-tags" style="margin-top: 8px;">
-                              {% if topico is iterable and topico is not string %}
-                                {% for tag in topico %}
-                                  {% if tag %}
-                                    <span class="tag">{{ tag }}</span>
-                                  {% endif %}
-                                {% endfor %}
-                              {% elif topico %}
-                                <span class="tag">{{ topico }}</span>
-                              {% endif %}
-                            </div>
-                          {% endif %}
-                          {% if feedback %}
-                            <p class="duvida-conteudo" style="margin-top: 8px; font-style: italic; color: #666;">
-                              Feedback: {{ feedback }}
-                            </p>
-                          {% endif %}
-                        </div>
-                        {% if item_id %}
-                        <form method="POST" action="{{ url_for('duvidas_frequentes_delete', item_id=item_id) }}" style="display: inline; margin-left: 15px;" onsubmit="return confirm('Tem certeza que deseja remover esta dúvida frequente?')">
-                          <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px 10px; text-decoration: underline;">Apagar</button>
-                        </form>
-                        {% endif %}
-                      </div>
-                    {% endif %}
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="empty-state">
-              <p>Nenhuma dúvida de matéria encontrada.</p>
-            </div>
-          {% endif %}
-        </div>
-
-        <div id="duvidas-institucional" class="duvidas-category">
-          {% if duvidas_institucionais and duvidas_institucionais|length > 0 %}
-            <div class="duvidas-list">
-              {% for mensagem in duvidas_institucionais %}
-                <div class="duvida-item">
-                  {% if mensagem is mapping %}
-                    {% set pergunta = mensagem.get('primeira_pergunta', '') %}
-                    {% set item_id = mensagem.get('id_mensagem') or mensagem.get('id') %}
-                    {% set topico = mensagem.get('topico', []) %}
-                    {% set feedback = mensagem.get('feedback', '') %}
-                    
-                    {% if pergunta %}
-                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                        <div style="flex: 1;">
-                          <h3 class="duvida-titulo">{{ pergunta }}</h3>
-                          {% if topico %}
-                            <div class="duvida-tags" style="margin-top: 8px;">
-                              {% if topico is iterable and topico is not string %}
-                                {% for tag in topico %}
-                                  {% if tag %}
-                                    <span class="tag">{{ tag }}</span>
-                                  {% endif %}
-                                {% endfor %}
-                              {% elif topico %}
-                                <span class="tag">{{ topico }}</span>
-                              {% endif %}
-                            </div>
-                          {% endif %}
-                          {% if feedback %}
-                            <p class="duvida-conteudo" style="margin-top: 8px; font-style: italic; color: #666;">
-                              Feedback: {{ feedback }}
-                            </p>
-                          {% endif %}
-                        </div>
-                        {% if item_id %}
-                        <form method="POST" action="{{ url_for('duvidas_frequentes_delete', item_id=item_id) }}" style="display: inline; margin-left: 15px;" onsubmit="return confirm('Tem certeza que deseja remover esta dúvida frequente?')">
-                          <button type="submit" style="background: none; border: none; color: #dc3545; cursor: pointer; padding: 5px 10px; text-decoration: underline;">Apagar</button>
-                        </form>
-                        {% endif %}
-                      </div>
-                    {% endif %}
-                  {% endif %}
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="empty-state">
-              <p>Nenhuma dúvida institucional encontrada.</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </section>
+    </div>
   </main>
 
   <script>
-    // Toggle entre categorias
-    document.querySelectorAll('.category-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const category = this.dataset.category;
-        
-        // Remove active de todos os botões
-        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-        // Adiciona active no botão clicado
-        this.classList.add('active');
-        
-        // Esconde todas as categorias
-        document.querySelectorAll('.duvidas-category').forEach(cat => cat.classList.remove('active'));
-        // Mostra a categoria selecionada
-        const targetCategory = category === 'materia' ? 'duvidas-materia' : 'duvidas-institucional';
-        document.getElementById(targetCategory).classList.add('active');
-      });
+    // Dados do dashboard
+    const topicosData = {{ topicos | tojson }};
+    const duvidasData = {{ duvidas | tojson }};
+    
+    // Gráfico de Tópicos (Pizza)
+    const ctxTopicos = document.getElementById('topicosChart').getContext('2d');
+    new Chart(ctxTopicos, {
+      type: 'doughnut',
+      data: {
+        labels: topicosData.map(t => t.nome),
+        datasets: [{
+          data: topicosData.map(t => t.count_total),
+          backgroundColor: [
+            '#023D71', '#035a9f', '#0478d1', '#2C8DFA', '#5BA3FF',
+            '#8ABEFF', '#B3D5FF', '#D1E7FF', '#E8F2FF', '#F0F7FF'
+          ],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: {
+            left: 10,
+            right: 10,
+            top: 10,
+            bottom: 10
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              padding: 15,
+              font: {
+                size: 12,
+                family: 'Rubik'
+              },
+              boxWidth: 15,
+              boxHeight: 15
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            },
+            padding: 12,
+            titleFont: {
+              size: 13
+            },
+            bodyFont: {
+              size: 12
+            }
+          }
+        }
+      }
+    });
+    
+    // Gráfico de Top Dúvidas (Barras)
+    const top10 = duvidasData.slice(0, 10);
+    const ctxTop = document.getElementById('topDuvidasChart').getContext('2d');
+    new Chart(ctxTop, {
+      type: 'bar',
+      data: {
+        labels: top10.map(d => {
+          const pergunta = d.pergunta || '';
+          // Trunca para exibição no gráfico, mas mostra completo no tooltip
+          return pergunta.length > 50 ? pergunta.substring(0, 50) + '...' : pergunta;
+        }),
+        datasets: [{
+          label: 'Ocorrências',
+          data: top10.map(d => d.count),
+          backgroundColor: '#023D71',
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        layout: {
+          padding: {
+            left: 10,
+            right: 10,
+            top: 10,
+            bottom: 10
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              title: function(context) {
+                const index = context[0].dataIndex;
+                return top10[index] ? top10[index].pergunta : '';
+              },
+              label: function(context) {
+                return `Ocorrências: ${context.parsed.x}`;
+              }
+            },
+            titleFont: {
+              size: 13
+            },
+            bodyFont: {
+              size: 12
+            },
+            padding: 12,
+            displayColors: false
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: {
+                size: 11
+              }
+            }
+          },
+          y: {
+            ticks: {
+              font: {
+                size: 11
+              },
+              maxRotation: 0,
+              autoSkip: false
+            }
+          }
+        }
+      }
     });
   </script>
 </body>
 </html>
-

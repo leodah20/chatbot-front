@@ -290,9 +290,10 @@ def login():
 
         try:
             print(f"[DEBUG] Tentando login com: {email}")
+            print(f"[DEBUG] Email normalizado: {email.strip().lower()}")
             response = requests.post(auth_url, json=credentials, timeout=10)
             print(f"[DEBUG] Status Code: {response.status_code}")
-            print(f"[DEBUG] Response: {response.text}")
+            print(f"[DEBUG] Response: {response.text[:500]}")  # Limita a 500 caracteres para não poluir logs
             
             # Verifica o status code antes de processar
             if response.status_code != 200:
@@ -842,12 +843,13 @@ def docentes_add():
                 docente_data['disciplina_nomes'] = disciplina_nomes
             
             # Coleta dados de atendimento se fornecidos
-            dia_semana = request.form.get('dia_semana', '').strip()
+            dias_atendimento = request.form.getlist('dias_atendimento')
+            dias_atendimento = [d.strip() for d in dias_atendimento if d.strip()]
             horario_inicio = request.form.get('horario_inicio', '').strip()
             horario_fim = request.form.get('horario_fim', '').strip()
             
-            if dia_semana:
-                docente_data['dias_atendimento'] = [dia_semana]
+            if dias_atendimento:
+                docente_data['dias_atendimento'] = dias_atendimento
             
             if horario_inicio:
                 # Converte formato HH:MM para time object se necessário
@@ -964,32 +966,46 @@ def docentes_view(id):
     try:
         print(f"[DEBUG] Buscando professor {id} (tipo: {type(id)})")
         headers = get_auth_headers()
-        # Tenta buscar da API primeiro
-        response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
         
+        # Tenta buscar professor por ID diretamente (endpoint específico)
         docente = None
-        if response.status_code == 200:
-            professores = response.json()
-            print(f"[DEBUG] Professores encontrados: {len(professores)}")
-            # Compara IDs como string (suporta UUID e números)
-            id_str = str(id).strip()
-            for p in professores:
-                p_id = p.get('id')
-                if p_id is not None:
-                    p_id_str = str(p_id).strip()
-                    if p_id_str == id_str:
-                        docente = p
-                        print(f"[DEBUG] Docente encontrado na API: {docente.get('nome_professor', 'N/A')}")
-                        break
-                    # Tenta também comparar como int se ambos forem numéricos
-                    try:
-                        if str(p_id_str).isdigit() and str(id_str).isdigit():
-                            if int(p_id_str) == int(id_str):
-                                docente = p
-                                print(f"[DEBUG] Docente encontrado na API (comparação numérica): {docente.get('nome_professor', 'N/A')}")
-                                break
-                    except (ValueError, TypeError):
-                        pass
+        try:
+            response = requests.get(f"{API_BASE_URL}/professores/get_professor/{id}", headers=headers, timeout=10)
+            if response.status_code == 200:
+                docente = response.json()
+                print(f"[DEBUG] Docente encontrado via get_professor: {docente.get('nome_professor', 'N/A')}")
+                print(f"[DEBUG] Disciplinas associadas: {docente.get('disciplina_nomes', [])}")
+                print(f"[DEBUG] Dias atendimento: {docente.get('dias_atendimento', [])}")
+                print(f"[DEBUG] Horários: {docente.get('atendimento_hora_inicio')} - {docente.get('atendimento_hora_fim')}")
+        except Exception as e:
+            print(f"[WARN] Erro ao buscar professor por ID: {e}")
+        
+        # Se não encontrou pelo endpoint específico, tenta buscar na lista
+        if not docente:
+            response = requests.get(f"{API_BASE_URL}/professores/lista_professores/", headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                professores = response.json()
+                print(f"[DEBUG] Professores encontrados: {len(professores)}")
+                # Compara IDs como string (suporta UUID e números)
+                id_str = str(id).strip()
+                for p in professores:
+                    p_id = p.get('id')
+                    if p_id is not None:
+                        p_id_str = str(p_id).strip()
+                        if p_id_str == id_str:
+                            docente = p
+                            print(f"[DEBUG] Docente encontrado na API: {docente.get('nome_professor', 'N/A')}")
+                            break
+                        # Tenta também comparar como int se ambos forem numéricos
+                        try:
+                            if str(p_id_str).isdigit() and str(id_str).isdigit():
+                                if int(p_id_str) == int(id_str):
+                                    docente = p
+                                    print(f"[DEBUG] Docente encontrado na API (comparação numérica): {docente.get('nome_professor', 'N/A')}")
+                                    break
+                        except (ValueError, TypeError):
+                            pass
         
         # Se não encontrou na API, tenta da sessão
         if not docente:
@@ -1019,6 +1035,25 @@ def docentes_view(id):
             return redirect(url_for('docentes_list'))
         
         print(f"[DEBUG] Docente encontrado: ID={docente.get('id')}, Nome={docente.get('nome_professor', 'N/A')}")
+        print(f"[DEBUG] Dados completos do docente: {docente}")
+        
+        # Garantir que disciplina_nomes seja uma lista
+        if 'disciplina_nomes' not in docente or docente.get('disciplina_nomes') is None:
+            docente['disciplina_nomes'] = []
+        elif not isinstance(docente.get('disciplina_nomes'), list):
+            docente['disciplina_nomes'] = []
+        
+        # Garantir que dias_atendimento seja uma lista
+        if 'dias_atendimento' not in docente or docente.get('dias_atendimento') is None:
+            docente['dias_atendimento'] = []
+        elif not isinstance(docente.get('dias_atendimento'), list):
+            docente['dias_atendimento'] = []
+        
+        # Log para debug
+        print(f"[DEBUG] Disciplinas associadas: {docente.get('disciplina_nomes', [])}")
+        print(f"[DEBUG] Dias atendimento: {docente.get('dias_atendimento', [])}")
+        print(f"[DEBUG] Horários: {docente.get('atendimento_hora_inicio')} - {docente.get('atendimento_hora_fim')}")
+        
         return render_template('docentes/view.html', docente=docente, user=session.get('user', {}))
         
     except requests.exceptions.RequestException as e:
@@ -1079,12 +1114,13 @@ def docentes_edit(id):
                 docente_data['disciplina_nomes'] = disciplina_nomes
             
             # Coleta dados de atendimento se fornecidos
-            dia_semana = request.form.get('dia_semana', '').strip()
+            dias_atendimento = request.form.getlist('dias_atendimento')
+            dias_atendimento = [d.strip() for d in dias_atendimento if d.strip()]
             horario_inicio = request.form.get('horario_inicio', '').strip()
             horario_fim = request.form.get('horario_fim', '').strip()
             
-            if dia_semana:
-                docente_data['dias_atendimento'] = [dia_semana]
+            if dias_atendimento:
+                docente_data['dias_atendimento'] = dias_atendimento
             
             if horario_inicio:
                 docente_data['atendimento_hora_inicio'] = horario_inicio
@@ -1413,10 +1449,8 @@ def get_conteudos_api():
                     
                     # Determina o tipo baseado na categoria
                     categoria = item.get('categoria', 'Material de Aula')
-                    if categoria in ['Material Complementar', 'complementar', 'Material Complementar']:
-                        tipo = 'complementar'
-                    else:
-                        tipo = 'aula'  # Default para Material de Aula
+                    # Removido suporte a Material Complementar
+                    tipo = 'aula'  # Sempre Material de Aula
                     
                     # Título pode vir do nome_arquivo_origem ou do conteúdo processado
                     titulo = item.get('nome_arquivo_origem', 'Sem título')
@@ -1522,11 +1556,7 @@ def create_conteudo_api(data, file_storage=None):
         conteudo_para_base = f"Material: {titulo}"
         
         # Mapear tipo para categoria
-        categoria_map = {
-            'aula': 'Material de Aula',
-            'complementar': 'Material Complementar'
-        }
-        categoria = categoria_map.get(tipo, 'Material de Aula')
+        categoria = 'Material de Aula'  # Sempre Material de Aula (removido Material Complementar)
         
         # 1. CASO 1: Upload de arquivo (o endpoint já cria na baseconhecimento automaticamente)
         if file_storage and file_storage.filename:
@@ -1534,11 +1564,14 @@ def create_conteudo_api(data, file_storage=None):
             
             # Usa upload_disciplina que já salva na baseconhecimento
             if disciplina_nome and disciplina_nome != 'Sem Disciplina':
+                print(f"[DEBUG] Iniciando upload de documento para disciplina: {disciplina_nome}")
                 success, result = upload_documento_por_categoria(
                     file_storage,
                     'disciplina',
                     nome_disciplina=disciplina_nome
                 )
+                
+                print(f"[DEBUG] Resultado do upload: success={success}, result={result if success else 'Erro: ' + str(result)}")
                 
                 if success:
                     # O endpoint já criou o registro na baseconhecimento
@@ -1675,11 +1708,7 @@ def update_conteudo_api(conteudo_id, data, file_storage=None):
         link = data.get('link', '')
         
         # Mapear tipo para categoria
-        categoria_map = {
-            'aula': 'Material de Aula',
-            'complementar': 'Material Complementar'
-        }
-        categoria = categoria_map.get(tipo, 'Material de Aula')
+        categoria = 'Material de Aula'  # Sempre Material de Aula (removido Material Complementar)
         
         # Buscar ID da disciplina
         id_disciplina = None
@@ -2021,7 +2050,9 @@ def avisos_list():
         flash("Erro ao carregar avisos. Tente novamente.", "error")
         avisos = []
     
-    return render_template('avisos/list.html', avisos=avisos)
+    # Passar user para o template
+    user = session.get('user')
+    return render_template('avisos/list.html', avisos=avisos, user=user)
 
 @app.route('/avisos/add', methods=['GET', 'POST'])
 @login_required
@@ -2552,6 +2583,7 @@ def calendario_add():
                 'hora_inicio': request.form.get('hora_inicio', '').strip(),
                 'hora_fim': request.form.get('hora_fim', '').strip(),
                 'sala': request.form.get('sala', '').strip(),
+                'tipo_aula': request.form.get('tipo_aula', '').strip(),
             })
             session.modified = True
             return redirect(url_for('calendario_add', step=4))
@@ -2704,7 +2736,8 @@ def calendario_add():
                             'periodicidade': 'semanal',
                             'id_disciplina': str(disciplina_id),
                             'dia_semana': dia_num,
-                            'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                            'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None,
+                            'tipo_aula': wizard.get('tipo_aula', '') if wizard.get('tipo_aula') else None
                         }
                         
                         print(f"[DEBUG] Criando cronograma: {cronograma_data}")
@@ -2850,18 +2883,26 @@ def calendario_view(materia_id):
             avaliacoes_data = []
             provas_dict = {}
             try:
+                avaliacoes_url = f"{API_BASE_URL}/avaliacao/disciplina/{materia_id}"
+                print(f"[DEBUG] Buscando avaliações para disciplina {materia_id} em: {avaliacoes_url}")
                 avaliacoes_response = requests.get(
-                    f"{API_BASE_URL}/avaliacao/disciplina/{materia_id}",
+                    avaliacoes_url,
                     headers=headers,
                     timeout=10
                 )
+                print(f"[DEBUG] Status Code da resposta de avaliações: {avaliacoes_response.status_code}")
+                
                 if avaliacoes_response.status_code == 200:
                     avaliacoes_data = avaliacoes_response.json()
                     print(f"[DEBUG] {len(avaliacoes_data)} avaliações encontradas")
+                    if len(avaliacoes_data) > 0:
+                        print(f"[DEBUG] Primeira avaliação: {avaliacoes_data[0]}")
                     
                     # Transforma as avaliações da API para o formato esperado pelo template
                     for avaliacao in avaliacoes_data:
-                        tipo = avaliacao.get('tipo_avaliacao', '').lower()
+                        tipo_raw = avaliacao.get('tipo_avaliacao', '')
+                        tipo = tipo_raw.lower() if tipo_raw else ''
+                        print(f"[DEBUG] Processando avaliação - tipo_raw: '{tipo_raw}', tipo: '{tipo}', dados: {avaliacao}")
                         if tipo:
                             # Formata data de "YYYY-MM-DD" para "DD/MM/YYYY"
                             data_prova = avaliacao.get('data_prova', '')
@@ -2916,10 +2957,18 @@ def calendario_view(materia_id):
                                 'aplicador': nome_aplicador,
                                 'conteudo': avaliacao.get('conteudo', '')
                             }
+                        else:
+                            print(f"[WARN] Avaliação sem tipo_avaliacao válido: {avaliacao}")
+                else:
+                    print(f"[WARN] Status code diferente de 200 ao buscar avaliações: {avaliacoes_response.status_code}")
+                    print(f"[WARN] Resposta: {avaliacoes_response.text[:500]}")
             except Exception as e:
                 print(f"[WARN] Erro ao buscar avaliações: {e}")
                 import traceback
                 traceback.print_exc()
+            
+            print(f"[DEBUG] Total de provas processadas: {len(provas_dict)}")
+            print(f"[DEBUG] Provas dict: {provas_dict}")
             
             # Mapeia dia da semana de número para nome
             dias_semana = {
@@ -3207,6 +3256,7 @@ def calendario_edit(materia_id):
                 'hora_inicio': request.form.get('hora_inicio', '').strip(),
                 'hora_fim': request.form.get('hora_fim', '').strip(),
                 'sala': request.form.get('sala', '').strip(),
+                'tipo_aula': request.form.get('tipo_aula', '').strip(),
             })
             session.modified = True
             return redirect(url_for('calendario_edit', materia_id=materia_id, step=4))
@@ -3369,7 +3419,8 @@ def calendario_edit(materia_id):
                                     'dia_semana': dia_num,
                                     'hora_inicio': hora_inicio,
                                     'hora_fim': hora_fim,
-                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None,
+                                    'tipo_aula': wizard.get('tipo_aula', '') if wizard.get('tipo_aula') else None
                                 }
                                 
                                 print(f"[DEBUG] Atualizando cronograma {cronograma_id}: {cronograma_update}")
@@ -3393,7 +3444,8 @@ def calendario_edit(materia_id):
                                     'periodicidade': 'semanal',
                                     'id_disciplina': str(materia_id),
                                     'dia_semana': dia_num,
-                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None
+                                    'sala': int(wizard.get('sala', 0)) if wizard.get('sala') and wizard.get('sala').isdigit() else None,
+                                    'tipo_aula': wizard.get('tipo_aula', '') if wizard.get('tipo_aula') else None
                                 }
                                 
                                 print(f"[DEBUG] Criando novo cronograma: {cronograma_data}")
@@ -3551,8 +3603,78 @@ def calendario_delete(materia_id):
 @app.route('/infos-curso')
 @login_required
 def infos_curso_list():
-    # Lista informações do curso
-    return render_template('infos_curso/list.html', user=session.get('user', {}))
+    # Lista informações do curso - busca trabalhos acadêmicos da API
+    try:
+        headers = get_auth_headers()
+        
+        # Buscar curso do usuário
+        curso_id = None
+        if session.get('user') and session.get('user').get('curso_id'):
+            curso_id = session.get('user').get('curso_id')
+        elif session.get('user') and session.get('user').get('curso_nome'):
+            # Tentar buscar curso por nome
+            try:
+                curso_nome = session.get('user').get('curso_nome')
+                curso_response = requests.get(
+                    f"{API_BASE_URL}/curso/get_curso_nome/{curso_nome}",
+                    headers=headers,
+                    timeout=10
+                )
+                if curso_response.status_code == 200:
+                    curso = curso_response.json()
+                    curso_id = curso.get('id_curso')
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar curso por nome: {e}")
+        
+        # Buscar trabalhos acadêmicos por tipo
+        trabalhos_por_tipo = {
+            'APS': [],
+            'TC 1': [],
+            'TC 2': [],
+            'estagio': [],
+            'horas_complementares': []
+        }
+        
+        if curso_id:
+            try:
+                trabalhos_response = requests.get(
+                    f"{API_BASE_URL}/trabalho_academico/curso/{curso_id}",
+                    headers=headers,
+                    timeout=10
+                )
+                if trabalhos_response.status_code == 200:
+                    trabalhos = trabalhos_response.json()
+                    for trabalho in trabalhos:
+                        tipo = trabalho.get('tipo', '').strip()
+                        if tipo in trabalhos_por_tipo:
+                            trabalhos_por_tipo[tipo].append(trabalho)
+            except Exception as e:
+                print(f"[WARN] Erro ao buscar trabalhos acadêmicos: {e}")
+        
+        # Buscar também por tipo diretamente (caso não tenha curso_id)
+        for tipo in ['APS', 'TC 1', 'TC 2', 'estagio', 'horas_complementares']:
+            if not trabalhos_por_tipo[tipo]:
+                try:
+                    tipo_response = requests.get(
+                        f"{API_BASE_URL}/trabalho_academico/tipo/{tipo}",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if tipo_response.status_code == 200:
+                        trabalhos_por_tipo[tipo] = tipo_response.json()
+                except Exception as e:
+                    print(f"[WARN] Erro ao buscar trabalhos do tipo {tipo}: {e}")
+        
+        return render_template(
+            'infos_curso/list.html',
+            user=session.get('user', {}),
+            trabalhos_por_tipo=trabalhos_por_tipo
+        )
+    except Exception as e:
+        print(f"[ERROR] Erro ao carregar informações do curso: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('infos_curso/list.html', user=session.get('user', {}), trabalhos_por_tipo={})
 
 @app.route('/infos-curso/add', methods=['GET', 'POST'])
 @login_required
@@ -3584,35 +3706,89 @@ def infos_curso_add_aps():
     # Formulário para adicionar APS
     if request.method == 'POST':
         try:
+            headers = get_auth_headers()
+            
             # Obter dados do formulário
-            semestre = request.form.get('semestre')
+            semestre_num = request.form.get('semestre')
             data_limite = request.form.get('data_limite')
             tema = request.form.get('tema')
             max_integrantes = request.form.get('max_integrantes')
             file_storage = request.files.get('documento')
             
+            # Buscar curso do usuário (da sessão ou buscar da API)
+            curso_id = None
+            if session.get('user') and session.get('user').get('curso_id'):
+                curso_id = session.get('user').get('curso_id')
+            else:
+                # Tentar buscar curso do usuário da sessão ou usar um padrão
+                # Se não houver curso_id na sessão, pode usar um curso padrão ou buscar por nome
+                # Por enquanto, vamos usar None e deixar a API lidar com isso
+                pass
+            
+            if not curso_id:
+                flash('Erro: Curso não encontrado. Por favor, verifique suas configurações.', 'error')
+                return redirect(url_for('infos_curso_add_aps'))
+            
+            # Formatar semestre (ano.semestre)
+            from datetime import datetime
+            ano_atual = datetime.now().year
+            semestre_formatado = f"{ano_atual}.{semestre_num}"
+            
+            # Preparar dados para API trabalho_academico
+            trabalho_data = {
+                'tipo': 'APS',
+                'tema': tema,
+                'semestre': semestre_formatado,
+                'id_curso': str(curso_id),
+                'data_entrega': data_limite if data_limite else None,
+                'maximo_integrantes': int(max_integrantes) if max_integrantes and max_integrantes.isdigit() else None
+            }
+            
+            # Salvar trabalho acadêmico na API
+            print(f"[DEBUG] Criando APS: {trabalho_data}")
+            trabalho_response = requests.post(
+                f"{API_BASE_URL}/trabalho_academico/",
+                json=trabalho_data,
+                headers=headers,
+                timeout=10
+            )
+            
+            if trabalho_response.status_code not in [200, 201]:
+                error_detail = trabalho_response.json().get('detail', 'Erro desconhecido') if trabalho_response.headers.get('content-type', '').startswith('application/json') else trabalho_response.text
+                print(f"[ERROR] Erro ao criar APS: {error_detail}")
+                flash(f'Erro ao salvar APS: {error_detail}', 'error')
+                return redirect(url_for('infos_curso_add_aps'))
+            
+            trabalho_id = trabalho_response.json().get('id_trabalho')
+            print(f"[DEBUG] APS criada com ID: {trabalho_id}")
+            
             # Fazer upload do documento se houver
             if file_storage and file_storage.filename:
-                # Buscar nome do curso (pode vir da sessão ou ser fixo)
-                nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                nome_curso = request.form.get('nome_curso', 'Curso Padrão')
                 
                 success, result = upload_documento_por_categoria(
                     file_storage, 
                     'aps',
                     tipo='aps',
                     nome_curso=nome_curso,
-                    data=data_limite or '2025-12-31'  # Data padrão se não fornecida
+                    data=data_limite or '2025-12-31'
                 )
                 
                 if not success:
-                    flash(f'Erro ao fazer upload do documento: {result}', 'error')
-                    return redirect(url_for('infos_curso_add_aps'))
+                    print(f"[WARN] Erro ao fazer upload do documento: {result}")
+                    # Não falha a operação se o upload falhar, apenas avisa
+                    flash(f'APS criada, mas houve erro no upload do documento: {result}', 'warning')
+                else:
+                    flash('APS adicionada com sucesso!', 'success')
+            else:
+                flash('APS adicionada com sucesso!', 'success')
             
-            # Aqui você pode salvar os outros dados (semestre, tema, etc.) na API se necessário
-            flash('APS adicionada com sucesso!', 'success')
             session.pop('add_info_type', None)
             return redirect(url_for('infos_curso_list'))
         except Exception as e:
+            print(f"[ERROR] Erro ao processar formulário APS: {e}")
+            import traceback
+            traceback.print_exc()
             flash(f'Erro ao processar formulário: {str(e)}', 'error')
             return redirect(url_for('infos_curso_add_aps'))
 
@@ -3632,16 +3808,128 @@ def infos_curso_add_tcc():
         elif action == 'back' and step > 1:
             session['tcc_step'] = step - 1
         elif action == 'save':
-            # Salvar dados do TCC
+            # Salvar dados do TCC (TC 1 e TC 2)
             try:
-                # Obter dados do formulário
-                file_storage = request.files.get('manual_tcc')
+                headers = get_auth_headers()
+                
+                # Buscar curso do usuário
+                curso_id = None
+                if session.get('user') and session.get('user').get('curso_id'):
+                    curso_id = session.get('user').get('curso_id')
+                elif session.get('user') and session.get('user').get('curso_nome'):
+                    try:
+                        curso_nome = session.get('user').get('curso_nome')
+                        curso_response = requests.get(
+                            f"{API_BASE_URL}/curso/get_curso_nome/{curso_nome}",
+                            headers=headers,
+                            timeout=10
+                        )
+                        if curso_response.status_code == 200:
+                            curso = curso_response.json()
+                            curso_id = curso.get('id_curso')
+                    except Exception as e:
+                        print(f"[WARN] Erro ao buscar curso por nome: {e}")
+                
+                if not curso_id:
+                    flash('Erro: Curso não encontrado. Por favor, verifique suas configurações.', 'error')
+                    return redirect(url_for('infos_curso_add_tcc'))
+                
+                # Buscar professores para obter IDs
+                professores_response = requests.get(
+                    f"{API_BASE_URL}/professores/lista_professores/",
+                    headers=headers,
+                    timeout=10
+                )
+                professores_list = []
+                if professores_response.status_code == 200:
+                    professores_list = professores_response.json()
+                
+                def buscar_id_professor(nome_professor):
+                    """Busca ID do professor pelo nome"""
+                    if not nome_professor or not professores_list:
+                        return None
+                    for prof in professores_list:
+                        nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                        if nome_professor.lower() in nome_completo.lower() or nome_completo.lower() in nome_professor.lower():
+                            return prof.get('id')
+                    return None
+                
+                # Formatar semestre (ano.semestre)
+                from datetime import datetime
+                ano_atual = datetime.now().year
+                semestre_atual = 1 if datetime.now().month <= 6 else 2
+                semestre_formatado = f"{ano_atual}.{semestre_atual}"
+                
+                trabalhos_criados = []
+                
+                # Criar TC 1
+                professor_tc1 = request.form.get('professor_tc1', '').strip()
+                regras_tc1 = request.form.get('regras_tc1', '').strip()
+                id_orientador_tc1 = buscar_id_professor(professor_tc1) if professor_tc1 else None
+                
+                if regras_tc1:  # Só cria se houver regras
+                    trabalho_tc1_data = {
+                        'tipo': 'TC 1',
+                        'tema': 'Trabalho de Conclusão de Curso I',
+                        'regras': regras_tc1,
+                        'semestre': semestre_formatado,
+                        'id_curso': str(curso_id),
+                        'id_orientador': str(id_orientador_tc1) if id_orientador_tc1 else None
+                    }
+                    
+                    print(f"[DEBUG] Criando TC 1: {trabalho_tc1_data}")
+                    tc1_response = requests.post(
+                        f"{API_BASE_URL}/trabalho_academico/",
+                        json=trabalho_tc1_data,
+                        headers=headers,
+                        timeout=10
+                    )
+                    
+                    if tc1_response.status_code in [200, 201]:
+                        trabalhos_criados.append(('TC 1', tc1_response.json().get('id_trabalho')))
+                    else:
+                        error_detail = tc1_response.json().get('detail', 'Erro desconhecido') if tc1_response.headers.get('content-type', '').startswith('application/json') else tc1_response.text
+                        print(f"[ERROR] Erro ao criar TC 1: {error_detail}")
+                
+                # Criar TC 2
+                professor_tc2 = request.form.get('professor_tc2', '').strip()
+                regras_tc2 = request.form.get('regras_tc2', '').strip()
+                entrega_final = request.form.get('entrega_final', '').strip()
+                id_orientador_tc2 = buscar_id_professor(professor_tc2) if professor_tc2 else None
+                
+                if regras_tc2:  # Só cria se houver regras
+                    trabalho_tc2_data = {
+                        'tipo': 'TC 2',
+                        'tema': 'Trabalho de Conclusão de Curso II',
+                        'regras': regras_tc2,
+                        'semestre': semestre_formatado,
+                        'id_curso': str(curso_id),
+                        'id_orientador': str(id_orientador_tc2) if id_orientador_tc2 else None,
+                        'data_entrega': entrega_final if entrega_final else None
+                    }
+                    
+                    print(f"[DEBUG] Criando TC 2: {trabalho_tc2_data}")
+                    tc2_response = requests.post(
+                        f"{API_BASE_URL}/trabalho_academico/",
+                        json=trabalho_tc2_data,
+                        headers=headers,
+                        timeout=10
+                    )
+                    
+                    if tc2_response.status_code in [200, 201]:
+                        trabalhos_criados.append(('TC 2', tc2_response.json().get('id_trabalho')))
+                    else:
+                        error_detail = tc2_response.json().get('detail', 'Erro desconhecido') if tc2_response.headers.get('content-type', '').startswith('application/json') else tc2_response.text
+                        print(f"[ERROR] Erro ao criar TC 2: {error_detail}")
                 
                 # Fazer upload do documento se houver
+                file_storage = request.files.get('manual_tcc')
                 if file_storage and file_storage.filename:
-                    # Buscar nome do curso (pode vir da sessão ou ser fixo)
-                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
-                    data_entrega = request.form.get('entrega_final', '2025-12-31')
+                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')
+                    data_entrega = entrega_final or '2025-12-31'
+                    
+                    # Usar o primeiro trabalho criado para associar o documento
+                    trabalho_id = trabalhos_criados[0][1] if trabalhos_criados else None
                     
                     success, result = upload_documento_por_categoria(
                         file_storage,
@@ -3652,15 +3940,23 @@ def infos_curso_add_tcc():
                     )
                     
                     if not success:
-                        flash(f'Erro ao fazer upload do documento: {result}', 'error')
-                        return redirect(url_for('infos_curso_add_tcc'))
+                        print(f"[WARN] Erro ao fazer upload do documento: {result}")
+                        flash(f'TCC criado, mas houve erro no upload do documento: {result}', 'warning')
+                    else:
+                        flash('TCC adicionado com sucesso!', 'success')
+                else:
+                    if trabalhos_criados:
+                        flash('TCC adicionado com sucesso!', 'success')
+                    else:
+                        flash('Nenhum trabalho foi criado. Verifique os dados preenchidos.', 'warning')
                 
-                # Aqui você pode salvar os outros dados do TCC na API se necessário
-                flash('TCC adicionado com sucesso!', 'success')
                 session.pop('tcc_step', None)
                 session.pop('add_info_type', None)
                 return redirect(url_for('infos_curso_list'))
             except Exception as e:
+                print(f"[ERROR] Erro ao processar formulário TCC: {e}")
+                import traceback
+                traceback.print_exc()
                 flash(f'Erro ao processar formulário: {str(e)}', 'error')
                 return redirect(url_for('infos_curso_add_tcc'))
 
@@ -3678,42 +3974,138 @@ def infos_curso_add_estagio():
         action = request.form.get('action')
 
         if action == 'next' and step < 2:
+            # Salvar dados do step 1 na sessão
+            session['estagio_carga_horaria'] = request.form.get('carga_horaria', '').strip()
+            session['estagio_orientador'] = request.form.get('orientador', '').strip()
             session['estagio_step'] = step + 1
         elif action == 'back' and step > 1:
             session['estagio_step'] = step - 1
         elif action == 'save':
             # Salvar dados do Estágio
             try:
-                # Obter dados do formulário (arquivo está na etapa 1)
-                # Se o arquivo foi enviado na etapa 1, ele deve estar na sessão
-                # Por enquanto, vamos processar se houver arquivo na etapa atual
-                file_storage = request.files.get('kit_estudante')
+                headers = get_auth_headers()
                 
-                # Fazer upload do documento se houver
+                # Buscar curso do usuário
+                curso_id = None
+                if session.get('user') and session.get('user').get('curso_id'):
+                    curso_id = session.get('user').get('curso_id')
+                elif session.get('user') and session.get('user').get('curso_nome'):
+                    try:
+                        curso_nome = session.get('user').get('curso_nome')
+                        curso_response = requests.get(
+                            f"{API_BASE_URL}/curso/get_curso_nome/{curso_nome}",
+                            headers=headers,
+                            timeout=10
+                        )
+                        if curso_response.status_code == 200:
+                            curso = curso_response.json()
+                            curso_id = curso.get('id_curso')
+                    except Exception as e:
+                        print(f"[WARN] Erro ao buscar curso por nome: {e}")
+                
+                if not curso_id:
+                    flash('Erro: Curso não encontrado. Por favor, verifique suas configurações.', 'error')
+                    return redirect(url_for('infos_curso_add_estagio'))
+                
+                # Buscar dados da sessão (step 1) e do formulário atual (step 2)
+                carga_horaria = session.get('estagio_carga_horaria') or request.form.get('carga_horaria', '').strip()
+                orientador_nome = session.get('estagio_orientador') or request.form.get('orientador', '').strip()
+                
+                # Buscar ID do orientador
+                id_orientador = None
+                if orientador_nome:
+                    try:
+                        professores_response = requests.get(
+                            f"{API_BASE_URL}/professores/lista_professores/",
+                            headers=headers,
+                            timeout=10
+                        )
+                        if professores_response.status_code == 200:
+                            professores_list = professores_response.json()
+                            for prof in professores_list:
+                                nome_completo = f"{prof.get('nome_professor', '')} {prof.get('sobrenome_professor', '')}".strip()
+                                if orientador_nome.lower() in nome_completo.lower() or nome_completo.lower() in orientador_nome.lower():
+                                    id_orientador = prof.get('id')
+                                    break
+                    except Exception as e:
+                        print(f"[WARN] Erro ao buscar orientador: {e}")
+                
+                # Formatar semestre
+                from datetime import datetime
+                ano_atual = datetime.now().year
+                semestre_atual = 1 if datetime.now().month <= 6 else 2
+                semestre_formatado = f"{ano_atual}.{semestre_atual}"
+                
+                # Pegar primeira data de entrega
+                datas = request.form.getlist('data[]')
+                data_entrega = datas[0] if datas else None
+                
+                # Preparar regras com informações do estágio
+                regras_parts = []
+                if carga_horaria:
+                    regras_parts.append(f"Carga horária: {carga_horaria}")
+                if orientador_nome:
+                    regras_parts.append(f"Orientador: {orientador_nome}")
+                regras = "\n".join(regras_parts) if regras_parts else "Estágio supervisionado"
+                
+                # Criar trabalho acadêmico
+                trabalho_data = {
+                    'tipo': 'estagio',
+                    'tema': 'Estágio Supervisionado',
+                    'regras': regras,
+                    'semestre': semestre_formatado,
+                    'id_curso': str(curso_id),
+                    'id_orientador': str(id_orientador) if id_orientador else None,
+                    'data_entrega': data_entrega if data_entrega else None
+                }
+                
+                print(f"[DEBUG] Criando Estágio: {trabalho_data}")
+                trabalho_response = requests.post(
+                    f"{API_BASE_URL}/trabalho_academico/",
+                    json=trabalho_data,
+                    headers=headers,
+                    timeout=10
+                )
+                
+                if trabalho_response.status_code not in [200, 201]:
+                    error_detail = trabalho_response.json().get('detail', 'Erro desconhecido') if trabalho_response.headers.get('content-type', '').startswith('application/json') else trabalho_response.text
+                    print(f"[ERROR] Erro ao criar Estágio: {error_detail}")
+                    flash(f'Erro ao salvar Estágio: {error_detail}', 'error')
+                    return redirect(url_for('infos_curso_add_estagio'))
+                
+                trabalho_id = trabalho_response.json().get('id_trabalho')
+                print(f"[DEBUG] Estágio criado com ID: {trabalho_id}")
+                
+                # Fazer upload do documento se houver (pode estar na sessão do step 1)
+                file_storage = request.files.get('kit_estudante')
                 if file_storage and file_storage.filename:
-                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
-                    # Pegar a primeira data de entrega se houver
-                    datas = request.form.getlist('data[]')
-                    data_entrega = datas[0] if datas else '2025-12-31'
+                    nome_curso = request.form.get('nome_curso', 'Curso Padrão')
                     
                     success, result = upload_documento_por_categoria(
                         file_storage,
                         'estagio',
                         tipo='estagio',
                         nome_curso=nome_curso,
-                        data=data_entrega
+                        data=data_entrega or '2025-12-31'
                     )
                     
                     if not success:
-                        flash(f'Erro ao fazer upload do documento: {result}', 'error')
-                        return redirect(url_for('infos_curso_add_estagio'))
+                        print(f"[WARN] Erro ao fazer upload do documento: {result}")
+                        flash(f'Estágio criado, mas houve erro no upload do documento: {result}', 'warning')
+                    else:
+                        flash('Estágio adicionado com sucesso!', 'success')
+                else:
+                    flash('Estágio adicionado com sucesso!', 'success')
                 
-                # Aqui você pode salvar os outros dados do Estágio na API se necessário
-                flash('Estágio adicionado com sucesso!', 'success')
                 session.pop('estagio_step', None)
+                session.pop('estagio_carga_horaria', None)
+                session.pop('estagio_orientador', None)
                 session.pop('add_info_type', None)
                 return redirect(url_for('infos_curso_list'))
             except Exception as e:
+                print(f"[ERROR] Erro ao processar formulário Estágio: {e}")
+                import traceback
+                traceback.print_exc()
                 flash(f'Erro ao processar formulário: {str(e)}', 'error')
                 return redirect(url_for('infos_curso_add_estagio'))
 
@@ -3727,14 +4119,88 @@ def infos_curso_add_horas():
     # Formulário para adicionar Horas Complementares
     if request.method == 'POST':
         try:
+            headers = get_auth_headers()
+            
+            # Buscar curso do usuário
+            curso_id = None
+            if session.get('user') and session.get('user').get('curso_id'):
+                curso_id = session.get('user').get('curso_id')
+            elif session.get('user') and session.get('user').get('curso_nome'):
+                try:
+                    curso_nome = session.get('user').get('curso_nome')
+                    curso_response = requests.get(
+                        f"{API_BASE_URL}/curso/get_curso_nome/{curso_nome}",
+                        headers=headers,
+                        timeout=10
+                    )
+                    if curso_response.status_code == 200:
+                        curso = curso_response.json()
+                        curso_id = curso.get('id_curso')
+                except Exception as e:
+                    print(f"[WARN] Erro ao buscar curso por nome: {e}")
+            
+            if not curso_id:
+                flash('Erro: Curso não encontrado. Por favor, verifique suas configurações.', 'error')
+                return redirect(url_for('infos_curso_add_horas'))
+            
             # Obter dados do formulário
-            carga_horaria = request.form.get('carga_horaria')
-            data_limite = request.form.get('data_limite')
-            file_storage = request.files.get('kit_estudante')
+            carga_horaria = request.form.get('carga_horaria', '').strip()
+            data_limite = request.form.get('data_limite', '').strip()
+            
+            # Formatar semestre
+            from datetime import datetime
+            ano_atual = datetime.now().year
+            semestre_atual = 1 if datetime.now().month <= 6 else 2
+            semestre_formatado = f"{ano_atual}.{semestre_atual}"
+            
+            # Preparar regras com categorias
+            categorias_nomes = request.form.getlist('categoria_nome[]')
+            categorias_limites = request.form.getlist('categoria_limite[]')
+            categorias_tipos = request.form.getlist('categoria_tipo[]')
+            
+            regras_parts = []
+            if carga_horaria:
+                regras_parts.append(f"Carga horária total: {carga_horaria}")
+            if categorias_nomes:
+                regras_parts.append("\nDistribuição por categoria:")
+                for i, nome in enumerate(categorias_nomes):
+                    limite = categorias_limites[i] if i < len(categorias_limites) else ''
+                    tipo = categorias_tipos[i] if i < len(categorias_tipos) else ''
+                    if nome:
+                        regras_parts.append(f"- {nome}: {limite} {tipo}")
+            regras = "\n".join(regras_parts) if regras_parts else "Horas complementares"
+            
+            # Criar trabalho acadêmico
+            trabalho_data = {
+                'tipo': 'horas_complementares',
+                'tema': 'Horas Complementares',
+                'regras': regras,
+                'semestre': semestre_formatado,
+                'id_curso': str(curso_id),
+                'data_entrega': data_limite if data_limite else None
+            }
+            
+            print(f"[DEBUG] Criando Horas Complementares: {trabalho_data}")
+            trabalho_response = requests.post(
+                f"{API_BASE_URL}/trabalho_academico/",
+                json=trabalho_data,
+                headers=headers,
+                timeout=10
+            )
+            
+            if trabalho_response.status_code not in [200, 201]:
+                error_detail = trabalho_response.json().get('detail', 'Erro desconhecido') if trabalho_response.headers.get('content-type', '').startswith('application/json') else trabalho_response.text
+                print(f"[ERROR] Erro ao criar Horas Complementares: {error_detail}")
+                flash(f'Erro ao salvar Horas Complementares: {error_detail}', 'error')
+                return redirect(url_for('infos_curso_add_horas'))
+            
+            trabalho_id = trabalho_response.json().get('id_trabalho')
+            print(f"[DEBUG] Horas Complementares criadas com ID: {trabalho_id}")
             
             # Fazer upload do documento se houver
+            file_storage = request.files.get('kit_estudante')
             if file_storage and file_storage.filename:
-                nome_curso = request.form.get('nome_curso', 'Curso Padrão')  # Ajustar conforme necessário
+                nome_curso = request.form.get('nome_curso', 'Curso Padrão')
                 
                 success, result = upload_documento_por_categoria(
                     file_storage,
@@ -3745,14 +4211,19 @@ def infos_curso_add_horas():
                 )
                 
                 if not success:
-                    flash(f'Erro ao fazer upload do documento: {result}', 'error')
-                    return redirect(url_for('infos_curso_add_horas'))
+                    print(f"[WARN] Erro ao fazer upload do documento: {result}")
+                    flash(f'Horas Complementares criadas, mas houve erro no upload do documento: {result}', 'warning')
+                else:
+                    flash('Horas Complementares adicionadas com sucesso!', 'success')
+            else:
+                flash('Horas Complementares adicionadas com sucesso!', 'success')
             
-            # Aqui você pode salvar os outros dados (carga_horaria, categorias, etc.) na API se necessário
-            flash('Horas Complementares adicionadas com sucesso!', 'success')
             session.pop('add_info_type', None)
             return redirect(url_for('infos_curso_list'))
         except Exception as e:
+            print(f"[ERROR] Erro ao processar formulário Horas Complementares: {e}")
+            import traceback
+            traceback.print_exc()
             flash(f'Erro ao processar formulário: {str(e)}', 'error')
             return redirect(url_for('infos_curso_add_horas'))
 
@@ -4109,79 +4580,60 @@ def base_conhecimento_delete(item_id):
 @app.route('/duvidas-frequentes')
 @login_required
 def duvidas_frequentes_list():
-    # Lista dúvidas frequentes dos alunos (mensagens do chatbot)
+    # Dashboard de dúvidas frequentes com estatísticas e gráficos
     try:
         headers = get_auth_headers()
         user = session.get('user', {})
         
-        # Buscar mensagens dos alunos da API
+        # Buscar dados do dashboard da API
         response = requests.get(
-            f"{API_BASE_URL}/mensagens_aluno/get_lista_msg/",
+            f"{API_BASE_URL}/mensagens_aluno/dashboard/",
             headers=headers,
-            timeout=10
+            timeout=15
         )
         
-        todas_mensagens = []
         if response.status_code == 200:
-            mensagens_data = response.json()
-            todas_mensagens = mensagens_data if isinstance(mensagens_data, list) else [mensagens_data]
+            dashboard_data = response.json()
         elif response.status_code == 404:
-            todas_mensagens = []
+            dashboard_data = {
+                "total_geral": 0,
+                "topicos": [],
+                "duvidas_frequentes": [],
+                "estatisticas": {}
+            }
         else:
-            flash(f"Erro ao carregar dúvidas frequentes: {response.status_code}", "error")
-            todas_mensagens = []
-        
-        # Separar por tópico/categoria
-        duvidas_materia = []  # Disciplina, Conteúdo, etc.
-        duvidas_institucionais = []  # Geral, TCC, etc.
-        
-        for mensagem in todas_mensagens:
-            if isinstance(mensagem, dict):
-                topico = mensagem.get('topico', [])
-                
-                # Se topico é uma lista, pega o primeiro item
-                if isinstance(topico, list) and len(topico) > 0:
-                    topico_str = topico[0] if isinstance(topico[0], str) else str(topico[0])
-                elif isinstance(topico, str):
-                    topico_str = topico
-                else:
-                    topico_str = 'Geral'
-                
-                topico_lower = topico_str.lower()
-                
-                # Classificar baseado no tópico
-                if any(palavra in topico_lower for palavra in ['disciplina', 'conteúdo', 'materia', 'aula', 'prova', 'avaliacao']):
-                    duvidas_materia.append(mensagem)
-                else:
-                    duvidas_institucionais.append(mensagem)
+            flash(f"Erro ao carregar dashboard: {response.status_code}", "error")
+            dashboard_data = {
+                "total_geral": 0,
+                "topicos": [],
+                "duvidas_frequentes": [],
+                "estatisticas": {}
+            }
         
         # Obter informações do curso do usuário (se disponíveis)
         curso_codigo = user.get('curso_codigo', '') if user else ''
         curso_nome = user.get('curso_nome', '') if user else ''
-        
-        # Se não encontrou nada, mostra mensagem informativa
-        if not todas_mensagens:
-            flash("Nenhuma dúvida frequente encontrada.", "info")
         
         return render_template(
             'duvidas_frequentes/list.html',
             user=user,
             curso_codigo=curso_codigo,
             curso_nome=curso_nome,
-            duvidas_materia=duvidas_materia,
-            duvidas_institucionais=duvidas_institucionais,
-            todas_duvidas=todas_mensagens
+            dashboard_data=dashboard_data
         )
     except requests.exceptions.RequestException as e:
-        flash(f"Erro ao carregar dúvidas frequentes: {str(e)}", "error")
+        flash(f"Erro ao carregar dashboard: {str(e)}", "error")
         return render_template(
             'duvidas_frequentes/list.html',
             user=session.get('user', {}),
             curso_codigo=session.get('user', {}).get('curso_codigo', '') if session.get('user') else '',
             curso_nome=session.get('user', {}).get('curso_nome', '') if session.get('user') else '',
-            duvidas_materia=[],
-            duvidas_institucionais=[],
-            todas_duvidas=[]
+            dashboard_data={
+                "total_geral": 0,
+                "topicos": [],
+                "duvidas_frequentes": [],
+                "estatisticas": {}
+            }
         )
 
 @app.route('/duvidas-frequentes/delete/<item_id>', methods=['POST'])
@@ -4333,12 +4785,28 @@ def upload_documento_por_categoria(file_storage, categoria, **kwargs):
             return False, f"Categoria '{categoria}' não suportada"
         
         # Faz a requisição
+        print(f"[DEBUG] Fazendo upload para: {endpoint}")
+        print(f"[DEBUG] Dados enviados: {data}")
+        print(f"[DEBUG] Arquivo: {file_storage.filename} ({file_storage.mimetype})")
+        print(f"[DEBUG] Headers: {list(upload_headers.keys())}")
+        
         response = requests.post(endpoint, files=files, data=data, headers=upload_headers, timeout=30)
         
+        print(f"[DEBUG] Status Code: {response.status_code}")
+        print(f"[DEBUG] Response Headers: {dict(response.headers)}")
+        
         if response.status_code == 201:
-            return True, response.json()
+            result = response.json()
+            print(f"[DEBUG] Upload bem-sucedido: {result}")
+            return True, result
         else:
-            error_detail = response.json().get("detail", f"Erro {response.status_code}") if response.headers.get('content-type', '').startswith('application/json') else response.text
+            try:
+                error_json = response.json()
+                error_detail = error_json.get("detail", f"Erro {response.status_code}")
+                print(f"[ERROR] Erro no upload: {error_detail}")
+            except:
+                error_detail = response.text[:500] if response.text else f"Erro {response.status_code}"
+                print(f"[ERROR] Erro no upload (não JSON): {error_detail}")
             return False, error_detail
             
     except requests.exceptions.RequestException as e:

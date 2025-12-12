@@ -111,28 +111,47 @@
                         <div class="form-group">
                             <div class="display-field">
                                 <span class="field-label-inline">Dias da Semana:</span>
-                                <span class="field-value">{{ docente.dia_semana|title if docente.dia_semana else 'Terça, Quinta, Segunda' }}</span>
+                                <span class="field-value">
+                                    {% if docente.dias_atendimento and docente.dias_atendimento|length > 0 %}
+                                        {{ docente.dias_atendimento|join(', ')|title }}
+                                    {% else %}
+                                        Não informado
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="display-field">
                                 <span class="field-label-inline">Horários:</span>
-                                <span class="field-value">{{ docente.horario_inicio if docente.horario_inicio else '18h' }} | {{ docente.horario_fim if docente.horario_fim else '22h' }}</span>
+                                <span class="field-value">
+                                    {% if docente.atendimento_hora_inicio and docente.atendimento_hora_fim %}
+                                        {{ docente.atendimento_hora_inicio[:5] }}h | {{ docente.atendimento_hora_fim[:5] }}h
+                                    {% elif docente.atendimento_hora_inicio %}
+                                        {{ docente.atendimento_hora_inicio[:5] }}h
+                                    {% else %}
+                                        Não informado
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                     </div>
                     <div class="info-column">
                         <h3 class="section-subtitle">Disciplinas:</h3>
-                        <div class="form-group">
-                            <div class="display-field">
-                                <span class="field-value field-value-disciplina">Ciência da Computação</span>
+                        {% if docente.disciplina_nomes and docente.disciplina_nomes|length > 0 %}
+                            {% for disciplina in docente.disciplina_nomes %}
+                            <div class="form-group">
+                                <div class="display-field">
+                                    <span class="field-value field-value-disciplina">{{ disciplina }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="display-field">
-                                <span class="field-value field-value-disciplina">Análise e Desenvolvimento de Sistemas</span>
+                            {% endfor %}
+                        {% else %}
+                            <div class="form-group">
+                                <div class="display-field">
+                                    <span class="field-value field-value-disciplina">Nenhuma disciplina associada</span>
+                                </div>
                             </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
 

@@ -199,29 +199,28 @@
           <summary class="section-summary">Avaliações e Prazos</summary>
           <div class="section-content avaliacoes-content">
             
-            {% if materia.provas %}
+            {% if materia.provas and materia.provas|length > 0 %}
               {% for prova_key, prova in materia.provas.items() %}
-                {% if prova.data %}
                 <div class="avaliacao-block">
                   <h3 class="avaliacao-title">{{ prova_key|upper }}</h3>
                   <div class="avaliacao-info-row">
                     <div class="avaliacao-field">
                       <span class="avaliacao-field-label">Data:</span>
-                      <span class="avaliacao-field-value">{{ prova.data }}</span>
+                      <span class="avaliacao-field-value">{{ prova.data or 'Não informada' }}</span>
                     </div>
                     <div class="avaliacao-field">
                       <span class="avaliacao-field-label">Horário:</span>
-                      <span class="avaliacao-field-value">{{ prova.inicio }}</span>
+                      <span class="avaliacao-field-value">{{ prova.inicio or 'Não informado' }}</span>
                     </div>
                   </div>
                   <div class="avaliacao-info-row">
                     <div class="avaliacao-field">
                       <span class="avaliacao-field-label">Sala:</span>
-                      <span class="avaliacao-field-value">{{ prova.sala }}</span>
+                      <span class="avaliacao-field-value">{{ prova.sala or 'Não informada' }}</span>
                     </div>
                     <div class="avaliacao-field">
                       <span class="avaliacao-field-label">Aplicador(a):</span>
-                      <span class="avaliacao-field-value">{{ prova.aplicador }}</span>
+                      <span class="avaliacao-field-value">{{ prova.aplicador or 'Não informado' }}</span>
                     </div>
                   </div>
                   <div class="avaliacao-description">
@@ -229,7 +228,6 @@
                     <p class="avaliacao-description-text">{{ prova.conteudo or 'Conteúdo não especificado.' }}</p>
                   </div>
                 </div>
-                {% endif %}
               {% endfor %}
             {% else %}
               <p class="empty-message">Nenhuma avaliação cadastrada.</p>

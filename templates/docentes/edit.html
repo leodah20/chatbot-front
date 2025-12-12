@@ -138,19 +138,32 @@
                     <h3 class="schedule-title">Horário de Atendimento:</h3>
                     
                     <div class="form-field">
-                        <label class="schedule-label">Dia da Semana:</label>
-                        <div class="select-wrapper">
-                            <select name="dia_semana" class="text-input">
-                                <option value="">Selecione</option>
-                                <option value="segunda">Segunda-feira</option>
-                                <option value="terca">Terça-feira</option>
-                                <option value="quarta">Quarta-feira</option>
-                                <option value="quinta">Quinta-feira</option>
-                                <option value="sexta">Sexta-feira</option>
-                            </select>
-                            <svg class="select-arrow" width="16" height="9" viewBox="0 0 16 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0.75 0.75L7.875 7.5L15 0.75" stroke="#4A4A4A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                        <label class="schedule-label">Dias da Semana:</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="segunda" {% if docente.dias_atendimento and 'segunda' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Segunda-feira</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="terca" {% if docente.dias_atendimento and 'terca' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Terça-feira</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="quarta" {% if docente.dias_atendimento and 'quarta' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Quarta-feira</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="quinta" {% if docente.dias_atendimento and 'quinta' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Quinta-feira</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="sexta" {% if docente.dias_atendimento and 'sexta' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Sexta-feira</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="dias_atendimento" value="sabado" {% if docente.dias_atendimento and 'sabado' in docente.dias_atendimento %}checked{% endif %}>
+                                <span>Sábado</span>
+                            </label>
                         </div>
                     </div>
 
@@ -181,14 +194,6 @@
                     </button>
                 </div>
 
-                <script>
-                    // Set selected values after page load
-                    document.addEventListener('DOMContentLoaded', function() {
-                        {% if docente.dia_semana %}
-                        document.querySelector('select[name="dia_semana"]').value = '{{ docente.dia_semana }}';
-                        {% endif %}
-                    });
-                </script>
             </form>
         </section>
     </main>
