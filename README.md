@@ -67,6 +67,12 @@ Fornecer uma interface intuitiva e eficiente para administradores, coordenadores
 - ✅ Estatísticas rápidas
 - ✅ Acesso rápido às principais funcionalidades
 
+### ❓ Dúvidas Frequentes
+- ✅ Dashboard com estatísticas de mensagens de alunos
+- ✅ Visualização de dúvidas mais frequentes
+- ✅ Organização por tópicos
+- ✅ Remoção de itens de dúvidas frequentes
+
 ---
 
 ## 🛠️ Tecnologias Utilizadas
@@ -74,17 +80,18 @@ Fornecer uma interface intuitiva e eficiente para administradores, coordenadores
 ### Backend
 - **[Flask](https://flask.palletsprojects.com/)** 3.0.0 - Framework web Python
 - **[Requests](https://requests.readthedocs.io/)** 2.31.0 - Cliente HTTP para comunicação com API
+- **[Python-dotenv](https://pypi.org/project/python-dotenv/)** 1.0.0 - Carregamento de variáveis de ambiente
 
 ### Frontend
 - **HTML5** - Estrutura semântica
 - **CSS3** - Estilização moderna e responsiva
-- **JavaScript (Vanilla)** - Interatividade e validações
-- **Jinja2** - Sistema de templates
+- **JavaScript (Vanilla)** - Interatividade, validações e notificações (toast)
+- **Jinja2** - Sistema de templates do Flask
 
 ### Ferramentas
 - **Python 3.10+** - Linguagem de programação
 - **Git** - Controle de versão
-- **Virtual Environment** - Isolamento de dependências
+- **Virtual Environment** - Isolamento de dependências Python
 
 ---
 
@@ -361,12 +368,13 @@ Após o login, você será redirecionado para o dashboard principal, onde poder�
 
 ### 4. Funcionalidades Disponíveis
 
-- **Dashboard:** Visão geral do sistema
-- **Avisos:** Gerenciar avisos acadêmicos
-- **Conteúdo:** Gerenciar conteúdo acadêmico
-- **Docentes:** Gerenciar professores
-- **Calendário:** Visualizar eventos acadêmicos
-- **Informações de Curso:** Gerenciar informações de cursos
+- **Dashboard:** Visão geral do sistema com estatísticas
+- **Avisos:** Gerenciar avisos acadêmicos (criar, editar, visualizar, remover)
+- **Conteúdo:** Gerenciar conteúdo acadêmico por disciplinas
+- **Docentes:** Gerenciar professores (cadastro, edição, visualização, remoção)
+- **Calendário:** Gerenciar calendário acadêmico, cronogramas e avaliações
+- **Informações de Curso:** Gerenciar APS, estágio, TCC, horas complementares e disciplinas seletivas
+- **Dúvidas Frequentes:** Dashboard com estatísticas e gestão de dúvidas frequentes dos alunos
 
 ### 5. Controle de Acesso
 
@@ -390,14 +398,19 @@ chatbot-front/
 ├── README.md                       # Este arquivo
 │
 ├── static/                         # Arquivos estáticos
-│   └── css/                        # Folhas de estilo
-│       ├── avisos_styles.css       # Estilos para seção de avisos
-│       ├── calendario_styles.css   # Estilos para calendário
-│       ├── conteudo_styles.css     # Estilos para conteúdo
-│       ├── dashboard_styles.css    # Estilos do dashboard
-│       ├── docentes_styles.css     # Estilos para docentes
-│       ├── infos_curso_styles.css  # Estilos para informações de curso
-│       └── login_styles.css        # Estilos da página de login
+│   ├── css/                        # Folhas de estilo
+│   │   ├── avisos_styles.css       # Estilos para seção de avisos
+│   │   ├── calendario_styles.css   # Estilos para calendário
+│   │   ├── common_buttons.css      # Estilos comuns para botões
+│   │   ├── conteudo_styles.css     # Estilos para conteúdo
+│   │   ├── dashboard_styles.css    # Estilos do dashboard
+│   │   ├── docentes_styles.css     # Estilos para docentes
+│   │   ├── duvidas_frequentes_styles.css  # Estilos para dúvidas frequentes
+│   │   ├── infos_curso_styles.css  # Estilos para informações de curso
+│   │   ├── login_styles.css        # Estilos da página de login
+│   │   └── toast.css               # Estilos para notificações toast
+│   └── js/                         # Arquivos JavaScript
+│       └── toast.js                # Sistema de notificações toast
 │
 └── templates/                      # Templates Jinja2
     ├── login.html                  # Página de login
@@ -426,13 +439,16 @@ chatbot-front/
     │   ├── edit.html               # Editar evento
     │   └── view.html               # Visualizar evento
     │
-    └── infos_curso/                # Templates de informações de curso
-        ├── list.html               # Lista de informações
-        ├── add_aps.html            # Adicionar APS
-        ├── add_estagio.html        # Adicionar estágio
-        ├── add_horas.html          # Adicionar horas complementares
-        ├── add_select.html         # Adicionar seletiva
-        └── add_tcc.html            # Adicionar TCC
+    ├── infos_curso/                # Templates de informações de curso
+    │   ├── list.html               # Lista de informações
+    │   ├── add_aps.html            # Adicionar APS
+    │   ├── add_estagio.html        # Adicionar estágio
+    │   ├── add_horas.html          # Adicionar horas complementares
+    │   ├── add_select.html         # Adicionar seletiva
+    │   └── add_tcc.html            # Adicionar TCC
+    ├── duvidas_frequentes/         # Templates de dúvidas frequentes
+    │   └── list.html               # Dashboard de dúvidas frequentes
+    └── _toasts.html                # Template parcial para notificações toast
 ```
 
 ---
@@ -443,14 +459,54 @@ A aplicação se comunica com uma API REST backend. Todas as requisições são 
 
 ### Endpoints Principais
 
-A aplicação integra-se com os seguintes endpoints:
+A aplicação integra-se com os seguintes endpoints da API backend:
 
-- `/auth/login` - Autenticação de usuários
-- `/aviso/` - CRUD de avisos
-- `/conteudo/` - CRUD de conteúdo acadêmico
-- `/professores/` - CRUD de professores
-- `/calendario/` - Gestão de calendário
-- `/cursos/` - Informações de cursos
+#### Autenticação
+- `POST /auth/login` - Autenticação de usuários
+
+#### Avisos
+- `GET /aviso/get_lista_aviso/` - Listar todos os avisos
+- `POST /aviso/` - Criar novo aviso
+- `GET /aviso/get_aviso_id/{id}` - Obter aviso por ID
+- `PUT /aviso/update/{id}` - Atualizar aviso
+- `DELETE /aviso/delete/{id}` - Remover aviso
+
+#### Conteúdo Acadêmico (Base de Conhecimento)
+- `GET /baseconhecimento/get_lista_conhecimento` - Listar conteúdo acadêmico
+- `POST /baseconhecimento/` - Criar novo conteúdo
+- `PUT /baseconhecimento/update/{id}` - Atualizar conteúdo
+- `DELETE /baseconhecimento/delete/{id}` - Remover conteúdo
+
+#### Professores
+- `GET /professores/lista_professores/` - Listar todos os professores
+- `POST /professores/` - Criar novo professor
+- `GET /professores/get_professor/{id}` - Obter professor por ID
+- `PUT /professores/update/{id}` - Atualizar professor
+- `DELETE /professores/delete/{id}` - Remover professor
+
+#### Calendário e Disciplinas
+- `GET /disciplinas/get_diciplina_id/{id}` - Obter disciplina por ID
+- `GET /disciplinas/lista_disciplina/` - Listar todas as disciplinas
+- `PUT /disciplinas/update/{id}` - Atualizar disciplina
+- `GET /cronograma/disciplina/{id}` - Obter cronograma da disciplina
+- `POST /cronograma/` - Criar cronograma
+- `PUT /cronograma/updade/{id}` - Atualizar cronograma
+- `DELETE /cronograma/delete/{id}` - Remover cronograma
+- `GET /avaliacao/disciplina/{id}` - Obter avaliações da disciplina
+- `POST /avaliacao/` - Criar avaliação
+
+#### Coordenadores
+- `GET /coordenador/get_list_coordenador/` - Listar coordenadores
+
+#### Cursos e Trabalhos Acadêmicos
+- `GET /curso/get_curso/` - Listar todos os cursos
+- `GET /curso/get_curso/{id}` - Obter curso por ID
+- `GET /curso/get_curso_nome/{nome}` - Obter curso por nome
+- `GET /trabalho_academico/curso/{id}` - Obter trabalhos acadêmicos do curso
+
+#### Dúvidas Frequentes
+- `GET /mensagens_aluno/dashboard/` - Dashboard de dúvidas frequentes
+- `DELETE /mensagens_aluno/delete/{id}` - Remover mensagem de aluno
 
 ### Autenticação
 
@@ -477,10 +533,9 @@ Para testar o sistema localmente:
 
 ### Credenciais de Teste
 
-Use as credenciais fornecidas pela API backend para teste. Exemplo:
+Use as credenciais fornecidas pela API backend. As credenciais exatas dependem da configuração do backend.
 
-- **Admin:** `admin@admin.com` / `1234567`
-- Outros usuários conforme configurados na API
+**⚠️ Nota:** As credenciais de teste devem ser fornecidas pelo administrador do sistema ou configuradas na API backend. O frontend não possui credenciais hardcoded por questões de segurança.
 
 ---
 
@@ -489,9 +544,10 @@ Use as credenciais fornecidas pela API backend para teste. Exemplo:
 ### Problema: Erro ao conectar com a API
 
 **Solução:**
-- Verifique se a API está rodando na URL configurada
-- Verifique a configuração de `API_BASE_URL` em `app.py`
-- Verifique os logs do console para mensagens de erro
+- Verifique se a API está rodando na URL configurada em `API_BASE_URL` no arquivo `.env`
+- Verifique se a URL da API começa com `http://` ou `https://`
+- Verifique os logs do console para mensagens de erro detalhadas
+- Teste a conectividade com a API usando a rota `/test-api` (após fazer login)
 
 ### Problema: Erro 401 - Não autorizado
 
@@ -570,7 +626,7 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 Para dúvidas, sugestões ou problemas:
 
 - **GitHub Issues:** [Abrir uma issue](https://github.com/leodah20/chatbot-front/issues)
-- **Email:** (adicione seu email aqui)
+- **GitHub:** [@leodah20](https://github.com/leodah20)
 
 ---
 
